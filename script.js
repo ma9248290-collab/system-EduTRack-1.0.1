@@ -51,13 +51,42 @@ function findStudentByCodeOrName(input) {
     return students.find(s => s.code === val || normalizeArabicName(s.name) === normalizedInput);
 }
 
+// 🔊 تعريف ملفات الصوت (يجب وضع الملفين في فولدر المشروع)
+const successSound = new Audio('success.mp3');
+const errorSound = new Audio('error.mp3');
+// تقليل مستوى الصوت شوية عشان ميكونش مزعج
+successSound.volume = 0.7; 
+errorSound.volume = 0.8;
+
 function showToast(message, type = 'success') {
+    // 🎵 تشغيل الصوت المناسب بناءً على نوع الإشعار
+    try {
+        if (type === 'success') {
+            successSound.currentTime = 0; // تصفير الصوت عشان لو ضغط مرتين ورا بعض
+            successSound.play().catch(e => {}); // catch لمنع ظهور خطأ في الكونسول لو المتصفح منع الصوت
+        } else {
+            errorSound.currentTime = 0;
+            errorSound.play().catch(e => {});
+        }
+    } catch (e) {}
+
+    // رسم الإشعار على الشاشة
     let container = document.getElementById('toast-container');
-    if (!container) { container = document.createElement('div'); container.id = 'toast-container'; document.body.appendChild(container); }
-    const toast = document.createElement('div'); toast.className = `toast ${type}`;
+    if (!container) { 
+        container = document.createElement('div'); 
+        container.id = 'toast-container'; 
+        document.body.appendChild(container); 
+    }
+    const toast = document.createElement('div'); 
+    toast.className = `toast ${type}`;
     toast.innerHTML = `<span style="margin-left: 10px;">${type === 'success' ? '✅' : '❌'}</span> <span>${message}</span>`;
     container.appendChild(toast);
-    setTimeout(() => { toast.style.animation = 'slideOut 0.3s ease-in forwards'; setTimeout(() => toast.remove(), 300); }, 3000);
+    
+    // إخفاء الإشعار بعد 3 ثواني
+    setTimeout(() => { 
+        toast.style.animation = 'slideOut 0.3s ease-in forwards'; 
+        setTimeout(() => toast.remove(), 300); 
+    }, 3000);
 }
 
 let confirmCallback = null;
@@ -316,22 +345,54 @@ async function activateSoftware() {
     } catch (e) { showToast("عطل في الاتصال بالخادم", "error"); }
 }
 
-// 3. المزامنة السحابية + التحقق من الإيقاف
+// 3. المزامنة السحابية + التحقق من الإيقاف والتاريخ التلقائي والإنذار
 async function loadDataFromFirebase() {
     if(!licenseKey) return; 
     try {
-        // 🚨 تشغيل حائط الصد (Kill Switch Check)
         let licRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${licenseKey}.json`);
         let licData = await licRes.json();
-        if (licData && licData.status === 'suspended') {
-            document.getElementById("login-screen").style.display = "none";
-            document.getElementById("main-app").style.display = "none";
-            document.getElementById("suspended-screen").style.display = "flex";
-            return; // وقف كل حاجة هنا ومتحملش الداتا
+        
+        if (licData) {
+            let isExpired = false;
+            
+            // حساب هل الباقة انتهت زمنياً أم لا
+            if (licData.activatedAt && licData.durationMonths) {
+                let activationDate = new Date(licData.activatedAt);
+                let expirationDate = new Date(activationDate.setMonth(activationDate.getMonth() + parseInt(licData.durationMonths)));
+                let today = new Date();
+                
+                let timeDiff = expirationDate.getTime() - today.getTime();
+                let daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24)); // حساب الأيام المتبقية
+
+                if (daysLeft <= 0) {
+                    isExpired = true;
+                } else if (daysLeft <= 5) {
+                    // 🚨 إظهار شريط الإنذار لو باقي 5 أيام أو أقل
+                    document.getElementById("expiration-banner").style.display = "block";
+                    document.getElementById("expire-days").innerText = daysLeft;
+                }
+            }
+
+            // لو موقوف من الإدارة أو مدته انتهت
+            if (licData.status === 'suspended' || isExpired) {
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("main-app").style.display = "none";
+                const suspendedScreen = document.getElementById("suspended-screen");
+                suspendedScreen.style.display = "flex";
+                
+                // تغيير الرسالة بناءً على سبب الإيقاف
+                if (isExpired) {
+                    suspendedScreen.querySelector("h2").innerText = "انتهت فترة الاشتراك! ⏳";
+                    suspendedScreen.querySelector("p").innerText = "لقد انتهت صلاحية باقتك الحالية. يرجى التواصل مع الإدارة لتجديد الاشتراك واستعادة بياناتك.";
+                }
+                return; // قفل السيستم
+            }
         }
 
+        // --- باقي دالة الـ loadDataFromFirebase لسحب الداتا ---
         let res = await fetch(getFirebaseUrl());
         let data = await res.json();
+        // ... (تكملة الكود بتاع سحب الـ settings والـ students زي ما هو) ...
         
         if (data) {
             if(data.settings) {
