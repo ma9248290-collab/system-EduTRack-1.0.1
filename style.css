@@ -205,6 +205,7 @@ body.assistant-mode .delete-btn { display: none !important; }
 
 
 #shefo-assistant-btn {
+    display: none; /* مخفي بشكل افتراضي */
     position: fixed;
     bottom: 30px;
     left: 30px; /* على الشمال عشان ميزعجش القوايم */
