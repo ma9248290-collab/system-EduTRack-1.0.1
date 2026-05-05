@@ -108,12 +108,29 @@ document.getElementById("loginForm")?.addEventListener("submit", function(e) {
     e.preventDefault();
     const user = document.getElementById("loginUsername").value.trim();
     const pass = document.getElementById("loginPassword").value.trim();
-    if(user === ADMIN_USER && pass === ADMIN_PASS) {
+    
+    // جلب البيانات من المتصفح (localStorage)
+    const savedUser = localStorage.getItem("adminUser");
+    const savedPass = localStorage.getItem("adminPass");
+
+    // المقارنة بالبيانات المحفوظة
+    if(user === savedUser && pass === savedPass) {
         sessionStorage.setItem("isLoggedIn", "true");
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("main-app").style.display = "flex";
+        
+        // إظهار زرار ميرا فور الدخول
+        const miraBtn = document.getElementById("shefo-assistant-btn");
+        if(miraBtn) miraBtn.style.display = "block";
+        
         setTimeout(renderDashboardCharts, 100); 
-    } else { document.getElementById("loginError").style.display = "block"; }
+        showToast(`مرحباً بك يا مدير ${user}`);
+    } else { 
+        document.getElementById("loginError").style.display = "block"; 
+        // مساعدة إضافية في الكونسول للتأكد
+        console.log("البيانات المدخلة:", user, pass);
+        console.log("البيانات المسجلة:", savedUser, savedPass);
+    }
 });
 window.logout = function() { sessionStorage.removeItem("isLoggedIn"); location.reload(); };
 
@@ -233,70 +250,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 2. دالة تفعيل البرنامج وتثبيت العلامة التجارية
 async function activateSoftware() {
-    const key = document.getElementById("licenseKeyInput").value.trim();
-    const tName = document.getElementById("actTeacherName").value.trim();
-    const cName = document.getElementById("actCenterName").value.trim();
+    const elements = {
+        key: document.getElementById("licenseKeyInput").value.trim(),
+        tName: document.getElementById("actTeacherName").value.trim(),
+        cName: document.getElementById("actCenterName").value.trim(),
+        newUser: document.getElementById("newAdminUser").value.trim(),
+        newPass: document.getElementById("newAdminPass").value.trim(),
+        newPin: document.getElementById("newAdminPin").value.trim()
+    };
 
-    if (key.length < 5 || tName === "" || cName === "") {
-        document.getElementById("activationError").style.display = "block";
-        document.getElementById("activationError").innerText = "يرجى إدخال الكود والبيانات كاملة!";
+    if (Object.values(elements).some(val => val === "")) {
+        const err = document.getElementById("activationError");
+        err.style.display = "block"; err.innerText = "يرجى ملء جميع الخانات لتأمين حسابك!";
         return;
     }
     
     try {
-        // 🚨 أول حاجة: نسأل السحابة هل الكود ده إنت مكرته أصلاً كمدير؟
-        let licRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${key}.json`);
+        let licRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${elements.key}.json`);
         let licData = await licRes.json();
         
-        if (!licData) {
+        if (!licData || licData.status === 'suspended') {
             document.getElementById("activationError").style.display = "block";
-            document.getElementById("activationError").innerText = "كود التفعيل غير صحيح أو غير مسجل!";
-            return;
-        }
-        if (licData.status === 'suspended') {
-            document.getElementById("activationError").style.display = "block";
-            document.getElementById("activationError").innerText = "هذا الكود موقوف من الإدارة!";
+            document.getElementById("activationError").innerText = "الكود غير صحيح أو موقوف!";
             return;
         }
 
         // حفظ البيانات محلياً
-        localStorage.setItem("licenseKey", key);
-        localStorage.setItem("teacherName", tName);
-        localStorage.setItem("centerName", cName);
-        licenseKey = key;
+        localStorage.setItem("licenseKey", elements.key);
+        localStorage.setItem("teacherName", elements.tName);
+        localStorage.setItem("centerName", elements.cName);
+        localStorage.setItem("adminUser", elements.newUser);
+        localStorage.setItem("adminPass", elements.newPass);
+        localStorage.setItem("adminPin", elements.newPin);
         
-        // رفع الثوابت للسحابة لقفلها (Branding Lock)
-        const initialSettings = { settings: { teacherName: tName, centerName: cName } };
-        
-        let checkRes = await fetch(getFirebaseUrl());
-        let checkData = await checkRes.json();
-        
-        if (checkData && checkData.settings) {
-            localStorage.setItem("teacherName", checkData.settings.teacherName);
-            localStorage.setItem("centerName", checkData.settings.centerName);
-            showToast("هذا الكود مستخدم مسبقاً، تم استرجاع بياناتك.", "success");
-        } else {
-            await fetch(getFirebaseUrl(), {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(initialSettings)
-            });
-            showToast("تم تفعيل النسخة وتثبيت العلامة التجارية بنجاح!", "success");
-        }
+        licenseKey = elements.key; adminPin = elements.newPin;
 
-        // 🚨 تحديث بيانات الترخيص في لوحة المدير عشان تعرف مين استخدم الكود
-        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${key}.json`, {
+        // رفع إعدادات الأمان للهوية المحفورة (Branding & Security Lock)
+        const initialSettings = { 
+            settings: { 
+                teacherName: elements.tName, 
+                centerName: elements.cName,
+                adminUser: elements.newUser,
+                adminPass: elements.newPass,
+                adminPin: elements.newPin
+            } 
+        };
+        
+        await fetch(getFirebaseUrl(), {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ claimedBy: tName, center: cName, activatedAt: new Date().toISOString() })
+            body: JSON.stringify(initialSettings)
         });
 
+        // تحديث لوحة المدير العام
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${elements.key}.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ claimedBy: elements.tName, activatedAt: new Date().toISOString() })
+        });
+
+        showToast("تم التفعيل وتأمين الحساب بنجاح!");
         document.getElementById("activation-screen").style.display = "none";
         document.getElementById("login-screen").style.display = "flex";
         loadDataFromFirebase();
-    } catch (e) {
-        showToast("خطأ في الاتصال بالسيرفر أثناء التفعيل", "error");
-    }
+    } catch (e) { showToast("عطل في الاتصال بالخادم", "error"); }
 }
 
 // 3. المزامنة السحابية + التحقق من الإيقاف
@@ -320,6 +337,11 @@ async function loadDataFromFirebase() {
             if(data.settings) {
                 localStorage.setItem("teacherName", data.settings.teacherName);
                 localStorage.setItem("centerName", data.settings.centerName);
+                // السطرين الجداد دول 👇
+                localStorage.setItem("adminUser", data.settings.adminUser);
+                localStorage.setItem("adminPass", data.settings.adminPass);
+                localStorage.setItem("adminPin", data.settings.adminPin);
+                adminPin = data.settings.adminPin; // تحديث المتغير العالمي
             } else if (data.teacherName) {
                 localStorage.setItem("teacherName", data.teacherName);
             }
