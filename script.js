@@ -383,23 +383,33 @@ async function loadDataFromFirebase() {
 async function syncDataToBot() {
     if (!isFirebaseLoaded || !licenseKey) return; 
 
-    // ✅ إضافة settings هنا عشان متتمسحش من السحابة وقت المزامنة!
+    // ✅ تجميع كل البيانات بما فيها بيانات الدخول والأمان
     const dataToSync = {
         settings: {
             teacherName: localStorage.getItem("teacherName") || "المدير",
-            centerName: localStorage.getItem("centerName") || "السنتر"
+            centerName: localStorage.getItem("centerName") || "السنتر",
+            adminUser: localStorage.getItem("adminUser") || "shefo",
+            adminPass: localStorage.getItem("adminPass") || "12345",
+            adminPin: localStorage.getItem("adminPin") || "1234"
         },
+        // كررناهم بره الـ settings كاحتياطي للتعامل مع أجزاء السيستم القديمة
         teacherName: localStorage.getItem("teacherName") || "المدير",
         centerName: localStorage.getItem("centerName") || "السنتر",
+        adminUser: localStorage.getItem("adminUser"),
+        adminPass: localStorage.getItem("adminPass"),
+        adminPin: localStorage.getItem("adminPin"),
+        
         students, classSessions, exams, homeworks, schedule, groups, financeRecords, expenses, books
     };
 
+    // مزامنة مع السيرفر المحلي (الواتساب)
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") {
         try {
             await fetch('http://localhost:3000/sync-database', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSync) });
         } catch (e) {}
     }
 
+    // ✅ الرفعة السحرية للسحابة (الآن ستظهر البيانات في Firebase)
     try {
         await fetch(getFirebaseUrl(), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSync) });
     } catch (e) {}
