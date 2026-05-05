@@ -940,6 +940,7 @@ function renderGradesTable(itemDetails, tbodyId, saveFunction, itemId, itemType)
 // ==========================================
 // سيتم تنفيذها داخل دالة `renderDashboardCharts` اللي عرفناها فوق
 function renderDashboardCharts() {
+    renderDashboardCharts
     if(sessionStorage.getItem("isLoggedIn") !== "true") return;
     document.getElementById("total-students").innerText = students.length;
     document.getElementById("total-groups").innerText = groups.length;
@@ -1546,3 +1547,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
+
+// ==========================================
+// 🔗 توليد ونسخ رابط بوابة أولياء الأمور
+// ==========================================
+function updateParentLinkUI() {
+    const linkInput = document.getElementById("parentPortalLink");
+    const currentKey = localStorage.getItem("licenseKey");
+    if (linkInput && currentKey) {
+        // حط هنا اسم اللينك بتاعك على نتليفاي بالظبط
+        linkInput.value = `https://system-edutrack.netlify.app/parent.html?id=${currentKey}`;
+    }
+}
+
+function copyParentLink() {
+    const linkInput = document.getElementById("parentPortalLink");
+    if (!linkInput || !linkInput.value) return;
+    
+    // تحديد النص ونسخه
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999); // عشان الموبايل لو حد فتح من الويب
+    navigator.clipboard.writeText(linkInput.value).then(() => {
+        showToast("تم نسخ الرابط بنجاح! تقدر تبعته دلوقتي 🚀", "success");
+    }).catch(err => {
+        showToast("فشل النسخ، يرجى نسخه يدوياً", "error");
+    });
+}
