@@ -15,29 +15,35 @@
     <div id="toast-container"></div>
 
 
-    <!-- شاشة تفعيل البرنامج (تظهر لأول مرة فقط) -->
+    <!-- شاشة تفعيل البرنامج المطورة 🔐 -->
     <div id="activation-screen" class="login-overlay" style="display: none; z-index: 9999;">
-        <div class="login-card" style="width: 400px;">
-            <h2 class="logo" style="margin-bottom: 10px;">EduTrack <span class="dot">.</span></h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">نظام إدارة الدروس الخصوصية الأذكى</p>
-            <h3 style="margin-bottom: 15px; color: var(--primary-color);">تفعيل النسخة 🔐</h3>
-            <p style="font-size: 13px; margin-bottom: 20px; color: var(--danger-color); font-weight: bold;">تنبيه: الاسم والسنتر سيتم حفرهم في النظام ولا يمكن تغييرهم لاحقاً (سيظهرون في رسائل الواتساب والتقارير).</p>
+        <div class="login-card" style="width: 450px; max-height: 90vh; overflow-y: auto;">
+            <h2 class="logo" style="margin-bottom: 5px;">EduTrack <span class="dot">.</span></h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">تفعيل النسخة وتأسيس الحساب</p>
             
-            <div class="input-group" style="text-align: right;">
-                <label>كود التفعيل (License Key)</label>
-                <input type="text" id="licenseKeyInput" required class="custom-input" placeholder="مثال: EDUTRACK-2026" style="text-align: center; font-weight: bold; letter-spacing: 2px;">
-            </div>
-            <div class="input-group" style="text-align: right;">
-                <label>اسم المدرس (مستر ...)</label>
-                <input type="text" id="actTeacherName" required class="custom-input" placeholder="مثال: أحمد محمود">
-            </div>
-            <div class="input-group" style="text-align: right;">
-                <label>اسم السنتر الأساسي</label>
-                <input type="text" id="actCenterName" required class="custom-input" placeholder="مثال: الأوائل">
+            <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--primary-color);">
+                <h3 style="color: var(--primary-color); margin-bottom: 10px; font-size: 16px;">1. بيانات الترخيص والعلامة التجارية</h3>
+                <input type="text" id="licenseKeyInput" class="custom-input" placeholder="كود التفعيل (License Key)" style="margin-bottom: 10px; text-align: center; font-weight: bold;">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="actTeacherName" class="custom-input" placeholder="اسم المدرس">
+                    <input type="text" id="actCenterName" class="custom-input" placeholder="اسم السنتر">
+                </div>
             </div>
 
-            <button onclick="activateSoftware()" class="save-btn" style="margin-top: 15px; font-size: 16px; width: 100%;">تفعيل وتثبيت العلامة التجارية 🚀</button>
-            <p id="activationError" style="color: var(--danger-color); margin-top: 15px; display: none; font-weight: bold;">يرجى إدخال جميع البيانات بشكل صحيح!</p>
+            <div style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--success-color);">
+                <h3 style="color: var(--success-color); margin-bottom: 10px; font-size: 16px;">2. بيانات الدخول (Login)</h3>
+                <input type="text" id="newAdminUser" class="custom-input" placeholder="اسم مستخدم جديد (بدل shefo)" style="margin-bottom: 10px;">
+                <input type="password" id="newAdminPass" class="custom-input" placeholder="كلمة مرور الدخول الجديدة">
+            </div>
+
+            <div style="background: rgba(139, 92, 246, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--exam-color);">
+                <h3 style="color: var(--exam-color); margin-bottom: 10px; font-size: 16px;">3. أمان الإدارة (Admin PIN)</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">هذا الكود يستخدم لفتح "صلاحيات المدير" من وضع المساعد.</p>
+                <input type="password" id="newAdminPin" class="custom-input" placeholder="رقم سري للإدارة (4 أرقام)" maxlength="4" style="text-align: center; letter-spacing: 5px;">
+            </div>
+
+            <button onclick="activateSoftware()" class="save-btn" style="margin-top: 5px; font-size: 16px; width: 100%;">تفعيل وتأمين النظام 🚀</button>
+            <p id="activationError" style="color: var(--danger-color); margin-top: 15px; display: none; font-weight: bold;"></p>
         </div>
     </div>
 
