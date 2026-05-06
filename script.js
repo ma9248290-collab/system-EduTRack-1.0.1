@@ -266,13 +266,32 @@ function getFirebaseUrl() {
 
 // 1. التحكم في الشاشات أول ما البرنامج يفتح
 document.addEventListener('DOMContentLoaded', () => {
-    if (!licenseKey) {
-        // لو المدرس لسه مشتراش البرنامج ومفيش كود -> نفتحله شاشة التفعيل ونقفل اللوجين
+    // تشغيل دوال الواجهة الأساسية
+    if (typeof renderTable === "function") renderTable(); 
+    if (typeof populateDropdowns === "function") populateDropdowns();
+
+    // فحص الكاش والبيانات
+    let currentKey = localStorage.getItem("licenseKey");
+    let currentUser = localStorage.getItem("adminUser");
+
+    // لو مفيش كود تفعيل، أو مفيش اسم مستخدم (كاش قديم من نسخة سابقة)
+    if (!currentKey || !currentUser) {
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("main-app").style.display = "none";
-        document.getElementById("activation-screen").style.display = "flex";
+        document.getElementById("activation-screen").style.display = "flex"; // إجبار على التفعيل
     } else {
-        // لو مفعل قبل كده، يكمل في مساره الطبيعي (اللوجين أو الداشبورد)
+        // لو مفعل وكله تمام، هل هو مسجل دخول أصلاً؟
+        if(sessionStorage.getItem("isLoggedIn") === "true") {
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("activation-screen").style.display = "none";
+            document.getElementById("main-app").style.display = "flex";
+            switchPage('dashboard'); 
+            setTimeout(renderDashboardCharts, 500); 
+        } else {
+            // لو مش مسجل دخول، اعرض شاشة اللوجين بس
+            document.getElementById("activation-screen").style.display = "none";
+            document.getElementById("login-screen").style.display = "flex";
+        }
         loadDataFromFirebase();
     }
 });
@@ -940,7 +959,8 @@ function renderGradesTable(itemDetails, tbodyId, saveFunction, itemId, itemType)
 // ==========================================
 // سيتم تنفيذها داخل دالة `renderDashboardCharts` اللي عرفناها فوق
 function renderDashboardCharts() {
-    renderDashboardCharts
+    if(typeof updateParentLinkUI === "function") updateParentLinkUI(); // 👈 السطر الجديد ده
+    
     if(sessionStorage.getItem("isLoggedIn") !== "true") return;
     document.getElementById("total-students").innerText = students.length;
     document.getElementById("total-groups").innerText = groups.length;
@@ -1474,37 +1494,81 @@ setInterval(async () => {
 // 🚀 تسريع الرصد (الانتقال بزر Enter مع التحقق)
 // ==========================================
 
-// 1. التحكم في الشاشات أول ما البرنامج يفتح
 document.addEventListener('DOMContentLoaded', () => {
-    // تشغيل دوال الواجهة الأساسية
-    if (typeof renderTable === "function") renderTable(); 
-    if (typeof populateDropdowns === "function") populateDropdowns();
-
-    // فحص الكاش والبيانات
-    let currentKey = localStorage.getItem("licenseKey");
-    let currentUser = localStorage.getItem("adminUser");
-
-    // لو مفيش كود تفعيل، أو مفيش اسم مستخدم (كاش قديم من نسخة سابقة)
-    if (!currentKey || !currentUser) {
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("main-app").style.display = "none";
-        document.getElementById("activation-screen").style.display = "flex"; // إجبار على التفعيل
-    } else {
-        // لو مفعل وكله تمام، هل هو مسجل دخول أصلاً؟
-        if(sessionStorage.getItem("isLoggedIn") === "true") {
-            document.getElementById("login-screen").style.display = "none";
-            document.getElementById("activation-screen").style.display = "none";
-            document.getElementById("main-app").style.display = "flex";
-            switchPage('dashboard'); 
-            setTimeout(renderDashboardCharts, 500); 
-        } else {
-            // لو مش مسجل دخول، اعرض شاشة اللوجين بس
-            document.getElementById("activation-screen").style.display = "none";
-            document.getElementById("login-screen").style.display = "flex";
+    
+    // --- 1. قسم الامتحانات ---
+    document.getElementById('examBarcodeCode')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            let val = this.value.trim();
+            if (val === "") return;
+            
+            let student = findStudentByCodeOrName(val);
+            const ex = exams.find(e => e.id === currentActiveExamId);
+            
+            // التحقق من وجود الطالب
+            if (!student) {
+                showToast("الطالب غير موجود!", "error");
+                this.value = ''; // تفريغ الخانة
+                return;
+            }
+            // التحقق من إن الطالب في نفس المجموعة
+            if (ex && student.group !== ex.group) {
+                showToast("الطالب ليس في هذه المجموعة!", "error");
+                this.value = ''; // تفريغ الخانة
+                return;
+            }
+            
+            // لو الطالب سليم 100%، انط لخانة الدرجة
+            document.getElementById('examBarcodeGrade')?.focus();
         }
-        loadDataFromFirebase();
-    }
+    });
+
+    document.getElementById('examBarcodeGrade')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if(typeof submitExamBarcodeGrade === 'function') submitExamBarcodeGrade();
+        }
+    });
+
+    // --- 2. قسم الواجبات ---
+    document.getElementById('hwBarcodeCode')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            let val = this.value.trim();
+            if (val === "") return;
+            
+            let student = findStudentByCodeOrName(val);
+            const hw = homeworks.find(h => h.id === currentActiveHwId);
+            
+            // التحقق من وجود الطالب
+            if (!student) {
+                showToast("الطالب غير موجود!", "error");
+                this.value = ''; // تفريغ الخانة
+                return;
+            }
+            // التحقق من إن الطالب في نفس المجموعة
+            if (hw && student.group !== hw.group) {
+                showToast("الطالب ليس في هذه المجموعة!", "error");
+                this.value = ''; // تفريغ الخانة
+                return;
+            }
+
+            // لو الطالب سليم 100%، انط لخانة الدرجة
+            document.getElementById('hwBarcodeGrade')?.focus();
+        }
+    });
+
+    document.getElementById('hwBarcodeGrade')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if(typeof submitHwBarcodeGrade === 'function') submitHwBarcodeGrade();
+        }
+    });
+
 });
+
+
 
 // ==========================================
 // 🔗 توليد ونسخ رابط بوابة أولياء الأمور
@@ -1513,7 +1577,7 @@ function updateParentLinkUI() {
     const linkInput = document.getElementById("parentPortalLink");
     const currentKey = localStorage.getItem("licenseKey");
     if (linkInput && currentKey) {
-        // حط هنا اسم اللينك بتاعك على نتليفاي بالظبط
+        // حط هنا لينك موقعك على نتليفاي بالظبط
         linkInput.value = `https://system-edutrack.netlify.app/parent.html?id=${currentKey}`;
     }
 }
@@ -1524,7 +1588,7 @@ function copyParentLink() {
     
     // تحديد النص ونسخه
     linkInput.select();
-    linkInput.setSelectionRange(0, 99999); // عشان الموبايل لو حد فتح من الويب
+    linkInput.setSelectionRange(0, 99999); // لدعم الموبايلات
     navigator.clipboard.writeText(linkInput.value).then(() => {
         showToast("تم نسخ الرابط بنجاح! تقدر تبعته دلوقتي 🚀", "success");
     }).catch(err => {
