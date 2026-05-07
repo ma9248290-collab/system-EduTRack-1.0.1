@@ -28,8 +28,8 @@
             <p style="color: var(--text-muted); margin-bottom: 20px;">تفعيل النسخة وتأسيس الحساب</p>
             
             <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--primary-color);">
-                <h3 style="color: var(--primary-color); margin-bottom: 10px; font-size: 16px;">1. بيانات الترخيص والعلامة التجارية</h3>
-                <input type="text" id="licenseKeyInput" class="custom-input" placeholder="كود التفعيل (License Key)" style="margin-bottom: 10px; text-align: center; font-weight: bold;">
+                <h3 style="color: var(--primary-color); margin-bottom: 10px; font-size: 16px;">1. بيانات الترخيص</h3>
+                <input type="text" id="licenseKeyInput" class="custom-input" placeholder="كود التفعيل (License Key)" style="margin-bottom: 10px; text-align: center;">
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="actTeacherName" class="custom-input" placeholder="اسم المدرس">
                     <input type="text" id="actCenterName" class="custom-input" placeholder="اسم السنتر">
@@ -37,22 +37,20 @@
             </div>
 
             <div style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--success-color);">
-                <h3 style="color: var(--success-color); margin-bottom: 10px; font-size: 16px;">2. بيانات الدخول (Login)</h3>
-                <input type="text" id="newAdminUser" class="custom-input" placeholder="اسم مستخدم جديد (بدل shefo)" style="margin-bottom: 10px;">
-                <input type="password" id="newAdminPass" class="custom-input" placeholder="كلمة مرور الدخول الجديدة">
+                <h3 style="color: var(--success-color); margin-bottom: 10px; font-size: 16px;">2. بيانات الدخول</h3>
+                <input type="text" id="newAdminUser" class="custom-input" placeholder="اسم المستخدم الجديد" style="margin-bottom: 10px;">
+                <input type="password" id="newAdminPass" class="custom-input" placeholder="كلمة المرور الجديدة">
             </div>
 
             <div style="background: rgba(139, 92, 246, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--exam-color);">
-                <h3 style="color: var(--exam-color); margin-bottom: 10px; font-size: 16px;">3. أمان الإدارة (Admin PIN)</h3>
-                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">هذا الكود يستخدم لفتح "صلاحيات المدير" من وضع المساعد.</p>
-                <input type="password" id="newAdminPin" class="custom-input" placeholder="رقم سري للإدارة (4 أرقام)" maxlength="4" style="text-align: center; letter-spacing: 5px;">
+                <h3 style="color: var(--exam-color); margin-bottom: 10px; font-size: 16px;">3. رمز الإدارة (PIN)</h3>
+                <input type="password" id="newAdminPin" class="custom-input" placeholder="رقم سري للإدارة (4 أرقام)" maxlength="4" style="text-align: center;">
             </div>
 
-            <button onclick="activateSoftware()" class="save-btn" style="margin-top: 5px; font-size: 16px; width: 100%;">تفعيل وتأمين النظام 🚀</button>
-            <p id="activationError" style="color: var(--danger-color); margin-top: 15px; display: none; font-weight: bold;"></p>
+            <button onclick="activateSoftware()" class="save-btn" style="width: 100%;">تفعيل وتأمين النظام 🚀</button>
+            <p id="activationError" style="color: var(--danger-color); margin-top: 15px; display: none;"></p>
         </div>
     </div>
-
 
 
         <!-- شاشة إيقاف الترخيص (Kill Switch) -->
@@ -126,6 +124,16 @@
                     <div class="stat-card"><h3>إجمالي الطلاب</h3><p class="stat-number" id="total-students">0</p></div>
                     <div class="stat-card"><h3>عدد المجموعات</h3><p class="stat-number" id="total-groups">0</p></div>
                 </div>
+
+                <div class="stat-card no-print" style="margin-top: 20px; margin-bottom: 30px; border-right: 5px solid #10b981; background: rgba(16, 185, 129, 0.05);">
+                    <h3 style="margin-bottom: 10px; color: #10b981;">👨‍👩‍👦 بوابة أولياء الأمور (الرابط الخاص بك)</h3>
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">انسخ هذا الرابط وشاركه مع أولياء الأمور والطلاب على جروبات الواتساب لمتابعة غيابهم ودرجاتهم مباشرة.</p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="parentPortalLink" class="custom-input" readonly style="direction: ltr; text-align: left; font-weight: bold; color: var(--primary-color); background: var(--card-bg); flex: 1;">
+                        <button class="save-btn" style="width: 150px; margin: 0; background-color: #10b981;" onclick="copyParentLink()">📋 نسخ الرابط</button>
+                    </div>
+                </div>
+                
                 <div class="charts-container" style="display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap;">
                     <div class="stat-card" style="flex: 2; min-width: 400px;"><h3 style="margin-bottom: 20px;">متوسط الحضور اليومي</h3><canvas id="attendanceChart" style="max-height: 250px;"></canvas></div>
                     <div class="stat-card" style="flex: 1; min-width: 300px;"><h3 style="margin-bottom: 20px;">توزيع الطلاب</h3><canvas id="groupsChart" style="max-height: 250px;"></canvas></div>
