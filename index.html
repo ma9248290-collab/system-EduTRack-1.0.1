@@ -126,19 +126,6 @@
                     <div class="stat-card"><h3>إجمالي الطلاب</h3><p class="stat-number" id="total-students">0</p></div>
                     <div class="stat-card"><h3>عدد المجموعات</h3><p class="stat-number" id="total-groups">0</p></div>
                 </div>
-
-                <!-- رابط بوابة أولياء الأمور الخاص بالمدرس -->
-                <div class="stat-card no-print" style="margin-top: 20px; margin-bottom: 30px; border-right: 5px solid #10b981; background: rgba(16, 185, 129, 0.05);">
-                    <h3 style="margin-bottom: 10px; color: #10b981;">👨‍👩‍👦 بوابة أولياء الأمور (الرابط الخاص بك)</h3>
-                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">انسخ هذا الرابط وشاركه مع أولياء الأمور والطلاب على جروبات الواتساب لمتابعة غيابهم ودرجاتهم مباشرة.</p>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="parentPortalLink" class="custom-input" readonly style="direction: ltr; text-align: left; font-weight: bold; color: var(--primary-color); background: var(--card-bg); flex: 1;">
-                        <button class="save-btn" style="width: 150px; margin: 0; background-color: #10b981;" onclick="copyParentLink()">📋 نسخ الرابط</button>
-                    </div>
-                </div>
-
-
-                
                 <div class="charts-container" style="display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap;">
                     <div class="stat-card" style="flex: 2; min-width: 400px;"><h3 style="margin-bottom: 20px;">متوسط الحضور اليومي</h3><canvas id="attendanceChart" style="max-height: 250px;"></canvas></div>
                     <div class="stat-card" style="flex: 1; min-width: 300px;"><h3 style="margin-bottom: 20px;">توزيع الطلاب</h3><canvas id="groupsChart" style="max-height: 250px;"></canvas></div>
