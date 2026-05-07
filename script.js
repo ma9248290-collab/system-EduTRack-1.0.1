@@ -266,13 +266,29 @@ function getFirebaseUrl() {
 
 // 1. التحكم في الشاشات أول ما البرنامج يفتح
 document.addEventListener('DOMContentLoaded', () => {
-    if (!licenseKey) {
-        // لو المدرس لسه مشتراش البرنامج ومفيش كود -> نفتحله شاشة التفعيل ونقفل اللوجين
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("main-app").style.display = "none";
-        document.getElementById("activation-screen").style.display = "flex";
+    // تشغيل دوال الواجهة الأساسية اللي كانت في قسم 9
+    if (typeof renderTable === "function") renderTable(); 
+    if (typeof populateDropdowns === "function") populateDropdowns();
+
+    let currentKey = localStorage.getItem("licenseKey");
+    let currentUser = localStorage.getItem("adminUser");
+
+    // لو مفيش كود تفعيل أو مفيش اسم مستخدم (يعني كاش قديم على الويب)
+    if (!currentKey || !currentUser) {
+        if(document.getElementById("login-screen")) document.getElementById("login-screen").style.display = "none";
+        if(document.getElementById("main-app")) document.getElementById("main-app").style.display = "none";
+        if(document.getElementById("activation-screen")) document.getElementById("activation-screen").style.display = "flex";
     } else {
-        // لو مفعل قبل كده، يكمل في مساره الطبيعي (اللوجين أو الداشبورد)
+        // لو مفعل وكله تمام، هل هو مسجل دخول؟
+        if(sessionStorage.getItem("isLoggedIn") === "true") {
+            if(document.getElementById("login-screen")) document.getElementById("login-screen").style.display = "none";
+            if(document.getElementById("activation-screen")) document.getElementById("activation-screen").style.display = "none";
+            if(document.getElementById("main-app")) document.getElementById("main-app").style.display = "flex";
+            switchPage('dashboard'); 
+        } else {
+            if(document.getElementById("activation-screen")) document.getElementById("activation-screen").style.display = "none";
+            if(document.getElementById("login-screen")) document.getElementById("login-screen").style.display = "flex";
+        }
         loadDataFromFirebase();
     }
 });
@@ -648,19 +664,6 @@ function searchStudent() {
 function backToStudents() { currentStudentProfileCode = null; document.getElementById("students-overview").style.display = "block"; document.getElementById("student-profile-view").style.display = "none"; }
 
 
-// ==========================================
-// 7. لوحة القيادة (Dashboard) والرسوم
-// ==========================================
-function renderDashboardCharts() {
-    if(sessionStorage.getItem("isLoggedIn") !== "true") return;
-    document.getElementById("total-students").innerText = students.length;
-    document.getElementById("total-groups").innerText = groups.length;
-    
-    // إخفاء ماليّات المساعد
-    if(isAssistantMode) return; 
-
-    // رسم باقي التشارتس (زي ما كانت عندك)...
-}
 
 
 // ==========================================
@@ -672,20 +675,7 @@ function onScanSuccess(decodedText) { stopCameraScanner(); const targetInput = d
 function onScanFailure() {}
 
 
-// ==========================================
-// 9. تشغيل السيستم الأولي
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    // تشغيل دوال الواجهة
-    renderTable(); 
-    populateDropdowns();
-    if(sessionStorage.getItem("isLoggedIn") === "true") { 
-        switchPage('dashboard'); 
-        setTimeout(renderDashboardCharts, 500); 
-    }
-    // مزامنة مبدئية
-   
-});
+
 
 // ملاحظة: دوال الواجبات والامتحانات والحضور اللي في كودك الأصلي موجودة وتعمل بنفس المنطق.
 
@@ -938,8 +928,10 @@ function renderGradesTable(itemDetails, tbodyId, saveFunction, itemId, itemType)
 // ==========================================
 // 14. الرسوم البيانية (Dashboard Full)
 // ==========================================
-// سيتم تنفيذها داخل دالة `renderDashboardCharts` اللي عرفناها فوق
 function renderDashboardCharts() {
+    // 1. تشغيل لينك بوابة أولياء الأمور أوتوماتيك
+    if(typeof updateParentLinkUI === "function") updateParentLinkUI(); 
+    
     if(sessionStorage.getItem("isLoggedIn") !== "true") return;
     document.getElementById("total-students").innerText = students.length;
     document.getElementById("total-groups").innerText = groups.length;
@@ -975,6 +967,7 @@ function renderDashboardCharts() {
         groupsChartInstance = new Chart(ctxGrp, { type: 'doughnut', data: { labels: groupLabels, datasets: [{ data: groupData, backgroundColor: colors, borderWidth: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: textColor } } } } });
     }
 
+    // إخفاء ماليّات المساعد
     if(isAssistantMode) return; 
 
     // رسم المالية
