@@ -266,32 +266,13 @@ function getFirebaseUrl() {
 
 // 1. التحكم في الشاشات أول ما البرنامج يفتح
 document.addEventListener('DOMContentLoaded', () => {
-    // تشغيل دوال الواجهة الأساسية
-    if (typeof renderTable === "function") renderTable(); 
-    if (typeof populateDropdowns === "function") populateDropdowns();
-
-    // فحص الكاش والبيانات
-    let currentKey = localStorage.getItem("licenseKey");
-    let currentUser = localStorage.getItem("adminUser");
-
-    // لو مفيش كود تفعيل، أو مفيش اسم مستخدم (كاش قديم من نسخة سابقة)
-    if (!currentKey || !currentUser) {
+    if (!licenseKey) {
+        // لو المدرس لسه مشتراش البرنامج ومفيش كود -> نفتحله شاشة التفعيل ونقفل اللوجين
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("main-app").style.display = "none";
-        document.getElementById("activation-screen").style.display = "flex"; // إجبار على التفعيل
+        document.getElementById("activation-screen").style.display = "flex";
     } else {
-        // لو مفعل وكله تمام، هل هو مسجل دخول أصلاً؟
-        if(sessionStorage.getItem("isLoggedIn") === "true") {
-            document.getElementById("login-screen").style.display = "none";
-            document.getElementById("activation-screen").style.display = "none";
-            document.getElementById("main-app").style.display = "flex";
-            switchPage('dashboard'); 
-            setTimeout(renderDashboardCharts, 500); 
-        } else {
-            // لو مش مسجل دخول، اعرض شاشة اللوجين بس
-            document.getElementById("activation-screen").style.display = "none";
-            document.getElementById("login-screen").style.display = "flex";
-        }
+        // لو مفعل قبل كده، يكمل في مساره الطبيعي (اللوجين أو الداشبورد)
         loadDataFromFirebase();
     }
 });
@@ -959,8 +940,6 @@ function renderGradesTable(itemDetails, tbodyId, saveFunction, itemId, itemType)
 // ==========================================
 // سيتم تنفيذها داخل دالة `renderDashboardCharts` اللي عرفناها فوق
 function renderDashboardCharts() {
-    if(typeof updateParentLinkUI === "function") updateParentLinkUI(); // 👈 السطر الجديد ده
-    
     if(sessionStorage.getItem("isLoggedIn") !== "true") return;
     document.getElementById("total-students").innerText = students.length;
     document.getElementById("total-groups").innerText = groups.length;
@@ -1567,31 +1546,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
-
-
-
-// ==========================================
-// 🔗 توليد ونسخ رابط بوابة أولياء الأمور
-// ==========================================
-function updateParentLinkUI() {
-    const linkInput = document.getElementById("parentPortalLink");
-    const currentKey = localStorage.getItem("licenseKey");
-    if (linkInput && currentKey) {
-        // حط هنا لينك موقعك على نتليفاي بالظبط
-        linkInput.value = `https://system-edutrack.netlify.app/parent.html?id=${currentKey}`;
-    }
-}
-
-function copyParentLink() {
-    const linkInput = document.getElementById("parentPortalLink");
-    if (!linkInput || !linkInput.value) return;
-    
-    // تحديد النص ونسخه
-    linkInput.select();
-    linkInput.setSelectionRange(0, 99999); // لدعم الموبايلات
-    navigator.clipboard.writeText(linkInput.value).then(() => {
-        showToast("تم نسخ الرابط بنجاح! تقدر تبعته دلوقتي 🚀", "success");
-    }).catch(err => {
-        showToast("فشل النسخ، يرجى نسخه يدوياً", "error");
-    });
-}
