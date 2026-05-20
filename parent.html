@@ -6,8 +6,8 @@
     <title>بوابة ولي الأمر | EduTrack</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #f3f4f6; margin: 0; color: #1f2937; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        body { font-family: 'Cairo', sans-serif; background-color: #f3f4f6; margin: 0; color: #1f2937; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px 0; }
+        .container { background: white; width: 95%; max-width: 500px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); box-sizing: border-box; }
         .logo { text-align: center; color: #1e3a8a; font-size: 28px; font-weight: bold; margin-bottom: 5px; }
         .subtitle { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 30px; }
         .input-group { margin-bottom: 20px; }
@@ -19,18 +19,27 @@
         
         /* شاشة النتيجة */
         #result-screen { display: none; }
-        .student-header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px dashed #e5e7eb; }
-        .stat-box { display: flex; justify-content: space-between; padding: 15px; background: #f9fafb; border-radius: 8px; margin-bottom: 10px; border-right: 4px solid #1e3a8a; }
-        .stat-box.success { border-color: #10b981; }
-        .stat-box.warning { border-color: #f59e0b; }
-        .stat-box.danger { border-color: #ef4444; }
-        .stat-title { font-weight: bold; color: #4b5563; }
-        .stat-value { font-weight: bold; font-size: 18px; }
+        .student-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px dashed #e5e7eb; }
+        .stat-box { display: flex; justify-content: space-between; padding: 15px; background: #fffbeb; border-radius: 8px; border-right: 4px solid #f59e0b; margin-top: 10px; }
+        
+        /* الجداول والتفاصيل */
+        .section-title { font-size: 16px; font-weight: bold; color: #1e3a8a; margin-top: 25px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .scrollable-section { max-height: 250px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .detail-table th, .detail-table td { padding: 12px 10px; text-align: right; border-bottom: 1px solid #f3f4f6; }
+        .detail-table th { background: #f9fafb; color: #4b5563; position: sticky; top: 0; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .detail-table tr:last-child td { border-bottom: none; }
+        
+        /* الشارات (Badges) */
+        .badge-present { color: #059669; background: #d1fae5; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
+        .badge-absent { color: #dc2626; background: #fee2e2; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
+        .badge-none { color: #64748b; font-size: 12px; }
+        .score-box { font-weight: bold; color: #1e3a8a; font-size: 14px; }
+        .score-max { font-size: 11px; color: #94a3b8; }
     </style>
 </head>
 <body>
 
-    <!-- شاشة الدخول -->
     <div class="container" id="login-screen">
         <div class="logo">EduTrack Portal</div>
         <div class="subtitle">بوابة متابعة أولياء الأمور</div>
@@ -47,31 +56,36 @@
         <div id="error-msg" class="error">البيانات غير صحيحة أو غير مسجلة!</div>
     </div>
 
-    <!-- شاشة التقرير -->
     <div class="container" id="result-screen">
         <div class="student-header">
             <h2 id="s-name" style="margin: 0; color: #1e3a8a;">اسم الطالب</h2>
-            <p id="s-group" style="margin: 5px 0 0 0; color: #6b7280;">المجموعة</p>
+            <p id="s-group" style="margin: 5px 0 0 0; color: #6b7280; font-weight: bold;">المجموعة</p>
+            
+            <div class="stat-box">
+                <span style="font-weight: bold; color: #4b5563;">🌟 نقاط التميز (السلوك)</span>
+                <span id="s-behavior" style="font-weight: bold; font-size: 18px; color: #f59e0b;">0</span>
+            </div>
         </div>
         
-        <div class="stat-box success">
-            <span class="stat-title">نسبة الحضور</span>
-            <span class="stat-value" id="s-attendance" style="color: #10b981;">0%</span>
+        <div class="section-title">📅 سجل الحضور والغياب</div>
+        <div class="scrollable-section">
+            <table class="detail-table" id="attendance-details">
+                </table>
         </div>
-        <div class="stat-box warning">
-            <span class="stat-title">متوسط الامتحانات</span>
-            <span class="stat-value" id="s-exams" style="color: #f59e0b;">0%</span>
+
+        <div class="section-title">📝 سجل الامتحانات</div>
+        <div class="scrollable-section">
+            <table class="detail-table" id="exams-details">
+                </table>
         </div>
-        <div class="stat-box">
-            <span class="stat-title">متوسط الواجبات</span>
-            <span class="stat-value" id="s-hw" style="color: #1e3a8a;">0%</span>
-        </div>
-        <div class="stat-box danger">
-            <span class="stat-title">نقاط السلوك (التميز)</span>
-            <span class="stat-value" id="s-behavior" style="color: #ef4444;">0</span>
+
+        <div class="section-title">📚 سجل الواجبات</div>
+        <div class="scrollable-section">
+            <table class="detail-table" id="hw-details">
+                </table>
         </div>
         
-        <button class="btn" style="margin-top: 20px; background: #6b7280;" onclick="location.reload()">عودة للبحث 🔙</button>
+        <button class="btn" style="margin-top: 25px; background: #64748b;" onclick="location.reload()">عودة للبحث 🔙</button>
     </div>
 
     <script>
@@ -80,7 +94,6 @@
             const phone = document.getElementById("parentPhone").value.trim();
             const errorMsg = document.getElementById("error-msg");
             
-            // قراءة كود المدرس من رابط الويب (URL Parameter)
             const urlParams = new URLSearchParams(window.location.search);
             const teacherId = urlParams.get('id');
 
@@ -94,65 +107,80 @@
             document.querySelector('.btn').innerText = "جاري البحث... ⏳";
 
             try {
-                // سحب داتا المدرس من السحابة
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${teacherId}/data.json`);
                 let data = await res.json();
 
                 if (!data || !data.students) throw new Error();
 
-                // البحث عن الطالب
                 const student = data.students.find(s => s && s.code === code && s.parentPhone === phone);
                 
                 if (!student) {
                     errorMsg.style.display = "block";
-                    errorMsg.innerText = "هذا الطالب غير مسجل لدينا!";
+                    errorMsg.innerText = "هذا الطالب غير مسجل لدينا، أو البيانات غير متطابقة!";
                     document.querySelector('.btn').innerText = "عرض التقرير 📊";
                     return;
                 }
 
-                // --- حساب الإحصائيات (نفس منطق البرنامج) ---
-                // 1. الحضور
-                let attended = 0;
-                let groupSessions = (data.classSessions || []).filter(s => s && s.group === student.group);
-                groupSessions.forEach(s => { if(s.attendance && s.attendance[student.phone] === 'present') attended++; });
-                let attendanceRate = groupSessions.length > 0 ? Math.round((attended / groupSessions.length) * 100) : 0;
-
-                // 2. الامتحانات
-                let tExam = 0, sExam = 0;
-                let groupExams = (data.exams || []).filter(e => e && e.group === student.group);
-                groupExams.forEach(e => {
-                    if (e.grades && e.grades[student.phone]) {
-                        tExam += parseFloat(e.maxScore);
-                        sExam += parseFloat(e.grades[student.phone]);
-                    }
-                });
-                let examRate = tExam > 0 ? Math.round((sExam / tExam) * 100) : 0;
-
-                // 3. الواجبات
-                let tHw = 0, sHw = 0;
-                let groupHw = (data.homeworks || []).filter(h => h && h.group === student.group);
-                groupHw.forEach(h => {
-                    if (h.grades && h.grades[student.phone]) {
-                        tHw += parseFloat(h.maxScore);
-                        sHw += parseFloat(h.grades[student.phone]);
-                    }
-                });
-                let hwRate = tHw > 0 ? Math.round((sHw / tHw) * 100) : 0;
-
-                // عرض النتيجة
+                // --- تعبئة البيانات الأساسية ---
                 document.getElementById("s-name").innerText = student.name;
                 document.getElementById("s-group").innerText = student.group;
-                document.getElementById("s-attendance").innerText = attendanceRate + "%";
-                document.getElementById("s-exams").innerText = examRate + "%";
-                document.getElementById("s-hw").innerText = hwRate + "%";
                 document.getElementById("s-behavior").innerText = student.behaviorPoints || 0;
 
+                // --- 1. بناء جدول الحضور ---
+                let attHtml = `<tr><th>التاريخ</th><th>الحصة</th><th>الحالة</th></tr>`;
+                // جلب حصص المجموعة وعكسها عشان الأحدث يظهر فوق
+                let groupSessions = (data.classSessions || []).filter(s => s && s.group === student.group).reverse(); 
+                if (groupSessions.length === 0) {
+                    attHtml += `<tr><td colspan="3" style="text-align:center; color:#6b7280;">لا توجد حصص مسجلة</td></tr>`;
+                } else {
+                    groupSessions.forEach(s => {
+                        let status = s.attendance[student.phone];
+                        let badge = status === 'present' ? `<span class="badge-present">حاضر ✓</span>` : 
+                                   (status === 'absent' ? `<span class="badge-absent">غائب ✗</span>` : `<span class="badge-none">--</span>`);
+                        attHtml += `<tr><td>${s.date}</td><td>${s.topic || 'حصة'}</td><td>${badge}</td></tr>`;
+                    });
+                }
+                document.getElementById("attendance-details").innerHTML = attHtml;
+
+                // --- 2. بناء جدول الامتحانات ---
+                let examHtml = `<tr><th>التاريخ</th><th>الامتحان</th><th>الدرجة</th></tr>`;
+                let groupExams = (data.exams || []).filter(e => e && e.group === student.group).reverse();
+                if (groupExams.length === 0) {
+                    examHtml += `<tr><td colspan="3" style="text-align:center; color:#6b7280;">لا توجد امتحانات مسجلة</td></tr>`;
+                } else {
+                    groupExams.forEach(e => {
+                        let grade = e.grades[student.phone];
+                        let gradeText = grade !== undefined ? 
+                            `<span class="score-box">${grade} <span class="score-max">/ ${e.maxScore}</span></span>` : 
+                            `<span class="badge-none">لم يمتحن</span>`;
+                        examHtml += `<tr><td>${e.date}</td><td>${e.name}</td><td>${gradeText}</td></tr>`;
+                    });
+                }
+                document.getElementById("exams-details").innerHTML = examHtml;
+
+                // --- 3. بناء جدول الواجبات ---
+                let hwHtml = `<tr><th>التاريخ</th><th>الواجب</th><th>الدرجة</th></tr>`;
+                let groupHw = (data.homeworks || []).filter(h => h && h.group === student.group).reverse();
+                if (groupHw.length === 0) {
+                    hwHtml += `<tr><td colspan="3" style="text-align:center; color:#6b7280;">لا توجد واجبات مسجلة</td></tr>`;
+                } else {
+                    groupHw.forEach(h => {
+                        let grade = h.grades[student.phone];
+                        let gradeText = grade !== undefined ? 
+                            `<span class="score-box">${grade} <span class="score-max">/ ${h.maxScore}</span></span>` : 
+                            `<span class="badge-none">لم يسلم</span>`;
+                        hwHtml += `<tr><td>${h.date}</td><td>${h.name}</td><td>${gradeText}</td></tr>`;
+                    });
+                }
+                document.getElementById("hw-details").innerHTML = hwHtml;
+
+                // إظهار النتيجة
                 document.getElementById("login-screen").style.display = "none";
                 document.getElementById("result-screen").style.display = "block";
 
             } catch (e) {
                 errorMsg.style.display = "block";
-                errorMsg.innerText = "حدث خطأ في الاتصال بالخادم!";
+                errorMsg.innerText = "حدث خطأ في الاتصال بالسحابة!";
                 document.querySelector('.btn').innerText = "عرض التقرير 📊";
             }
         }
