@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>EduTrack | لوحة تحكم الشركة</title>
+    <style>
+        /* ... نفس الستايل القديم بتاع اللوحة زي ما هو ... */
+        :root { --bg: #f3f4f6; --card: #ffffff; --primary: #1e3a8a; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --text: #1f2937; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); margin: 0; display: flex; height: 100vh; color: var(--text); }
+        .sidebar { width: 250px; background: var(--primary); color: white; padding: 20px 0; display: flex; flex-direction: column; }
+        .sidebar h2 { text-align: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+        .nav-item { padding: 15px 20px; cursor: pointer; transition: 0.3s; font-size: 16px; font-weight: bold; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.2); border-right: 4px solid var(--success); }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-box { background: var(--card); padding: 20px; border-radius: 12px; border-bottom: 4px solid var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; }
+        .stat-box h3 { margin: 0 0 10px 0; color: #6b7280; font-size: 16px; }
+        .stat-box p { margin: 0; font-size: 28px; font-weight: bold; color: var(--primary); }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        input, select { padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; flex: 1; min-width: 150px; }
+        button { background: var(--success); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { filter: brightness(1.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: right; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f9fafb; color: #4b5563; }
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .bg-success { background: #d1fae5; color: var(--success); }
+        .bg-danger { background: #fee2e2; color: var(--danger); }
+        .bg-warning { background: #fef3c7; color: var(--warning); }
+        .bg-gray { background: #f3f4f6; color: #6b7280; }
+        .view-section { display: none; }
+        .view-section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>👑 EduTrack CEO</h2>
+        <div class="nav-item active" onclick="switchTab('dashboard')">📊 لوحة القيادة</div>
+        <div class="nav-item" onclick="switchTab('create')">➕ إصدار تراخيص</div>
+        <div class="nav-item" onclick="switchTab('active')">✅ العملاء النشطين</div>
+        <div class="nav-item" onclick="switchTab('expired')">⏳ المنتهية والموقوفة</div>
+    </div>
+
+    <div class="main-content">
+        <!-- لوحة القيادة -->
+        <div id="dashboard" class="view-section active">
+            <h1 style="color: var(--primary);">نظرة عامة على البيزنس 🚀</h1>
+            <div class="stats-grid">
+                <div class="stat-box" style="border-color: var(--primary);"><h3>إجمالي التراخيص</h3><p id="stat-total">0</p></div>
+                <div class="stat-box" style="border-color: var(--success);"><h3>تراخيص نشطة</h3><p id="stat-active">0</p></div>
+                <div class="stat-box" style="border-color: var(--danger);"><h3>موقوف / منتهي</h3><p id="stat-expired">0</p></div>
+                <div class="stat-box" style="border-color: var(--warning);"><h3>إجمالي الإيرادات</h3><p id="stat-revenue">0 ج</p></div>
+            </div>
+        </div>
+
+        <!-- إصدار التراخيص -->
+        <div id="create" class="view-section">
+            <div class="card" style="border-top: 4px solid var(--primary);">
+                <h2 style="margin-top: 0; color: var(--primary);">إصدار ترخيص فردي 🔑</h2>
+                <div class="input-group">
+                    <input type="text" id="newLicenseKey" placeholder="اكتب كود التفعيل (مثال: VIP-001)">
+                    <select id="licDuration">
+                        <option value="1">اشتراك شهر (30 يوم)</option>
+                        <option value="3">اشتراك 3 شهور</option>
+                        <option value="6">اشتراك 6 شهور</option>
+                        <option value="12">اشتراك سنوي</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <input type="number" id="licPrice" placeholder="مبلغ الاشتراك (ج.م)">
+                    <select id="licPaymentStatus">
+                        <option value="paid">تم الدفع بالكامل 💰</option>
+                        <option value="unpaid">آجل / لم يدفع بعد ⏳</option>
+                    </select>
+                </div>
+                <button onclick="generateLicense()" style="width: 100%;">إصدار الكود الآن 🚀</button>
+            </div>
+
+            <!-- التوليد بالجملة (Bulk) -->
+            <div class="card" style="border-top: 4px solid var(--warning);">
+                <h2 style="margin-top: 0; color: var(--warning);">توليد الأكواد بالجملة (للمناديب) 📦</h2>
+                <div class="input-group">
+                    <input type="number" id="bulkCount" placeholder="العدد (مثال: 50 كود)">
+                    <input type="text" id="bulkPrefix" placeholder="بادئة الكود (مثال: EDU)">
+                </div>
+                <button onclick="generateBulkLicenses()" style="width: 100%; background-color: var(--warning); color: black;">توليد الأكواد بالجملة ⚡</button>
+            </div>
+        </div>
+
+        <!-- التراخيص النشطة -->
+        <div id="active" class="view-section">
+            <div class="card">
+                <h2>العملاء النشطين (التراخيص السارية) ✅</h2>
+                <table>
+                    <thead><tr><th>الكود</th><th>العميل</th><th>ينتهي في</th><th>الدفع</th><th>إجراء</th></tr></thead>
+                    <tbody id="activeTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- التراخيص المنتهية -->
+        <div id="expired" class="view-section">
+            <div class="card">
+                <h2 style="color: var(--danger);">التراخيص المنتهية والموقوفة 🛑</h2>
+                <table>
+                    <thead><tr><th>الكود</th><th>العميل</th><th>الحالة</th><th>الدفع</th><th>إجراء</th></tr></thead>
+                    <tbody id="expiredTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_LICENSES_URL = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses.json";
+        let allLicenses = {};
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        async function loadData() {
+            let res = await fetch(FIREBASE_LICENSES_URL);
+            allLicenses = await res.json() || {};
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            let total = 0, activeCount = 0, expiredCount = 0, revenue = 0;
+            const activeTable = document.getElementById("activeTable");
+            const expiredTable = document.getElementById("expiredTable");
+            activeTable.innerHTML = ""; expiredTable.innerHTML = "";
+            const now = new Date();
+
+            for (let key in allLicenses) {
+                total++;
+                let lic = allLicenses[key];
+                let isExpired = false;
+                let expireDateStr = "لم يفعل بعد";
+                
+                if (lic.activatedAt) {
+                    let activatedDate = new Date(lic.activatedAt);
+                    let expireDate = new Date(activatedDate.setMonth(activatedDate.getMonth() + parseInt(lic.durationMonths)));
+                    expireDateStr = expireDate.toLocaleDateString('ar-EG');
+                    if (now > expireDate) isExpired = true;
+                }
+
+                let isSuspended = lic.status === 'suspended';
+                let paymentBadge = lic.paymentStatus === 'paid' ? '<span class="badge bg-success">خالص</span>' : '<span class="badge bg-warning">آجل</span>';
+                let info = lic.claimedBy ? `<strong>${lic.claimedBy}</strong><br><small>${lic.center}</small>` : "<span class='badge bg-gray'>لم يُستخدم بعد</span>";
+                
+                if (lic.paymentStatus === 'paid') revenue += parseInt(lic.price || 0);
+
+                if (isSuspended || isExpired) {
+                    expiredCount++;
+                    let statusText = isSuspended ? "موقوف إدارياً" : "انتهت الباقة";
+                    expiredTable.innerHTML += `<tr>
+                        <td><strong>${key}</strong></td><td>${info}</td>
+                        <td><span class="badge bg-danger">${statusText}</span></td>
+                        <td>${paymentBadge}</td>
+                        <td>
+                            <button style="background: var(--primary);" onclick="toggleStatus('${key}', 'active')">تفعيل 🔄</button>
+                            ${lic.claimedBy ? `<button style="background: var(--warning); color: black;" onclick="resetBranding('${key}')">فك الاسم 🔓</button>` : ''}
+                        </td>
+                    </tr>`;
+                } else {
+                    activeCount++;
+                    activeTable.innerHTML += `<tr>
+                        <td><strong>${key}</strong></td><td>${info}</td>
+                        <td>${expireDateStr}</td>
+                        <td>${paymentBadge}</td>
+                        <td>
+                            <button style="background: var(--danger);" onclick="toggleStatus('${key}', 'suspended')">إيقاف 🛑</button>
+                            ${lic.claimedBy ? `<button style="background: var(--warning); color: black;" onclick="resetBranding('${key}')">فك الاسم 🔓</button>` : ''}
+                        </td>
+                    </tr>`;
+                }
+            }
+
+            document.getElementById("stat-total").innerText = total;
+            document.getElementById("stat-active").innerText = activeCount;
+            document.getElementById("stat-expired").innerText = expiredCount;
+            document.getElementById("stat-revenue").innerText = revenue + " ج.م";
+        }
+
+        async function generateLicense() {
+            let key = document.getElementById("newLicenseKey").value.trim();
+            if (!key) return alert("اكتب الكود!");
+            await pushLicense(key, document.getElementById("licDuration").value, document.getElementById("licPrice").value, document.getElementById("licPaymentStatus").value);
+            alert("تم إصدار الترخيص بنجاح!");
+            document.getElementById("newLicenseKey").value = "";
+            loadData();
+        }
+
+        async function generateBulkLicenses() {
+            let count = parseInt(document.getElementById("bulkCount").value);
+            let prefix = document.getElementById("bulkPrefix").value.trim() || "EDU";
+            if (!count || count <= 0) return alert("اكتب العدد الصحيح!");
+            
+            for(let i=0; i<count; i++) {
+                let randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+                let key = `${prefix}-${new Date().getFullYear()}-${randomStr}`;
+                await pushLicense(key, 1, 0, "unpaid"); // باقات بالجملة افتراضية (شهر - آجل)
+            }
+            alert(`تم توليد ${count} كود بنجاح! ✅`);
+            document.getElementById("bulkCount").value = "";
+            loadData();
+        }
+
+        async function pushLicense(key, duration, price, paymentStatus) {
+            await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${key}.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'active', durationMonths: duration, price: price, paymentStatus: paymentStatus, createdAt: new Date().toISOString() })
+            });
+        }
+
+        async function toggleStatus(key, newStatus) {
+            await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${key}.json`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            loadData();
+        }
+
+        // فك حظر العلامة التجارية للمدرس
+        async function resetBranding(key) {
+            if(!confirm("هل أنت متأكد من فك ارتباط هذا الكود بالعميل الحالي؟ (سيتمكن من كتابة اسم جديد)")) return;
+            await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${key}.json`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ claimedBy: "", center: "" }) // تصفير الاسم
+            });
+            alert("تم فك الارتباط! يمكن للمدرس تفعيل النسخة باسم جديد.");
+            loadData();
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

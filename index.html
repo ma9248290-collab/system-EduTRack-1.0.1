@@ -49,6 +49,9 @@
 
             <button onclick="activateSoftware()" class="save-btn" style="width: 100%;">تفعيل وتأمين النظام 🚀</button>
             <p id="activationError" style="color: var(--danger-color); margin-top: 15px; display: none;"></p>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" onclick="showLoginScreen()" style="color: var(--text-muted); text-decoration: none; font-size: 14px;">🔙 العودة لتسجيل الدخول</a>
+            </div>
         </div>
     </div>
 
@@ -78,9 +81,19 @@
                     <label>كلمة المرور</label>
                     <input type="password" id="loginPassword" required class="custom-input" placeholder="••••••••">
                 </div>
-                <button type="submit" class="save-btn" style="margin-top: 25px; font-size: 16px;">دخول النظام 🚀</button>
+                
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px; direction: rtl;">
+                    <input type="checkbox" id="rememberMeCheck" style="width: 16px; height: 16px; accent-color: var(--primary-color); cursor: pointer;">
+                    <label for="rememberMeCheck" style="color: var(--text-muted); cursor: pointer; font-size: 14px; margin: 0;">تذكرني على هذا الجهاز</label>
+                </div>
+                
+                <button type="submit" class="save-btn" style="margin-top: 20px; font-size: 16px; width: 100%;">دخول النظام 🚀</button>
             </form>
             <p id="loginError" style="color: var(--danger-color); margin-top: 15px; display: none; font-weight: bold;">البيانات غير صحيحة!</p>
+            
+            <div style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <a href="#" onclick="showActivationScreen()" style="color: var(--primary-color); font-weight: bold; text-decoration: none; font-size: 15px;">🆕 تسجيل كمدرس جديد (تفعيل النسخة)</a>
+            </div>
         </div>
     </div>
 
@@ -101,7 +114,7 @@
                 <li id="nav-broadcast"><a href="#" onclick="switchPage('broadcast')">الإرسال الجماعي 📢</a></li>
                 <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
                 <li id="nav-finance" class="admin-only"><a href="#" onclick="switchPage('finance')">الخزنة والماليات 💰</a></li>
-                <li id="nav-backup" class="admin-only"><a href="#" onclick="switchPage('backup')">النسخ الاحتياطي 🛡️</a></li>
+                <li id="nav-backup" class="admin-only"><a href="#" onclick="switchPage('backup')">لوحة الإدارة ⚙️</a></li>
                 <li style="margin-top: 20px;"><a href="#" onclick="openModal('settingsModal')" style="color: #8b5cf6; border: 1px solid #8b5cf6; text-align: center;">إعدادات السيرفر ⚙️</a></li>
                 <li style="margin-top: 10px;"><a href="#" onclick="logout()" style="color: var(--danger-color); border: 1px solid var(--danger-color); text-align: center;">تسجيل الخروج 🚪</a></li>
             </ul>
@@ -304,9 +317,96 @@
                 </div>
             </div>
 
-            <div id="backup-view" class="view-section admin-only" style="display: none;">
-                <section class="students-section" style="text-align: center; padding: 50px;"><h2 style="margin-bottom: 20px;">النسخ الاحتياطي 🛡️</h2><p style="color: var(--text-muted); margin-bottom: 40px;">احتفظ بنسخة من بياناتك لتجنب فقدانها.</p><div style="display: flex; gap: 20px; justify-content: center;"><button class="add-btn" style="padding: 15px 30px; font-size: 18px;" onclick="exportData()">⬇️ تحميل نسخة احتياطية</button><div style="position: relative;"><input type="file" id="importFile" accept=".json" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="importData(event)"><button class="theme-btn" style="padding: 15px 30px; font-size: 18px; border-color: var(--primary-color); color: var(--primary-color);">⬆️ استرجاع نسخة</button></div></div></section>
+          <!-- ========================================== -->
+<!-- ⚙️ لوحة الإدارة والتحكم الشامل والصيانة -->
+<!-- ========================================== -->
+<div id="backup-view" class="view-section" style="display: none;">
+    
+    <!-- ستايل مخصص للوحة الإدارة فقط عشان ميتعارضش مع باقي السيستم -->
+    <style>
+        .admin-panel-card { background: var(--card-bg); padding: 25px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .admin-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 20px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.3s ease; color: #fff !important; text-decoration: none; }
+        .admin-btn:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .btn-danger { background-color: #ef4444; }
+        .btn-warning { background-color: #f59e0b; }
+        .btn-primary { background-color: #3b82f6; }
+        .btn-success { background-color: #10b981; }
+        .btn-nuke { background-color: #991b1b; border: 2px solid #7f1d1d; }
+        .admin-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 768px) { .admin-grid-2 { grid-template-columns: 1fr; } }
+        .danger-zone { background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+    </style>
+
+    <div class="admin-panel-card" style="border-top: 5px solid #ef4444;">
+        <h2 style="color: #ef4444; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">⚠️</span> منطقة العمليات الحساسة (تنظيف البيانات)
+        </h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
+            تنبيه: العمليات أدناه نهائية وتمسح البيانات تماماً من الجهاز وتُحدث السحابة فوراً. جميع الأوامر محمية برقم الإدارة السري.
+        </p>
+        
+        <!-- أزرار المسح الأساسية -->
+        <div class="admin-grid-2" style="margin-bottom: 20px;">
+            <button class="admin-btn btn-danger" onclick="manageClearAction('students')">
+                <span>🗑️</span> مسح جميع الطلاب
+            </button>
+            <button class="admin-btn btn-danger" onclick="manageClearAction('groups')">
+                <span>🗑️</span> مسح جميع المجموعات
+            </button>
+        </div>
+
+        <!-- مسح مرحلة معينة -->
+        <div class="danger-zone">
+            <h3 style="margin-bottom: 15px; font-size: 16px; color: #b91c1c; display: flex; align-items: center; gap: 8px;">
+                <span>🎓</span> تفريغ ومسح مرحلة دراسية محددة
+            </h3>
+            <div style="display: flex; gap: 15px; align-items: stretch; flex-wrap: wrap;">
+                <select id="clearLevelSelect" class="custom-input" style="flex: 2; margin: 0; min-width: 200px; border-color: #fca5a5; background: #fff;">
+                    <option value="">اختر المرحلة الدراسية المراد مسحها...</option>
+                    <option value="الأول الثانوي">الأول الثانوي</option>
+                    <option value="الثاني الثانوي">الثاني الثانوي</option>
+                    <option value="الثالث الثانوي">الثالث الثانوي</option>
+                </select>
+                <button class="admin-btn btn-danger" onclick="manageClearAction('level')" style="flex: 1; margin: 0; min-width: 150px;">
+                    <span>🗑️</span> تنفيذ المسح
+                </button>
             </div>
+        </div>
+
+        <!-- أدوات صيانة إضافية -->
+        <div class="admin-grid-2" style="margin-bottom: 30px;">
+            <button class="admin-btn btn-warning" onclick="manageClearAction('behavior')">
+                <span>🌟</span> تصفير نقاط السلوك للكل
+            </button>
+            <button class="admin-btn btn-primary" onclick="if(typeof syncDataToBot === 'function') { syncDataToBot(); showToast('تمت المزامنة اليدوية الإجبارية مع السحاب! 🔄'); }">
+                <span>🔄</span> مزامنة يدوية فورية
+            </button>
+        </div>
+
+        <!-- تدمير شامل للبيانات -->
+        <button class="admin-btn btn-nuke" style="width: 100%; padding: 20px; font-size: 18px;" onclick="manageClearAction('all')">
+            <span>🚨</span> مسح شامل وتصفير كافة بيانات السيستم (ضبط مصنع)
+        </button>
+    </div>
+
+    <!-- أدوات النسخ الاحتياطي اليدوي -->
+    <div class="admin-panel-card" style="border-top: 5px solid #10b981;">
+        <h2 style="color: #10b981; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">💾</span> أدوات النسخ الاحتياطي اليدوي
+        </h2>
+        <div class="admin-grid-2">
+            <button class="admin-btn btn-success" onclick="exportData()">
+                <span>📥</span> تحميل نسخة احتياطية (JSON)
+            </button>
+            
+            <!-- زر الاسترجاع المخفي جواه الـ input -->
+            <button class="admin-btn" style="background-color: #475569;" onclick="document.getElementById('importFile').click()">
+                <span>📤</span> استرجاع نسخة من ملف
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+    </div>
+</div>
 
             <!-- صفحة إدارة الكتب -->
             <div id="books-view" class="view-section" style="display: none;">
