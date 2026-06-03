@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTrack | النظام الأذكى لإدارة السناتر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1; /* لون قريب للبنفسجي/الأزرق الفخم */
+            --primary-dark: #4338ca;
+            --secondary: #10b981; /* أخضر للأزرار */
+            --bg-color: #4f46e5;
+            --text-light: #f8fafc;
+            --text-dark: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; scroll-behavior: smooth; }
+        
+        body { background-color: #f8fafc; color: var(--text-dark); overflow-x: hidden; }
+
+        /* ================= Header ================= */
+        header {
+            position: fixed; width: 100%; top: 0; z-index: 1000;
+            background: rgba(79, 70, 229, 0.95); backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1); transition: 0.3s;
+        }
+        .nav-container {
+            max-width: 1200px; margin: 0 auto; padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo { font-size: 24px; font-weight: 900; color: white; text-decoration: none; }
+        .logo span { color: var(--secondary); }
+        .nav-links { display: flex; gap: 20px; list-style: none; }
+        .nav-links a { color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 700; transition: 0.3s; }
+        .nav-links a:hover { color: white; }
+        .nav-btn {
+            background: rgba(255,255,255,0.1); color: white; padding: 8px 20px;
+            border-radius: 8px; text-decoration: none; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); transition: 0.3s;
+        }
+        .nav-btn:hover { background: white; color: var(--primary); }
+
+        /* ================= Hero Section ================= */
+        .hero {
+            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            min-height: 100vh; display: flex; align-items: center; padding: 120px 20px 50px;
+            position: relative; overflow: hidden;
+        }
+        /* خلفية شبكية خفيفة زي الصورة */
+        .hero::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px; opacity: 0.5; z-index: 1;
+        }
+        
+        .hero-container {
+            max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 50px;
+            position: relative; z-index: 2; flex-wrap: wrap;
+        }
+        
+        .hero-content { flex: 1; min-width: 300px; color: white; }
+        .badge {
+            display: inline-block; padding: 5px 15px; background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3); border-radius: 50px; font-size: 14px;
+            margin-bottom: 20px; font-weight: bold;
+        }
+        .hero-content h1 { font-size: 48px; font-weight: 900; line-height: 1.3; margin-bottom: 20px; }
+        .hero-content p { font-size: 18px; color: rgba(255,255,255,0.8); margin-bottom: 30px; line-height: 1.6; }
+        
+        .hero-buttons { display: flex; gap: 15px; flex-wrap: wrap; }
+        .btn-main { background: var(--secondary); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; transition: 0.3s; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+        .btn-main:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6); }
+        .btn-outline { background: transparent; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; border: 2px solid rgba(255,255,255,0.5); transition: 0.3s; }
+        .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: white; }
+
+        /* Mockup Laptop */
+        .hero-image { flex: 1.2; min-width: 300px; position: relative; perspective: 1000px; }
+        .laptop-mockup {
+            width: 100%; max-width: 600px; background: #111; padding: 15px 15px 25px;
+            border-radius: 20px 20px 0 0; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            border: 2px solid #333; position: relative; margin: 0 auto;
+            transform: rotateY(-10deg) rotateX(5deg); transition: 0.5s;
+        }
+        .laptop-mockup:hover { transform: rotateY(0deg) rotateX(0deg); }
+        .screen { background: #f1f5f9; width: 100%; aspect-ratio: 16/10; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: bold;}
+        .laptop-base { height: 15px; background: #94a3b8; border-radius: 0 0 20px 20px; width: 110%; margin-left: -5%; border-bottom: 3px solid #64748b; }
+
+        /* ================= Sections ================= */
+        .section { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
+        .section-title { text-align: center; margin-bottom: 50px; }
+        .section-title h2 { font-size: 36px; color: var(--text-dark); margin-bottom: 10px; }
+        .section-title p { color: #64748b; font-size: 16px; }
+
+        /* Features */
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+        .feature-card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; text-align: center; transition: 0.3s; }
+        .feature-card:hover { transform: translateY(-10px); border-color: var(--primary); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.1); }
+        .feature-icon { font-size: 40px; margin-bottom: 20px; display: inline-block; }
+        .feature-card h3 { font-size: 20px; margin-bottom: 15px; color: var(--text-dark); }
+        .feature-card p { color: #64748b; font-size: 14px; line-height: 1.6; }
+
+        /* Pricing */
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; align-items: center; }
+        .price-card { background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; text-align: center; position: relative; transition: 0.3s; }
+        
+        /* الكارت المميز في النص */
+        .price-card.popular { padding: 0; border: none; transform: scale(1.05); box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2); overflow: hidden; z-index: 2; }
+        .popular-header { background: var(--primary); color: white; padding: 15px; font-weight: bold; font-size: 18px; }
+        .price-content-wrapper { padding: 30px; }
+
+        .price-title { font-size: 22px; font-weight: 900; color: var(--text-dark); margin-bottom: 15px; }
+        
+        /* تظبيط شكل السعر (الرقم وجنبه حرف ج) */
+        .price-amount { font-size: 55px; font-weight: 900; color: var(--primary); margin-bottom: 5px; display: flex; justify-content: center; align-items: center; gap: 5px; flex-direction: row-reverse; }
+        .price-amount span { font-size: 20px; font-weight: bold; color: #94a3b8; margin-top: 15px; }
+        
+        .price-subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 25px; }
+        
+        /* أزرار الشراء */
+        .btn-buy { display: block; width: 100%; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s; margin-bottom: 30px; font-size: 15px; }
+        .btn-buy.outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+        .btn-buy.outline:hover { background: rgba(99, 102, 241, 0.05); }
+        .btn-buy.solid { background: var(--primary); color: white; border: 1px solid var(--primary); }
+        .btn-buy.solid:hover { background: var(--primary-dark); }
+        
+       /* قائمة المميزات */
+        .price-features { list-style: none; text-align: right; margin: 0; padding: 0; }
+        .price-features li { margin-bottom: 15px; color: #334155; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; font-weight: bold; line-height: 1.6; }
+        .check-icon { display: inline-flex; justify-content: center; align-items: center; width: 18px; height: 18px; background: var(--primary); color: white; border-radius: 50%; font-size: 10px; flex-shrink: 0; margin-top: 3px; }
+
+
+        /* Footer */
+        footer { background: #1e293b; color: white; text-align: center; padding: 30px 20px; margin-top: 50px; }
+        
+        @media (max-width: 768px) {
+            .hero-content h1 { font-size: 32px; }
+            .nav-links { display: none; } /* يفضل عمل قائمة موبايل لاحقاً */
+            .price-card.popular { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="nav-container">
+            <a href="#" class="logo">EduTrack <span>.</span></a>
+            <ul class="nav-links">
+                <li><a href="#home">الرئيسية</a></li>
+                <li><a href="#features">المميزات</a></li>
+                <li><a href="#pricing">الأسعار</a></li>
+                <li><a href="#contact">الأسئلة الشائعة</a></li>
+            </ul>
+            <a href="#" class="nav-btn">تواصل معنا 📞</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="badge">✨ النظام الذكي للمدرسين </div>
+                <h1>النظام الأكبر والأذكى لإدارة الدروس الخصوصية في مصر</h1>
+                <p>تابع الحضور والغياب، راقب حساباتك، وابعت تقارير لأولياء الأمور تلقائياً على الواتساب بضغطة زر. مع EduTrack.. إدارتك في أمان!</p>
+                
+                <div class="hero-buttons">
+                    <a href="#" class="btn-main">اطلب نسختك التجريبية 🚀</a>
+                    <a href="#" class="btn-outline">مشاهدة شرح النظام 🎥</a>
+                </div>
+            </div>
+            
+            <div class="hero-image">
+                <!-- تصميم لابتوب بـ CSS بديل للصورة -->
+                <div class="laptop-mockup">
+                    <div class="screen" style="aspect-ratio: 16/9;">
+        <img src="dashboard.jpg" style="width: 100%; height: 100%; object-fit: fill; border-radius: 4px;">
+    </div>
+                </div>
+                <div class="laptop-base"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="section-title">
+            <h2>ليه تختار EduTrack؟</h2>
+            <p>مميزات حصرية صُممت خصيصاً لتوفير وقت المدرسين والمساعدين</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🤖</span>
+                <h3>مساعد الذكاء الاصطناعي</h3>
+                <p>تحدث مع "ميرا" لتنفيذ الأوامر (تسجيل غياب، إضافة طلاب) بصوتك فقط وبدون عناء الكتابة.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">📲</span>
+                <h3>واتساب أوتوماتيك</h3>
+                <p>إرسال تقارير الحصة (الغياب والدرجات) للطلاب وأولياء الأمور تلقائياً عبر سيرفر مضاد للحظر.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">👨‍👩‍👦</span>
+                <h3>بوابة أولياء الأمور</h3>
+                <p>رابط مخصص باسمك، يتيح لولي الأمر متابعة تاريخ ابنه بالكامل لزيادة الثقة والاحترافية.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">💰</span>
+                <h3>حسابات دقيقة للسنتر</h3>
+                <p>نظام لحساب صافي الأرباح، خصم السنتر، وإدارة متكاملة لمبيعات وعُهد الكتب والمذكرات.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="section" id="pricing">
+        <div class="section-title">
+            <h2 style="font-size: 38px; font-weight: 900; color: var(--text-dark);">خطط الأسعار</h2>
+            <p>اختر الباقة الأنسب لعملك.. جميع الباقات تمنحك وصولاً كاملاً 100% لجميع مميزات النظام</p>
+        </div>
+        <div class="pricing-grid">
+            
+            <div class="price-card">
+                <div class="price-title">الشراء مرة واحدة</div>
+                <div class="price-amount">5000<span>ج</span></div>
+                <div class="price-subtitle">بالإضافة لاشتراك السيرفرات السنوية (1500 ج)</div>
+                <a href="checkout.html?plan=lifetime" class="btn-buy outline">اشتر الآن</a>
+                <ul class="price-features">
+                    <li><span class="check-icon">✔</span> <span><strong>المساعد الذكي (ميرا):</strong> أوامر صوتية للإدارة</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>واتساب آلي:</strong> تقارير تلقائية مضادة للحظر</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>بوابة أولياء الأمور:</strong> رابط خاص لمتابعة الطلاب</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>حضور سريع:</strong> رصد بالـ QR Code والصوت</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>الماليات والكتب:</strong> إدارة الحسابات وعُهد السناتر</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>إرسال جماعي:</strong> إعلانات لكل الطلاب بضغطة زر</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>أمان سحابي:</strong> يعمل أوفلاين مع مزامنة لحظية</span></li>
+                </ul>
+            </div>
+
+            <div class="price-card popular">
+                <div class="popular-header">الأكثر شعبية</div>
+                <div class="price-content-wrapper">
+                    <div class="price-title">الاشتراك الشهري</div>
+                    <div class="price-amount">400<span>ج</span></div>
+                    <div class="price-subtitle">ساري لمدة 30 يوماً من تاريخ التفعيل</div>
+                    <a href="checkout.html?plan=monthly" class="btn-buy solid">اشترك الآن</a>
+                    <ul class="price-features">
+                        <li><span class="check-icon">✔</span> <span><strong>المساعد الذكي (ميرا):</strong> أوامر صوتية للإدارة</span></li>
+                        <li><span class="check-icon">✔</span> <span><strong>واتساب آلي:</strong> تقارير تلقائية مضادة للحظر</span></li>
+                        <li><span class="check-icon">✔</span> <span><strong>بوابة أولياء الأمور:</strong> رابط خاص لمتابعة الطلاب</span></li>
+                        <li><span class="check-icon">✔</span> <span><strong>حضور سريع:</strong> رصد بالـ QR Code والصوت</span></li>
+                        <li><span class="check-icon">✔</span> <span><strong>الماليات والكتب:</strong> إدارة الحسابات وعُهد السناتر</span></li>
+                        <li><span class="check-icon">✔</span> <span><strong>إرسال جماعي:</strong> إعلانات لكل الطلاب بضغطة زر</span></li>
+                        <li><span class="check-icon">✔</span> <span><strong>أمان سحابي:</strong> يعمل أوفلاين مع مزامنة لحظية</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="price-card">
+                <div class="price-title">التجربة المجانية</div>
+                <div class="price-amount">0<span>ج</span></div>
+                <div class="price-subtitle">سارية لمدة 7 أيام للتقييم</div>
+                <a href="checkout.html?plan=demo" class="btn-buy outline">بدء التجربة الآن</a>
+                <ul class="price-features">
+                    <li><span class="check-icon">✔</span> <span><strong>المساعد الذكي (ميرا):</strong> أوامر صوتية للإدارة</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>واتساب آلي:</strong> تقارير تلقائية مضادة للحظر</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>بوابة أولياء الأمور:</strong> رابط خاص لمتابعة الطلاب</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>حضور سريع:</strong> رصد بالـ QR Code والصوت</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>الماليات والكتب:</strong> إدارة الحسابات وعُهد السناتر</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>إرسال جماعي:</strong> إعلانات لكل الطلاب بضغطة زر</span></li>
+                    <li><span class="check-icon">✔</span> <span><strong>أمان سحابي:</strong> يعمل أوفلاين مع مزامنة لحظية</span></li>
+                </ul>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <h2>EduTrack .</h2>
+        <p style="color: #94a3b8; margin: 15px 0;">شريكك التقني للنجاح في عالم التدريس</p>
+        <p>جميع الحقوق محفوظة &copy; 2026 | تطوير م. شيفو</p>
+    </footer>
+
+</body>
+</html>
