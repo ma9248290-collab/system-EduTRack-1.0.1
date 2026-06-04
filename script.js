@@ -133,35 +133,104 @@ if(sessionStorage.getItem("isLoggedIn") === "true") {
     document.getElementById("main-app").style.display = "flex";
     if(isAssistantMode) enableAssistantMode();
 }
+// دالة تسجيل الدخول (مع خاصية تذكرني)
 document.getElementById("loginForm")?.addEventListener("submit", function(e) {
     e.preventDefault();
     const user = document.getElementById("loginUsername").value.trim();
     const pass = document.getElementById("loginPassword").value.trim();
+    const remember = document.getElementById("rememberMeCheck")?.checked;
     
-    // جلب البيانات من المتصفح (localStorage)
     const savedUser = localStorage.getItem("adminUser");
     const savedPass = localStorage.getItem("adminPass");
+    const currentKey = localStorage.getItem("licenseKey");
 
-    // المقارنة بالبيانات المحفوظة
+
+    // 🌟 --- بداية كود الحساب التجريبي --- 🌟
+    if (user === "demo" && pass === "demo123") {
+        let demoStart = localStorage.getItem("demo_start_date");
+        let now = new Date().getTime();
+
+        // لو دي أول مرة يدخل، نسجل تاريخ النهاردة
+        if (!demoStart) {
+            localStorage.setItem("demo_start_date", now);
+            demoStart = now;
+        }
+
+        // حساب عدد الأيام اللي عدت
+        let daysPassed = (now - parseInt(demoStart)) / (1000 * 60 * 60 * 24);
+
+        if (daysPassed > 7) {
+            // لو عدى 7 أيام، نمنعه من الدخول
+            document.getElementById('loginError').innerText = "انتهت فترة التجربة المجانية (7 أيام). يرجى شراء كود تفعيل!";
+            document.getElementById('loginError').style.display = 'block';
+            
+            // ممكن تظهرله زرار الاشتراك هنا أوتوماتيك
+            return; 
+        }
+
+        // لو لسه في فترة التجربة، نسمحله بالدخول
+        localStorage.setItem("is_demo_mode", "true"); // بنحط العلامة دي عشان نوقف الفايربيز بعدين
+        localStorage.setItem("teacherName", "حساب تجريبي"); 
+        
+        let daysLeft = Math.ceil(7 - daysPassed);
+        showToast(`أهلاً بك! متبقي لك ${daysLeft} أيام في النسخة التجريبية ⏳`);
+        
+        // إخفاء شاشة الدخول وإظهار البرنامج
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        
+        // تشغيل دوال تحميل البيانات من اللوكل ستوريدج (زي ما إنت مبرمجها)
+        initApp(); // أو اسم الدالة اللي بتشغل بيها السيستم
+        
+        return; // بنعمل return عشان ميكملش باقي كود الدخول العادي
+    }
+
+    
+    // فحص لو بيحاول يسجل ومفيش حساب متفعل أصلاً
+    if (!savedUser || !currentKey) {
+        document.getElementById("loginError").innerText = "لم يتم تفعيل حسابك! اضغط على 'تسجيل كمدرس جديد'.";
+        document.getElementById("loginError").style.display = "block";
+        return;
+    }
+
+    // التحقق من البيانات
     if(user === savedUser && pass === savedPass) {
-        sessionStorage.setItem("isLoggedIn", "true");
+        if(remember) {
+            localStorage.setItem("keepLoggedIn", "true"); // تذكرني للابد
+        } else {
+            localStorage.setItem("keepLoggedIn", "false"); // الجلسة دي بس
+            sessionStorage.setItem("isLoggedIn", "true");
+        }
+        
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("main-app").style.display = "flex";
         
-        // إظهار زرار ميرا فور الدخول
-        const miraBtn = document.getElementById("shefo-assistant-btn");
-        if(miraBtn) miraBtn.style.display = "block";
+        // 👇 والسطر ده كمان عشان لو سجل دخول يدوي 👇
+        if(document.getElementById("shefo-assistant-btn")) document.getElementById("shefo-assistant-btn").style.display = "block";
         
-        setTimeout(renderDashboardCharts, 100); 
-        showToast(`مرحباً بك يا مدير ${user}`);
-    } else { 
-        document.getElementById("loginError").style.display = "block"; 
-        // مساعدة إضافية في الكونسول للتأكد
-        console.log("البيانات المدخلة:", user, pass);
-        console.log("البيانات المسجلة:", savedUser, savedPass);
+        setTimeout(renderDashboardCharts, 100);
+        loadDataFromFirebase();
+    } else {
+        document.getElementById("loginError").innerText = "البيانات غير صحيحة!";
+        document.getElementById("loginError").style.display = "block";
     }
 });
-window.logout = function() { sessionStorage.removeItem("isLoggedIn"); location.reload(); };
+// دوال التنقل بين شاشة الدخول وشاشة التفعيل
+function showActivationScreen() {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("activation-screen").style.display = "flex";
+}
+function showLoginScreen() {
+    document.getElementById("activation-screen").style.display = "none";
+    document.getElementById("login-screen").style.display = "flex";
+}
+// تحديث زرار تسجيل الخروج لمسح "تذكرني" وحالة الديمو
+window.logout = function() { 
+    sessionStorage.removeItem("isLoggedIn"); 
+    localStorage.setItem("keepLoggedIn", "false");
+    localStorage.removeItem("is_demo_mode"); // 🛑 مهم عشان لو اشترى كود حقيقي يعرف يسجل
+    location.reload(); 
+};
 
 function switchPage(pageId) {
     document.querySelectorAll(".view-section").forEach(el => el.style.display = "none");
@@ -183,7 +252,7 @@ function switchPage(pageId) {
         "homework": ["الواجبات 📝", "تقييم الواجبات"],
         "finance": ["الماليات (حساب الحصة) 💰", "الإيرادات والمصروفات وصافي الربح لكل حصة"],
         "leaderboard": ["لوحة الشرف 🏆", "أفضل 5 طلاب في المجموعات"],
-        "backup": ["النسخ الاحتياطي 🛡️", "حفظ واسترجاع بيانات النظام"],
+       "backup": ["لوحة التحكم والصيانة الشاملة ⚙️", "تنظيف وقفل البيانات، ضبط المصنع، وإدارة الملفات الاحتياطية"],
         "atrisk": ["تحت الملاحظة 🚨", "الطلاب المعرضين للخطر (تأخر دراسي)"],
         "books": ["إدارة الكتب 📘", "حسابات الكتب والسناتر ونسب المبيعات"],
         "broadcast": ["الإرسال الجماعي 📢", "إرسال تنبيهات لكل الطلاب بضغطة زر"]
@@ -264,32 +333,54 @@ function getFirebaseUrl() {
     return `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${licenseKey}/data.json`;
 }
 
+// ==========================================
 // 1. التحكم في الشاشات أول ما البرنامج يفتح
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    // تشغيل دوال الواجهة الأساسية اللي كانت في قسم 9
     if (typeof renderTable === "function") renderTable(); 
     if (typeof populateDropdowns === "function") populateDropdowns();
 
     let currentKey = localStorage.getItem("licenseKey");
     let currentUser = localStorage.getItem("adminUser");
+    let keepLoggedIn = localStorage.getItem("keepLoggedIn") === "true";
+    let sessionLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
+    let isDemoMode = localStorage.getItem("is_demo_mode") === "true"; // 🌟 فحص وضع الديمو
 
-    // لو مفيش كود تفعيل أو مفيش اسم مستخدم (يعني كاش قديم على الويب)
-    if (!currentKey || !currentUser) {
-        if(document.getElementById("login-screen")) document.getElementById("login-screen").style.display = "none";
-        if(document.getElementById("main-app")) document.getElementById("main-app").style.display = "none";
-        if(document.getElementById("activation-screen")) document.getElementById("activation-screen").style.display = "flex";
-    } else {
-        // لو مفعل وكله تمام، هل هو مسجل دخول؟
-        if(sessionStorage.getItem("isLoggedIn") === "true") {
-            if(document.getElementById("login-screen")) document.getElementById("login-screen").style.display = "none";
-            if(document.getElementById("activation-screen")) document.getElementById("activation-screen").style.display = "none";
-            if(document.getElementById("main-app")) document.getElementById("main-app").style.display = "flex";
-            switchPage('dashboard'); 
-        } else {
-            if(document.getElementById("activation-screen")) document.getElementById("activation-screen").style.display = "none";
-            if(document.getElementById("login-screen")) document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("activation-screen").style.display = "none";
+    document.getElementById("main-app").style.display = "none";
+
+    // 🌟 1. لو الحساب تجريبي (ديمو)
+    if (isDemoMode) {
+        let demoStart = localStorage.getItem("demo_start_date");
+        let now = new Date().getTime();
+        let daysPassed = (now - parseInt(demoStart)) / (1000 * 60 * 60 * 24);
+
+        if (daysPassed > 7) {
+            localStorage.removeItem("is_demo_mode"); // مسح الديمو
+            document.getElementById("login-screen").style.display = "flex";
+            document.getElementById('loginError').innerText = "انتهت فترة التجربة المجانية (7 أيام). يرجى شراء كود تفعيل!";
+            document.getElementById('loginError').style.display = 'block';
+            return;
         }
+
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("main-app").style.display = "flex";
+        if(document.getElementById("shefo-assistant-btn")) document.getElementById("shefo-assistant-btn").style.display = "block";
+        switchPage('dashboard'); 
+        setTimeout(renderDashboardCharts, 500);
+        return; // خروج عشان ميكملش كود المستخدم العادي
+    }
+
+    // 🌟 2. لو مستخدم حقيقي (شاري كود)
+    if ((keepLoggedIn || sessionLoggedIn) && currentKey && currentUser) {
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("main-app").style.display = "flex";
+        if(document.getElementById("shefo-assistant-btn")) document.getElementById("shefo-assistant-btn").style.display = "block";
+        switchPage('dashboard'); 
+        setTimeout(renderDashboardCharts, 500); 
         loadDataFromFirebase();
+    } else {
+        document.getElementById("login-screen").style.display = "flex";
     }
 });
 
@@ -363,6 +454,11 @@ async function activateSoftware() {
 
 // 3. المزامنة السحابية + التحقق من الإيقاف والتاريخ التلقائي والإنذار
 async function loadDataFromFirebase() {
+    // 🛑 منع التحميل من السحابة لو الحساب تجريبي (حماية للداتا)
+    if (localStorage.getItem("is_demo_mode") === "true") {
+        isFirebaseLoaded = true; // نديها true وهمي عشان السيستم يشتغل محلي
+        return; 
+    }
     if(!licenseKey) return; 
     try {
         let licRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${licenseKey}.json`);
@@ -458,9 +554,12 @@ async function loadDataFromFirebase() {
 }
 
 async function syncDataToBot() {
-    if (!isFirebaseLoaded || !licenseKey) return; 
+    let isDemo = localStorage.getItem("is_demo_mode") === "true";
 
-    // ✅ تجميع كل البيانات بما فيها بيانات الدخول والأمان
+    // لو مش ديمو، ومفيش فايربيز أو كود، اخرج
+    if (!isDemo && (!isFirebaseLoaded || !licenseKey)) return; 
+
+    // ✅ تجميع كل البيانات
     const dataToSync = {
         settings: {
             teacherName: localStorage.getItem("teacherName") || "المدير",
@@ -469,7 +568,6 @@ async function syncDataToBot() {
             adminPass: localStorage.getItem("adminPass") || "12345",
             adminPin: localStorage.getItem("adminPin") || "1234"
         },
-        // كررناهم بره الـ settings كاحتياطي للتعامل مع أجزاء السيستم القديمة
         teacherName: localStorage.getItem("teacherName") || "المدير",
         centerName: localStorage.getItem("centerName") || "السنتر",
         adminUser: localStorage.getItem("adminUser"),
@@ -479,12 +577,15 @@ async function syncDataToBot() {
         students, classSessions, exams, homeworks, schedule, groups, financeRecords, expenses, books
     };
 
-    // مزامنة مع السيرفر المحلي (الواتساب)
+    // مزامنة مع السيرفر المحلي (الواتساب) - دي هنسيبها شغالة عشان يجرب يبعت واتساب!
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") {
         try {
             await fetch('http://localhost:3000/sync-database', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSync) });
         } catch (e) {}
     }
+
+    // 🛑 الإيقاف هنا لو الحساب تجريبي (عشان نمنع الرفع للفايربيز)
+    if (isDemo) return;
 
     // ✅ الرفعة السحرية للسحابة (الآن ستظهر البيانات في Firebase)
     try {
@@ -636,7 +737,32 @@ document.getElementById("addStudentForm")?.addEventListener("submit", function(e
 
     students.push({ code, name, level, gender, phone, parentPhone, group, behaviorPoints: 0 }); 
     localStorage.setItem("students", JSON.stringify(students)); 
-    this.reset(); closeModal('addStudentModal'); renderTable(); showToast("تم تسجيل الطالب"); 
+    
+    // --- 🚀 توليد رسالة الترحيب التلقائية متضمنة رابط البوابة الخاص بالمدرس ---
+    const currentKey = localStorage.getItem("licenseKey") || "";
+    const portalLink = `https://system-edutrack.netlify.app/parent.html?id=${currentKey}`;
+    
+    const msg = `📢 *أهلاً بك في نظام ${localStorage.getItem("teacherName") || "السنتر"} التعليمي*
+    
+    تم تسجيل بيانات الطالب بنجاح في نظام المتابعة الإلكترونية.
+    
+    👤 *اسم الطالب:* ${name}
+    🏫 *الصف:* ${level}
+    👥 *المجموعة:* ${group}
+    🎓 *كود الطالب:* ${code}
+    
+    🔗 *رابط بوابة المتابعة الخاصة بك للدرجات والغياب:*
+    ${portalLink}
+    
+    (💡 يرجى الاحتفاظ بكود الطالب ورابط البوابة لمتابعة تقارير الحصص أولاً بأول).`;
+    
+    // إرسال الرسالة في الخلفية لولي الأمر
+    if (typeof sendAutoWhatsApp === "function") {
+        sendAutoWhatsApp(parentPhone, msg);
+    }
+    // ---------------------------------------------------------------------
+
+    this.reset(); closeModal('addStudentModal'); renderTable(); showToast("تم تسجيل الطالب وإرسال رابط البوابة"); 
 });
 
 function renderTable() { 
@@ -929,7 +1055,7 @@ function renderGradesTable(itemDetails, tbodyId, saveFunction, itemId, itemType)
 // 14. الرسوم البيانية (Dashboard Full)
 // ==========================================
 function renderDashboardCharts() {
-    // 1. تشغيل لينك بوابة أولياء الأمور أوتوماتيك
+    // 🔴 السطر السحري اللي بيجيب اللينك ويحطه في المربع أوتوماتيك
     if(typeof updateParentLinkUI === "function") updateParentLinkUI(); 
     
     if(sessionStorage.getItem("isLoggedIn") !== "true") return;
@@ -1067,15 +1193,47 @@ function importStudentsFromExcel(event) {
             const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
             const excelData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
             let addedCount = 0, errorCount = 0;
+            
             excelData.forEach(row => {
                 const name = row['الاسم'], level = row['الصف'], group = row['المجموعة'], phone = row['هاتف الطالب'] || '', parentPhone = row['هاتف ولي الأمر'] || '', gender = row['الجنس'] || 'ذكر';
+                
                 if(name && level && group) {
                     const duplicate = students.find(s => (phone && s.phone === phone.toString()) || (parentPhone && s.parentPhone === parentPhone.toString()) || normalizeArabicName(s.name) === normalizeArabicName(name.toString()));
-                    if(!duplicate) { students.push({ code: generateStudentCode(), name: name.toString().trim(), level: level.toString().trim(), group: group.toString().trim(), phone: phone.toString().trim(), parentPhone: parentPhone.toString().trim(), gender: gender.toString().trim(), behaviorPoints: 0 }); addedCount++; } else { errorCount++; }
+                    
+                    if(!duplicate) { 
+                        // --- 🚀 الذكاء هنا: تنظيف اسم المجموعة ومطابقته بالسيستم ---
+                        let excelGroup = group.toString().trim();
+                        // بندور في المجموعات بتاعتك على اسم مشابه حتى لو فيه مسافات زيادة
+                        let matchedGroup = groups.find(g => normalizeArabicName(g.name) === normalizeArabicName(excelGroup));
+                        // لو لقاها بياخد الاسم الأصلي النظيف بتاع السيستم، لو ملقاهاش بياخد اللي في الإكسيل
+                        let finalGroup = matchedGroup ? matchedGroup.name : excelGroup;
+
+                        students.push({ 
+                            code: generateStudentCode(), 
+                            name: name.toString().trim(), 
+                            level: level.toString().trim(), 
+                            group: finalGroup, 
+                            phone: phone.toString().trim(), 
+                            parentPhone: parentPhone.toString().trim(), 
+                            gender: gender.toString().trim(), 
+                            behaviorPoints: 0 
+                        }); 
+                        addedCount++; 
+                    } else { 
+                        errorCount++; 
+                    }
                 }
             });
-            localStorage.setItem("students", JSON.stringify(students)); renderTable(); showToast(`تم استيراد ${addedCount} بنجاح، وتجاهل ${errorCount} مكرر.`);
-        } catch(err) { showToast("خطأ أثناء قراءة الملف!", "error"); }
+            localStorage.setItem("students", JSON.stringify(students)); 
+            renderTable(); 
+            showToast(`تم استيراد ${addedCount} بنجاح، وتجاهل ${errorCount} مكرر.`);
+            
+            // رفع البيانات على السحابة أوتوماتيك بعد الاستيراد
+            if (typeof syncDataToBot === "function") syncDataToBot();
+            
+        } catch(err) { 
+            showToast("خطأ أثناء قراءة الملف!", "error"); 
+        }
     };
     reader.readAsArrayBuffer(file); event.target.value = "";
 }
@@ -1148,24 +1306,47 @@ function toggleSessionStatus(id) {
 async function confirmCloseSession(sendMessages) {
     const session = classSessions.find(s => s.id === document.getElementById('closeSessionId').value); 
     if(!session) return;
-    session.status = 'closed'; localStorage.setItem("classSessions", JSON.stringify(classSessions)); renderSessionCards(); closeModal('closeSessionModal');
+    
+    session.status = 'closed'; 
+    localStorage.setItem("classSessions", JSON.stringify(classSessions)); 
+    renderSessionCards(); 
+    closeModal('closeSessionModal');
+    
     if(!sendMessages) return showToast("تم الإغلاق بدون إرسال.");
     
-    showToast("جاري الإرسال... لا تغلق الصفحة!"); let successCount = 0;
+    showToast("جاري الإرسال للطالب وولي الأمر... لا تغلق الصفحة!"); 
+    let successCount = 0;
+    
     const sessionExam = exams.find(e => e.group === session.group && e.date === session.date);
     const sessionHw = homeworks.find(h => h.group === session.group && h.date === session.date);
 
     for (let st of students.filter(s => s.group === session.group)) {
-        let msg = `📢 *تقرير حصة:* ${session.topic}\n${getRandomGreeting()} ولي أمر: *${st.name}*\n\n`;
-        if(document.getElementById('sendAttCheck').checked) msg += `📋 *الحضور:* ${session.attendance[st.phone] === 'present' ? 'حاضر ✅' : 'غائب ❌'}\n`;
-        if(document.getElementById('sendExamCheck').checked && sessionExam) msg += `📝 *الامتحان:* ${sessionExam.grades[st.phone] ? sessionExam.grades[st.phone] + ' / ' + sessionExam.maxScore + ' ⭐' : 'لم يمتحن ⚠️'}\n`;
-        if(document.getElementById('sendHwCheck').checked && sessionHw) msg += `📚 *الواجب:* ${sessionHw.grades[st.phone] ? sessionHw.grades[st.phone] + ' / ' + sessionHw.maxScore + ' 📚' : 'لم يسلم ⚠️'}\n`;
+        // تجميع بيانات التقرير المشتركة
+        let reportData = ``;
+        if(document.getElementById('sendAttCheck').checked) reportData += `📋 *الحضور:* ${session.attendance[st.phone] === 'present' ? 'حاضر ✅' : 'غائب ❌'}\n`;
+        if(document.getElementById('sendExamCheck').checked && sessionExam) reportData += `📝 *الامتحان:* ${sessionExam.grades[st.phone] ? sessionExam.grades[st.phone] + ' / ' + sessionExam.maxScore + ' ⭐' : 'لم يمتحن ⚠️'}\n`;
+        if(document.getElementById('sendHwCheck').checked && sessionHw) reportData += `📚 *الواجب:* ${sessionHw.grades[st.phone] ? sessionHw.grades[st.phone] + ' / ' + sessionHw.maxScore + ' 📚' : 'لم يسلم ⚠️'}\n`;
+        
         let currentTeacherName = localStorage.getItem("teacherName");
         let sig = (currentTeacherName && currentTeacherName !== "null" && currentTeacherName.trim() !== "") ? `إدارة مستر ${currentTeacherName}` : "الإدارة";
-        msg += `\n${sig}`;
-        if(await sendAutoWhatsApp(st.parentPhone, msg)) successCount++;
+        
+        // 1. صيغة رسالة ولي الأمر (رسمية)
+        let parentMsg = `📢 *تقرير حصة:* ${session.topic}\n${getRandomGreeting()} ولي الأمر المحترم،\nنحيط سيادتكم علماً بتقرير الطالب: *${st.name}*\n\n${reportData}\n${sig}`;
+        
+        // 2. صيغة رسالة الطالب (تشجيعية وحماسية)
+        let studentMsg = `🎯 *تقرير حصة:* ${session.topic}\nأهلاً بيك يا بطل *${st.name}* 👑\nعاش جداً، ده تقرير حصتك النهاردة:\n\n${reportData}\nبالتوفيق يا بطل! 💪\n${sig}`;
+
+        // إرسال لولي الأمر
+        if (st.parentPhone && await sendAutoWhatsApp(st.parentPhone, parentMsg)) {
+            successCount++;
+        }
+        
+        // إرسال للطالب (لو رقمه مش نفس رقم ولي الأمر عشان ميزعجهمش برسالتين)
+        if (st.phone && st.phone !== st.parentPhone && await sendAutoWhatsApp(st.phone, studentMsg)) {
+            successCount++;
+        }
     }
-    showToast(`تم إرسال ${successCount} تقرير بنجاح! ✅`);
+    showToast(`تم إرسال ${successCount} رسالة تقرير بنجاح! ✅`);
 }
 
 function updateBroadcastCount() { const target = document.getElementById('broadcastTarget').value; document.getElementById('targetCount').innerText = target === 'all' ? students.length : students.filter(s => s.group === target).length; }
@@ -1539,3 +1720,114 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
+
+
+// ==========================================
+// 🔗 توليد ونسخ رابط بوابة أولياء الأمور
+// ==========================================
+function updateParentLinkUI() {
+    const linkInput = document.getElementById("parentPortalLink");
+    const currentKey = localStorage.getItem("licenseKey");
+    if (linkInput && currentKey) {
+        linkInput.value = `https://system-edutrack.netlify.app/parent.html?id=${currentKey}`;
+    }
+}
+
+function copyParentLink() {
+    const linkInput = document.getElementById("parentPortalLink");
+    if (!linkInput || !linkInput.value) return;
+    
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(linkInput.value).then(() => {
+        showToast("تم نسخ الرابط بنجاح! تقدر تبعته دلوقتي 🚀", "success");
+    }).catch(err => {
+        showToast("فشل النسخ، يرجى نسخه يدوياً", "error");
+    });
+}
+
+// ==========================================
+// 🛠️ أدوات لوحة الإدارة وتنظيف البيانات المؤمنة
+// ==========================================
+function manageClearAction(type) {
+    // نافذة تأكيد وطلب الرقم السري كأمان لمنع الأخطاء غير المقصودة
+    const enteredPin = prompt("⚠️ تنبيه أمني حساس!\nهذه العملية ستؤدي لحذف البيانات نهائياً.\nالرجاء إدخال الرقم السري للإدارة (Admin PIN) لتأكيد الحذف:");
+    
+    if (enteredPin === null) return; // تم إلغاء الأمر من المستخدم
+    
+    const currentAdminPin = localStorage.getItem("adminPin") || "1234";
+    if (enteredPin !== currentAdminPin) {
+        showToast("الرقم السري للإدارة غير صحيح! تم كنسل العملية.", "error");
+        return;
+    }
+
+    if (type === 'students') {
+        students = [];
+        localStorage.setItem("students", JSON.stringify(students));
+        renderTable();
+        showToast("تم حذف سجلات جميع الطلاب بنجاح 🗑️");
+    } 
+    else if (type === 'groups') {
+        groups = [];
+        localStorage.setItem("groups", JSON.stringify(groups));
+        // تفريغ حقل المجموعة من الطلاب لمنع تعليق النظام
+        students.forEach(s => s.group = "");
+        localStorage.setItem("students", JSON.stringify(students));
+        renderTable();
+        if (typeof renderGroupCards === "function") renderGroupCards();
+        showToast("تم مسح المجموعات وتفريغ الطلاب التابعين لها 🗑️");
+    } 
+    else if (type === 'level') {
+        const levelVal = document.getElementById("clearLevelSelect").value;
+        if (!levelVal) {
+            showToast("الرجاء اختيار المرحلة المراد مسحها أولاً!", "error");
+            return;
+        }
+        students = students.filter(s => s.level !== levelVal);
+        localStorage.setItem("students", JSON.stringify(students));
+        renderTable();
+        showToast(`تم مسح جميع طلاب مرحلة [${levelVal}] بنجاح 🗑️`);
+    } 
+    else if (type === 'behavior') {
+        students.forEach(s => s.behaviorPoints = 0);
+        localStorage.setItem("students", JSON.stringify(students));
+        renderTable();
+        showToast("تم تصفير نقاط السلوك والتميز لجميع الطلاب 🌟");
+    } 
+    else if (type === 'all') {
+        // تدمير شامل وعودة لضبط المصنع
+        students = [];
+        groups = [];
+        classSessions = [];
+        exams = [];
+        homeworks = [];
+        financeRecords = {};
+        expenses = [];
+        schedule = [];
+        books = [];
+        
+        localStorage.setItem("students", JSON.stringify(students));
+        localStorage.setItem("groups", JSON.stringify(groups));
+        localStorage.setItem("classSessions", JSON.stringify(classSessions));
+        localStorage.setItem("exams", JSON.stringify(exams));
+        localStorage.setItem("homeworks", JSON.stringify(homeworks));
+        localStorage.setItem("financeRecords", JSON.stringify(financeRecords));
+        localStorage.setItem("expenses", JSON.stringify(expenses));
+        localStorage.setItem("schedule", JSON.stringify(schedule));
+        localStorage.setItem("books", JSON.stringify(books));
+        
+        // إعادة بناء الواجهات كلها على بياض
+        renderTable();
+        if (typeof renderGroupCards === "function") renderGroupCards();
+        if (typeof renderSchedule === "function") renderSchedule();
+        if (typeof renderBooksTable === "function") renderBooksTable();
+        if (typeof renderSessionCards === "function") renderSessionCards();
+        if (typeof renderExamCards === "function") renderExamCards();
+        if (typeof renderHwCards === "function") renderHwCards();
+        
+        showToast("💥 تم تنفيذ تصفير شامل بنجاح (عودة لضبط المصنع الأصلي)");
+    }
+
+    // 🔄 رفع البيانات وحذفها من السحابة فوراً لتتطابق مع قاعدة البيانات المحلية
+    if (typeof syncDataToBot === "function") syncDataToBot();
+}

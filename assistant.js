@@ -2,7 +2,7 @@
 // 🤖 المساعد الشخصي (ميرا) - النسخة الأسطورية (المتحكم الشامل للسناتر والكتب) 🚀🔥
 // ==========================================
 
-const GEMINI_API_KEY = "AIzaSyDj8jSs8_QFg0Yvjm1wNKulwfBRlbduiiU"; 
+const GEMINI_API_KEY = "AIzaSyAahfKY9BlzA_sRDSzvIArKICAJSdhOTCs"; 
 const chatOverlay = document.getElementById('shefo-chat-overlay');
 const chatMessages = document.getElementById('shefo-chat-messages');
 const textInput = document.getElementById('shefo-text-input');
