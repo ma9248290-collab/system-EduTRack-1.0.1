@@ -52,7 +52,11 @@
 </head>
 <body>
 
-    <header class="checkout-header">
+    <header class="checkout-header" style="position: relative;">
+        <a href="landing.html" style="position: absolute; top: 25px; right: 30px; font-size: 26px; font-weight: 900; color: white; text-decoration: none;">
+            EduTrack <span style="color: #10b981;"></span>
+        </a>
+        
         <h1>إتمام عملية الشراء 🛒</h1>
         <p>قم بملء البيانات التالية لإنشاء حسابك واستلام كود التفعيل فوراً</p>
     </header>
@@ -83,7 +87,11 @@
                     </label>
                 </div>
 
-                <button type="submit" class="submit-btn" id="payBtn">المتابعة للدفع</button>
+                <div style="display: flex; gap: 15px; margin-top: 30px;">
+                    <button type="button" style="flex: 1; padding: 15px; border-radius: 8px; border: 2px solid #cbd5e1; background: transparent; color: #64748b; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" onclick="window.history.back()">رجوع</button>
+                    
+                    <button type="submit" class="submit-btn" id="payBtn" style="flex: 2; margin-top: 0;">المتابعة للدفع</button>
+                </div>
             </form>
         </div>
 
@@ -142,24 +150,32 @@
             document.querySelectorAll('.section-title')[1].style.display = 'none';
         }
 
-        // التعامل مع زرار الدفع
+       // التعامل مع زرار الدفع والتحويل للواتساب
         document.getElementById('checkoutForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const teacherName = document.getElementById('teacherName').value;
-            const whatsapp = document.getElementById('whatsappNumber').value;
+            const teacherName = document.getElementById('teacherName').value.trim();
+            const whatsapp = document.getElementById('whatsappNumber').value.trim();
             const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+            const methodText = paymentMethod === 'wallet' ? 'محفظة إلكترونية (كاش)' : 'فوري';
 
-            // هنا بيتم توجيه العميل لبوابة الدفع (Paymob أو Fawry API)
-            // ولأننا لسه معندناش الـ API، هنعمل محاكاة (Simulate) للعملية:
+            // تجميع رسالة الواتساب الجاهزة
+            const message = `أهلاً يا هندسة، أنا مستر *${teacherName}* 👑\nعايز أشترك في نظام EduTrack.\n\n📌 الباقة: ${currentPlan.name}\n💰 السعر: ${currentPlan.price} ج.م\n💳 طريقة الدفع: ${methodText}\n📱 رقمي لاستلام كود التفعيل: ${whatsapp}\n\nأحول الفلوس إزاي؟`;
+
+            // رقمك مع كود الدولة (20)
+            const myWhatsAppNumber = "201288599712"; 
             
-            document.getElementById('payBtn').innerText = "جاري تحويلك لبوابة الدفع... ⏳";
-            document.getElementById('payBtn').style.opacity = "0.7";
+            // عمل رابط الواتساب
+            const waLink = `https://wa.me/${myWhatsAppNumber}?text=${encodeURIComponent(message)}`;
+
+            // تأثير بسيط على الزرار وتحويل العميل
+            document.getElementById('payBtn').innerText = "جاري تحويلك للواتساب... 💬";
+            document.getElementById('payBtn').style.opacity = "0.8";
 
             setTimeout(() => {
-                alert(`هنا سيفتح شاشة ${paymentMethod} لدفع مبلغ ${currentPlan.price} ج.م.\n\n(في الخلفية: السيرفر هيستنى الدفع ينجح، ويكريت كود التفعيل لـ "${teacherName}" ويبعته للرقم ${whatsapp})`);
-                document.getElementById('payBtn').innerText = currentPlan.btnText;
+                window.open(waLink, '_blank'); // فتح الواتساب في نافذة جديدة
+                document.getElementById('payBtn').innerText = currentPlan.btnText; // إرجاع الزرار لشكله الطبيعي
                 document.getElementById('payBtn').style.opacity = "1";
-            }, 1500);
+            }, 500);
         });
     </script>
 </body>
