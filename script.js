@@ -147,42 +147,32 @@ document.getElementById("loginForm")?.addEventListener("submit", function(e) {
 
     // 🌟 --- بداية كود الحساب التجريبي --- 🌟
     if (user === "demo" && pass === "demo123") {
-        let demoStart = localStorage.getItem("demo_start_date");
-        let now = new Date().getTime();
-
-        // لو دي أول مرة يدخل، نسجل تاريخ النهاردة
-        if (!demoStart) {
-            localStorage.setItem("demo_start_date", now);
-            demoStart = now;
+        // فحص هل سجل بياناته ولا لأ
+        if (!localStorage.getItem("demo_registered")) {
+            // لو مسجلش، نظهرله نافذة طلب الاسم والرقم ونوقف الدخول
+            document.getElementById('demoRegistrationModal').style.display = 'flex';
+            return; 
         }
 
-        // حساب عدد الأيام اللي عدت
+        // لو مسجل بياناته قبل كده، نكمل فحص الـ 7 أيام
+        let demoStart = localStorage.getItem("demo_start_date");
+        let now = new Date().getTime();
         let daysPassed = (now - parseInt(demoStart)) / (1000 * 60 * 60 * 24);
 
         if (daysPassed > 7) {
-            // لو عدى 7 أيام، نمنعه من الدخول
             document.getElementById('loginError').innerText = "انتهت فترة التجربة المجانية (7 أيام). يرجى شراء كود تفعيل!";
             document.getElementById('loginError').style.display = 'block';
-            
-            // ممكن تظهرله زرار الاشتراك هنا أوتوماتيك
             return; 
         }
 
         // لو لسه في فترة التجربة، نسمحله بالدخول
-        localStorage.setItem("is_demo_mode", "true"); // بنحط العلامة دي عشان نوقف الفايربيز بعدين
-        localStorage.setItem("teacherName", "حساب تجريبي"); 
+        localStorage.setItem("is_demo_mode", "true"); 
         
         let daysLeft = Math.ceil(7 - daysPassed);
         showToast(`أهلاً بك! متبقي لك ${daysLeft} أيام في النسخة التجريبية ⏳`);
         
-        // إخفاء شاشة الدخول وإظهار البرنامج
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-app').style.display = 'block';
-        
-        // تشغيل دوال تحميل البيانات من اللوكل ستوريدج (زي ما إنت مبرمجها)
-        initApp(); // أو اسم الدالة اللي بتشغل بيها السيستم
-        
-        return; // بنعمل return عشان ميكملش باقي كود الدخول العادي
+        setTimeout(() => { location.reload(); }, 800);
+        return; 
     }
 
     
@@ -352,15 +342,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🌟 1. لو الحساب تجريبي (ديمو)
     if (isDemoMode) {
         let demoStart = localStorage.getItem("demo_start_date");
+        let demoDeviceId = localStorage.getItem("demo_device_id"); // 🔒 رقم الجهاز
         let now = new Date().getTime();
         let daysPassed = (now - parseInt(demoStart)) / (1000 * 60 * 60 * 24);
 
         if (daysPassed > 7) {
-            localStorage.removeItem("is_demo_mode"); // مسح الديمو
+            localStorage.removeItem("is_demo_mode"); 
             document.getElementById("login-screen").style.display = "flex";
             document.getElementById('loginError').innerText = "انتهت فترة التجربة المجانية (7 أيام). يرجى شراء كود تفعيل!";
             document.getElementById('loginError').style.display = 'block';
             return;
+        }
+
+        // 🛑 فحص الأمان: التأكد إن الإدارة موقفتش الحساب أو حذفته من السيرفر
+        if (demoDeviceId) {
+            fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/demo_users/${demoDeviceId}.json`)
+            .then(res => res.json())
+            .then(data => {
+                // لو الداتا رجعت فاضية (أنت مسحته) أو حالته موقوف (أنت عملت إيقاف)
+                if (!data || data.status === 'suspended') {
+                    localStorage.removeItem("is_demo_mode");
+                    localStorage.removeItem("demo_start_date");
+                    localStorage.removeItem("demo_registered");
+                    alert("تم إيقاف نسختك التجريبية من قبل الإدارة. يرجى تفعيل الحساب للاستمرار.");
+                    location.reload();
+                }
+            }).catch(e => { /* تجاهل لو مفيش نت عشان يكمل أوفلاين عادي */ });
         }
 
         document.getElementById("login-screen").style.display = "none";
@@ -368,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(document.getElementById("shefo-assistant-btn")) document.getElementById("shefo-assistant-btn").style.display = "block";
         switchPage('dashboard'); 
         setTimeout(renderDashboardCharts, 500);
-        return; // خروج عشان ميكملش كود المستخدم العادي
+        return; 
     }
 
     // 🌟 2. لو مستخدم حقيقي (شاري كود)
@@ -1831,3 +1838,43 @@ function manageClearAction(type) {
     // 🔄 رفع البيانات وحذفها من السحابة فوراً لتتطابق مع قاعدة البيانات المحلية
     if (typeof syncDataToBot === "function") syncDataToBot();
 }
+
+// ==========================================
+// 🚀 إرسال وحفظ بيانات عميل الديمو
+// ==========================================
+document.getElementById('demoRegistrationForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('demoTeacherName').value.trim();
+    const phone = document.getElementById('demoTeacherPhone').value.trim();
+
+    if (!isValidEgyptianPhone(phone)) {
+        showToast("يرجى إدخال رقم واتساب مصري صحيح!", "error"); return;
+    }
+
+    let now = new Date().getTime();
+    let demoId = "device_" + Date.now(); // 🔒 توليد معرف فريد للجهاز
+    
+    // حفظ البيانات محلياً
+    localStorage.setItem("demo_registered", "true");
+    localStorage.setItem("demo_start_date", now);
+    localStorage.setItem("is_demo_mode", "true");
+    localStorage.setItem("teacherName", name);
+    localStorage.setItem("demo_device_id", demoId); // حفظ البصمة
+
+    // رفع بيانات العميل للوحة الإدارة (الفايربيز) بالحالة نشط
+    fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/demo_users/${demoId}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            teacherName: name,
+            whatsapp: phone,
+            timestamp: new Date().toISOString(), 
+            startDate: now,
+            status: 'active' // 👈 الحالة الافتراضية
+        })
+    });
+
+    document.getElementById('demoRegistrationModal').style.display = 'none';
+    showToast(`أهلاً بك يا مستر ${name}! بدأت تجربتك المجانية ⏳`);
+    setTimeout(() => { location.reload(); }, 1000);
+});
