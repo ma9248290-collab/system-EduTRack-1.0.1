@@ -363,3 +363,77 @@ body.assistant-mode .delete-btn { display: none !important; }
 #shefo-mic-btn:hover, #shefo-send-btn:hover { background: #1d4ed8; transform: scale(1.05); }
 #shefo-mic-btn.recording { background: #ef4444; animation: pulseMic 1s infinite; }
 @keyframes pulseMic { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+
+/* ========================================== */
+/* 📱 شاشات الموبايل والتابلت (لوحة التحكم) */
+/* ========================================== */
+@media (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+    
+    /* تحويل القائمة الجانبية لشريط علوي (App Style) */
+    .sidebar {
+        width: 100%;
+        min-width: 100%;
+        height: auto;
+        padding: 15px 10px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+    }
+    
+    .logo { margin-bottom: 15px; font-size: 24px; text-align: right; padding-right: 10px;}
+    
+    .nav-links {
+        display: flex;
+        overflow-x: auto; /* سكرول بالعرض */
+        white-space: nowrap;
+        gap: 10px;
+        padding-bottom: 5px;
+    }
+    .nav-links::-webkit-scrollbar { height: 4px; }
+    .nav-links::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 10px; }
+    
+    .nav-links li { margin-bottom: 0; }
+    .nav-links a { padding: 8px 12px; font-size: 14px; }
+    
+    /* تظبيط المحتوى الداخلي */
+    .main-content { padding: 15px; }
+    .top-header { flex-direction: column; gap: 15px; align-items: flex-start; }
+    .top-header h1 { font-size: 24px; }
+    
+    /* الكروت والجداول */
+    .stats-grid, .charts-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .stat-card, .table-container { width: 100% !important; min-width: 100% !important; }
+    
+    /* فلاتر البحث والزراير */
+    .section-header { flex-direction: column; align-items: stretch; gap: 15px; }
+    .header-actions { display: flex; flex-direction: column; width: 100%; }
+    .header-actions input, .header-actions select, .header-actions button {
+        width: 100% !important; margin: 0 !important;
+    }
+    
+    /* النوافذ المنبثقة (Modals) */
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+        padding: 20px;
+    }
+    .form-grid { display: flex; flex-direction: column; gap: 0; }
+    
+    /* نافذة الشات العائمة (ميرا) */
+    .shefo-chat-box { width: 95%; height: 80vh; bottom: 80px; }
+    
+    /* شاشة الدخول */
+    .login-card { padding: 25px 20px; width: 95%; }
+}

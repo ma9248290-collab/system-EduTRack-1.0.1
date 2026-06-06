@@ -48,6 +48,33 @@
         .trust-badges { list-style: none; font-size: 14px; color: #475569; }
         .trust-badges li { margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
         .check { color: var(--success); }
+
+        /* ================= Mobile Checkout ================= */
+        @media (max-width: 768px) {
+            .checkout-container {
+                display: flex;
+                flex-direction: column;
+                padding: 15px;
+                gap: 20px;
+                margin: 20px auto;
+                width: 95%;
+            }
+            
+            .checkout-summary, .checkout-form {
+                width: 100% !important;
+                min-width: 100% !important;
+                padding: 20px 15px;
+            }
+            
+            /* تظبيط الزراير والمدخلات */
+            .input-group input, .input-group select { font-size: 16px; /* يمنع الزوم التلقائي في الآيفون */ }
+            
+            .payment-methods { flex-direction: column; }
+            .payment-method { width: 100%; justify-content: flex-start; }
+            
+            h2 { font-size: 22px; }
+            .total-price { font-size: 30px; }
+        }
     </style>
 </head>
 <body>

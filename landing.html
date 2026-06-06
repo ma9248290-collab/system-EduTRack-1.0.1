@@ -132,10 +132,29 @@
         /* Footer */
         footer { background: #1e293b; color: white; text-align: center; padding: 30px 20px; margin-top: 50px; }
         
+        /* ================= Mobile & Tablet ================= */
         @media (max-width: 768px) {
+            .nav-container { flex-wrap: wrap; justify-content: space-between; }
+            .nav-links { display: none; } /* إخفاء القائمة في الموبايل للتبسيط */
+            .nav-btn { font-size: 14px; padding: 6px 12px; }
+            
+            .hero { padding: 120px 15px 40px; text-align: center; }
+            .hero-container { flex-direction: column; gap: 30px; }
             .hero-content h1 { font-size: 32px; }
-            .nav-links { display: none; } /* يفضل عمل قائمة موبايل لاحقاً */
-            .price-card.popular { transform: scale(1); }
+            .hero-content p { font-size: 16px; }
+            .hero-buttons { justify-content: center; flex-direction: column; width: 100%; }
+            .hero-buttons a { width: 100%; text-align: center; }
+            
+            /* اللابتوب الوهمي */
+            .laptop-mockup { width: 100%; transform: none !important; border-radius: 10px; padding: 10px; }
+            .laptop-base { display: none; }
+            
+            .section { padding: 50px 15px; }
+            .section-title h2 { font-size: 28px; }
+            
+            .features-grid, .pricing-grid { grid-template-columns: 1fr; gap: 20px; }
+            
+            .price-card.popular { transform: scale(1); margin-top: 15px; margin-bottom: 15px; }
         }
     </style>
 </head>
@@ -167,7 +186,8 @@
                 
                 <div class="hero-buttons">
                     <a href="checkout.html?plan=demo" class="btn-main">اطلب نسختك التجريبية 🚀</a>
-                    <a href="#" class="btn-outline">مشاهدة شرح النظام 🎥</a>
+                    <!-- التعديل تم هنا 👇 -->
+                    <a href="https://youtube.com/@edutrack-p5f?si=1ZRqA8nrg_7DSRFM" target="_blank" class="btn-outline">مشاهدة شرح النظام 🎥</a>
                 </div>
             </div>
             
