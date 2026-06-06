@@ -672,7 +672,7 @@
         <div class="modal-content" style="width: 450px;">
             <span class="close-btn" onclick="closeModal('requestIdCardsModal')">&times;</span>
             <h2 style="color: #8b5cf6; margin-bottom: 5px;">طلب طباعة كروت ID 💳</h2>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">قم بملء البيانات وسنتواصل معك عبر الواتساب لتأكيد التصميم والتكلفة.</p>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">املأ البيانات وسنتواصل معك قريباً لتأكيد التكلفة والتسليم.</p>
             
             <form id="requestIdCardsForm">
                 <div class="input-group">
@@ -681,13 +681,18 @@
                 </div>
                 
                 <div class="input-group">
+                    <label>رقم الواتساب للتواصل 📞</label>
+                    <input type="text" id="idCardTeacherPhone" required class="custom-input" placeholder="01.........">
+                </div>
+
+                <div class="input-group">
                     <label>عنوان التوصيل أو اسم السنتر</label>
                     <input type="text" id="idCardAddress" required class="custom-input" placeholder="مثال: الحوامدية، شارع ...، سنتر الأوائل">
                 </div>
                 
                 <div class="form-grid" style="display: flex; gap: 15px;">
                     <div class="input-group" style="flex: 1;">
-                        <label>بداية الأكواد من رقم:</label>
+                        <label>من كود رقم:</label>
                         <input type="number" id="idCardFrom" required class="custom-input" min="1" placeholder="مثال: 1">
                     </div>
                     <div class="input-group" style="flex: 1;">
@@ -696,11 +701,7 @@
                     </div>
                 </div>
 
-                <div style="background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed #f59e0b; margin-bottom: 20px;">
-                    <p style="font-size: 13px; color: #d97706; margin: 0;">💡 <strong>ملاحظة:</strong> سيتم تحويلك للواتساب لإتمام الطلب مباشرة بعد الضغط على الزر.</p>
-                </div>
-
-                <button type="submit" class="save-btn" style="width: 100%; background-color: #8b5cf6; font-size: 16px;">إتمام الطلب عبر الواتساب 🚀</button>
+                <button type="submit" class="save-btn" style="width: 100%; background-color: #8b5cf6; font-size: 16px;">إتمام الطلب ✅</button>
             </form>
         </div>
     </div>

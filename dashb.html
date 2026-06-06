@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTrack | Super Admin</title>
+    <title>EduTrack | Super Admin 2.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --primary: #3b82f6; --success: #10b981; --danger: #ef4444; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding: 20px; }
         
-        /* شاشة الدخول السرية */
         #adminLogin { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .login-box { background: var(--card); padding: 40px; border-radius: 12px; text-align: center; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .custom-input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #334155; background: var(--bg); color: white; text-align: center; font-size: 18px; }
-        .btn { background: var(--primary); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; }
+        .custom-input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #334155; background: var(--bg); color: white; text-align: center; font-size: 16px; outline: none; }
+        .custom-input:focus { border-color: var(--primary); }
+        .btn { background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; transition: 0.3s;}
+        .btn:hover { filter: brightness(1.1); }
         
-        /* لوحة التحكم */
         #adminDashboard { display: none; max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #334155; }
         .header h1 { color: var(--primary); }
@@ -26,9 +26,9 @@
         .stat-card h3 { font-size: 14px; color: #94a3b8; margin-bottom: 10px; }
         .stat-card .num { font-size: 32px; font-weight: bold; color: white; }
         
-        .section-title { font-size: 20px; margin-bottom: 15px; color: var(--success); display: flex; align-items: center; gap: 10px; }
-        .table-container { background: var(--card); border-radius: 12px; border: 1px solid #334155; overflow: hidden; margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; text-align: right; }
+        .section-title { font-size: 20px; margin-bottom: 15px; color: var(--success); display: flex; align-items: center; gap: 10px; margin-top: 30px;}
+        .table-container { background: var(--card); border-radius: 12px; border: 1px solid #334155; overflow-x: auto; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; text-align: right; min-width: 800px; }
         th, td { padding: 15px; border-bottom: 1px solid #334155; }
         th { background: #020617; color: #94a3b8; font-size: 14px; }
         tbody tr:hover { background: #334155; }
@@ -36,6 +36,8 @@
         .badge.active { background: rgba(16, 185, 129, 0.2); color: var(--success); }
         .badge.expired { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
         .badge.demo { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        
+        .generator-box { background: var(--card); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 30px; }
     </style>
 </head>
 <body>
@@ -43,7 +45,7 @@
     <div id="adminLogin">
         <div class="login-box">
             <h2 style="color: var(--primary);">EduTrack Super Admin</h2>
-            <p style="color: #94a3b8; font-size: 14px;">غرفة التحكم المركزية</p>
+            <p style="color: #94a3b8; font-size: 14px;">غرفة التحكم المركزية الشاملة</p>
             <input type="password" id="adminPass" class="custom-input" placeholder="كلمة مرور الإدارة">
             <button class="btn" onclick="checkAdmin()">دخول</button>
             <p id="errorMsg" style="color: var(--danger); margin-top: 15px; display: none;">كلمة المرور غير صحيحة!</p>
@@ -54,25 +56,47 @@
         <div class="header">
             <div>
                 <h1>EduTrack Control Room 🚀</h1>
-                <p style="color: #94a3b8;">مرحباً بك يا شيفو، إليك إحصائيات النظام الحية.</p>
+                <p style="color: #94a3b8;">مرحباً بك يا شيفو، إليك تحكم كامل في إمبراطوريتك.</p>
             </div>
             <button class="btn" style="width: auto; background: var(--danger);" onclick="location.reload()">تسجيل خروج 🔒</button>
         </div>
 
+        <h2 class="section-title">🔑 توليد أكواد التفعيل للعملاء</h2>
+        <div class="generator-box">
+            <select id="newLicenseType" class="custom-input" style="width: auto; margin: 0;">
+                <option value="1">باقة شهرية (شهر واحد)</option>
+                <option value="99">باقة مدى الحياة</option>
+            </select>
+            <button class="btn" style="width: auto; background: var(--success);" onclick="generateLicense()">+ إنشاء كود جديد</button>
+            <input type="text" id="generatedCodeDisplay" class="custom-input" readonly placeholder="الكود الجديد هيظهر هنا..." style="flex: 1; margin: 0; direction: ltr; text-align: left; color: var(--success); font-weight: bold; font-size: 18px;">
+        </div>
+
         <div class="stats-grid">
-            <div class="stat-card"><h3>إجمالي المدرسين (الرخص)</h3><div class="num" id="totalTeachers">0</div></div>
+            <div class="stat-card"><h3>الرخص الفعالة</h3><div class="num" id="totalTeachers">0</div></div>
             <div class="stat-card" style="border-color: var(--success);"><h3>إجمالي الطلاب ع السيستم</h3><div class="num" id="totalStudents">0</div></div>
             <div class="stat-card" style="border-color: #f59e0b;"><h3>حسابات الديمو النشطة</h3><div class="num" id="totalDemos">0</div></div>
+        </div>
+
+        <h2 class="section-title" style="color: #8b5cf6;">💳 طلبات طباعة كروت الـ ID الجديدة</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>المدرس / السنتر</th><th>رقم الهاتف</th><th>عنوان التوصيل</th><th>من كود</th><th>إلى كود</th><th>تاريخ الطلب</th></tr>
+                </thead>
+                <tbody id="idOrdersTable">
+                    <tr><td colspan="6" style="text-align: center;">جاري التحميل...</td></tr>
+                </tbody>
+            </table>
         </div>
 
         <h2 class="section-title">🌟 المدرسين المشتركين (Active Clients)</h2>
         <div class="table-container">
             <table>
                 <thead>
-                    <tr><th>اسم المدرس / السنتر</th><th>كود التفعيل</th><th>الباقة</th><th>تاريخ التفعيل</th><th>عدد الطلاب</th><th>الحالة</th></tr>
+                    <tr><th>المدرس / السنتر</th><th>كود التفعيل</th><th>الباقة</th><th>التفعيل</th><th>الطلاب</th><th>الحالة</th><th>إجراء</th></tr>
                 </thead>
                 <tbody id="clientsTable">
-                    <tr><td colspan="6" style="text-align: center;">جاري تحميل البيانات...</td></tr>
+                    <tr><td colspan="7" style="text-align: center;">جاري تحميل البيانات...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -81,10 +105,10 @@
         <div class="table-container">
             <table>
                 <thead>
-                   <tr><th>المدرس (الديمو)</th><th>رقم الواتساب</th><th>تاريخ البدء</th><th>الأيام المتبقية</th><th>الحالة</th><th>الإجراءات</th></tr>
+                   <tr><th>المدرس (الديمو)</th><th>الواتساب</th><th>بدأ يوم</th><th>المتبقي</th><th>الحالة</th><th>إجراء</th></tr>
                 </thead>
                 <tbody id="demoTable">
-                    <tr><td colspan="4" style="text-align: center;">لا يوجد حسابات ديمو حالياً</td></tr>
+                    <tr><td colspan="6" style="text-align: center;">جاري التحميل...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -95,7 +119,6 @@
         
         function checkAdmin() {
             const pass = document.getElementById('adminPass').value;
-            // الباسورد الخاص بيك للوحة الإدارة (تقدر تغيره من هنا)
             if (pass === "shefo2026") {
                 document.getElementById('adminLogin').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'block';
@@ -107,148 +130,194 @@
 
         async function fetchSystemData() {
             try {
-                // سحب الرخص
-                let licRes = await fetch(`${DB_URL}/licenses.json`);
-                let licenses = await licRes.json();
+                let [licRes, techRes, demoRes, idRes] = await Promise.all([
+                    fetch(`${DB_URL}/licenses.json`),
+                    fetch(`${DB_URL}/teachers.json`),
+                    fetch(`${DB_URL}/demo_users.json`),
+                    fetch(`${DB_URL}/id_orders.json`)
+                ]);
                 
-                // سحب داتا المدرسين (عشان نعد الطلاب)
-                let techRes = await fetch(`${DB_URL}/teachers.json`);
+                let licenses = await licRes.json();
                 let teachers = await techRes.json();
-
-                // سحب الديمو
-                let demoRes = await fetch(`${DB_URL}/demo_users.json`);
                 let demos = await demoRes.json();
+                let idOrders = await idRes.json();
 
                 renderClients(licenses, teachers);
                 renderDemos(demos);
+                renderIdOrders(idOrders);
             } catch (e) {
-                console.error("Error fetching data:", e);
-                alert("حدث خطأ أثناء جلب البيانات من السيرفر.");
+                console.error("Error:", e);
             }
+        }
+
+        async function generateLicense() {
+            const months = document.getElementById("newLicenseType").value;
+            const code = "EDU-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            await fetch(`${DB_URL}/licenses/${code}.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    durationMonths: parseInt(months),
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                })
+            });
+            document.getElementById("generatedCodeDisplay").value = code;
+            fetchSystemData(); 
+            alert("تم توليد الكود وإضافته لقاعدة البيانات بنجاح! 🚀");
         }
 
         function renderClients(licenses, teachers) {
             const tbody = document.getElementById("clientsTable");
             tbody.innerHTML = "";
-            let totalTeachersCount = 0;
-            let totalGlobalStudents = 0;
+            let totalTeachersCount = 0; let totalGlobalStudents = 0;
 
             if (!licenses) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">لا توجد تراخيص مسجلة</td></tr>`;
-                return;
+                return tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">لا توجد تراخيص</td></tr>`;
             }
 
             Object.keys(licenses).forEach(key => {
                 let lic = licenses[key];
-                if(lic.claimedBy) totalTeachersCount++; // لو حد فعل الكود
+                if(lic.claimedBy) totalTeachersCount++; 
 
-                // حساب عدد الطلاب للمدرس ده
                 let studentCount = 0;
                 if (teachers && teachers[key] && teachers[key].data && teachers[key].data.students) {
                     studentCount = teachers[key].data.students.length;
-                    totalGlobalStudents += studentCount;
+                }
+                totalGlobalStudents += studentCount;
+
+                let actDate = lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString('ar-EG') : 'لم يُفعل';
+                let duration = lic.durationMonths == 99 ? 'مدى الحياة' : `${lic.durationMonths} شهر`;
+
+                // 🛑 فحص الأيام المتبقية عشان نقوله منتهي ولا لأ
+                let isExpired = false;
+                if(lic.activatedAt && lic.durationMonths != 99) {
+                    let actDateObj = new Date(lic.activatedAt);
+                    let expDateObj = new Date(actDateObj.setMonth(actDateObj.getMonth() + parseInt(lic.durationMonths)));
+                    if(new Date() > expDateObj) isExpired = true;
                 }
 
-                let actDate = lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString('ar-EG') : 'لم يُفعل بعد';
-                let statusBadge = lic.status === 'active' ? `<span class="badge active">نشط</span>` : `<span class="badge expired">موقوف</span>`;
-                let duration = lic.durationMonths == 99 ? 'مدى الحياة' : `${lic.durationMonths} شهر`;
+                let statusBadge = '';
+                let actionBtn = '';
+
+                if(lic.status === 'suspended') {
+                    statusBadge = `<span class="badge expired">موقوف</span>`;
+                    actionBtn = `<button onclick="updateLicenseStatus('${key}', 'active')" style="background: var(--success); color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer;">تفعيل ✅</button>`;
+                } else if(isExpired) {
+                    statusBadge = `<span class="badge expired" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;">انتهى الاشتراك</span>`;
+                    actionBtn = `<button onclick="renewLicense('${key}')" style="background: #f59e0b; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer;">تجديد شهر 🔄</button>`;
+                } else {
+                    statusBadge = `<span class="badge active">نشط</span>`;
+                    actionBtn = `<button onclick="updateLicenseStatus('${key}', 'suspended')" style="background: var(--danger); color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer;">إيقاف 🚫</button>`;
+                }
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td>
+                        <td><strong>${lic.claimedBy || 'متاح للاستخدام'}</strong></td>
                         <td style="color: #94a3b8; font-family: monospace;">${key}</td>
                         <td>${duration}</td>
                         <td>${actDate}</td>
-                        <td style="color: var(--success); font-weight: bold;">${studentCount} طالب</td>
+                        <td style="color: var(--success); font-weight: bold;">${studentCount}</td>
                         <td>${statusBadge}</td>
+                        <td>${actionBtn}</td>
                     </tr>
                 `;
             });
-
             document.getElementById("totalTeachers").innerText = totalTeachersCount;
             document.getElementById("totalStudents").innerText = totalGlobalStudents;
         }
 
-       function renderDemos(demos) {
+        function renderDemos(demos) {
             const tbody = document.getElementById("demoTable");
-            tbody.innerHTML = "";
-            let demoCount = 0;
-
-            if (!demos) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">لا يوجد حسابات ديمو مسجلة</td></tr>`;
-                return;
-            }
-
+            tbody.innerHTML = ""; let demoCount = 0;
+            if (!demos) return tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">لا يوجد حسابات ديمو</td></tr>`;
             let now = new Date().getTime();
-
             Object.keys(demos).reverse().forEach(key => {
-                demoCount++;
-                let d = demos[key];
-                let startDate = new Date(d.startDate).toLocaleDateString('ar-EG');
-                
+                demoCount++; let d = demos[key];
                 let daysPassed = (now - parseInt(d.startDate)) / (1000 * 60 * 60 * 24);
                 let daysLeft = Math.ceil(7 - daysPassed);
                 
-                let statusHtml = '';
-                if (d.status === 'suspended') {
-                    statusHtml = `<span class="badge expired">موقوف (بلوك)</span>`;
-                    daysLeft = 0;
-                } else if (daysLeft > 0) {
-                    statusHtml = `<span class="badge demo">قيد التجربة</span>`;
-                } else {
-                    statusHtml = `<span class="badge expired">انتهت المدة</span>`;
-                    daysLeft = 0;
-                }
+                let statusHtml = d.status === 'suspended' ? `<span class="badge expired">موقوف</span>` : (daysLeft > 0 ? `<span class="badge demo">تجربة</span>` : `<span class="badge expired">انتهت</span>`);
+                if(d.status === 'suspended' || daysLeft <= 0) daysLeft = 0;
 
-                let tName = d.teacherName || "غير محدد";
-                let tPhone = d.whatsapp || "غير محدد";
                 let waLink = d.whatsapp ? `https://wa.me/20${d.whatsapp.replace(/^0+/, '')}` : '#';
-
-                // زراير التحكم
-                let actionBtns = ``;
-                if (d.status === 'suspended') {
-                    actionBtns = `
-                        <button onclick="updateDemoStatus('${key}', 'active')" style="background: var(--success); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">تفعيل ✅</button>
-                        <button onclick="deleteDemo('${key}')" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">حذف 🗑️</button>
-                    `;
-                } else {
-                    actionBtns = `
-                        <button onclick="updateDemoStatus('${key}', 'suspended')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">إيقاف 🚫</button>
-                        <button onclick="deleteDemo('${key}')" style="background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">حذف 🗑️</button>
-                    `;
-                }
+                
+                let actionBtns = d.status === 'suspended' 
+                    ? `<button onclick="updateDemoStatus('${key}', 'active')" style="background: var(--success); color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer;">✅</button>`
+                    : `<button onclick="updateDemoStatus('${key}', 'suspended')" style="background: #f59e0b; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer;">🚫</button>`;
+                
+                actionBtns += ` <button onclick="deleteDemo('${key}')" style="background: var(--danger); color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer;">🗑️</button>`;
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong>${tName}</strong></td>
-                        <td><a href="${waLink}" target="_blank" style="color: #10b981; text-decoration: none; font-weight: bold;">💬 ${tPhone}</a></td>
-                        <td>${startDate}</td>
+                        <td><strong>${d.teacherName || "غير محدد"}</strong></td>
+                        <td><a href="${waLink}" target="_blank" style="color: #10b981; text-decoration: none;">💬 ${d.whatsapp || "لا يوجد"}</a></td>
+                        <td>${new Date(d.startDate).toLocaleDateString('ar-EG')}</td>
                         <td style="font-weight: bold; color: ${daysLeft > 0 ? '#10b981' : '#ef4444'};">${daysLeft} أيام</td>
                         <td>${statusHtml}</td>
-                        <td style="display: flex; gap: 5px; justify-content: center;">${actionBtns}</td>
+                        <td>${actionBtns}</td>
                     </tr>
                 `;
             });
-
             document.getElementById("totalDemos").innerText = demoCount;
         }
 
-        // --- دوال التحكم في الديمو ---
-        async function updateDemoStatus(key, status) {
-            if (confirm(status === 'suspended' ? "هل تريد إيقاف هذا الجهاز ومنعه من دخول السيستم؟" : "هل تريد إعادة تفعيل الحساب؟")) {
-                await fetch(`${DB_URL}/demo_users/${key}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: status })
+        function renderIdOrders(orders) {
+            const tbody = document.getElementById("idOrdersTable");
+            tbody.innerHTML = "";
+            if (!orders) return tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">لا توجد طلبات جديدة</td></tr>`;
+            
+            Object.keys(orders).reverse().forEach(key => {
+                let o = orders[key];
+                let waLink = o.phone ? `https://wa.me/20${o.phone.replace(/^0+/, '')}` : '#';
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${o.teacherName}</strong></td>
+                        <td><a href="${waLink}" target="_blank" style="color: #10b981; text-decoration: none; font-weight: bold;">💬 ${o.phone}</a></td>
+                        <td>${o.address}</td>
+                        <td style="color: var(--success); font-weight: bold;">${o.fromCode}</td>
+                        <td style="color: var(--danger); font-weight: bold;">${o.toCode}</td>
+                        <td>${new Date(o.timestamp).toLocaleDateString('ar-EG')}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- دوال التحكم في السيستم من الداشبورد ---
+        async function updateLicenseStatus(key, status) {
+            if (confirm(status === 'suspended' ? "إيقاف الكود سيمنع المدرس من الدخول نهائياً. تأكيد؟" : "إعادة تفعيل؟")) {
+                await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: status }) });
+                fetchSystemData();
+            }
+        }
+        
+        async function renewLicense(key) {
+            if (confirm("هل تريد تجديد اشتراك هذا المدرس لمدة شهر إضافي؟")) {
+                await fetch(`${DB_URL}/licenses/${key}.json`, { 
+                    method: 'PATCH', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        activatedAt: new Date().toISOString(), // إعادة التفعيل من تاريخ النهاردة
+                        durationMonths: 1, // التجديد بيكون شهر بشهر
+                        status: 'active' 
+                    }) 
                 });
-                fetchSystemData(); // تحديث الشاشة
+                alert("تم التجديد وتفعيل حساب المدرس بنجاح! 🎉");
+                fetchSystemData();
             }
         }
 
+        async function updateDemoStatus(key, status) {
+            if (confirm("تأكيد العملية؟")) {
+                await fetch(`${DB_URL}/demo_users/${key}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: status }) });
+                fetchSystemData();
+            }
+        }
         async function deleteDemo(key) {
-            if (confirm("هل تريد حذف بيانات هذا العميل نهائياً من قائمة الديمو؟ (سيتم طرده من السيستم)")) {
+            if (confirm("حذف العميل من الديمو؟")) {
                 await fetch(`${DB_URL}/demo_users/${key}.json`, { method: 'DELETE' });
-                fetchSystemData(); // تحديث الشاشة
+                fetchSystemData();
             }
         }
     </script>
