@@ -73,6 +73,7 @@
 
         <div class="stats-grid">
             <div class="stat-card"><h3>الرخص الفعالة</h3><div class="num" id="totalTeachers">0</div></div>
+            <div class="stat-card" style="border-color: #f59e0b;"><h3>طلبات شراء جديدة</h3><div class="num" id="totalOrders">0</div></div>
             <div class="stat-card" style="border-color: var(--success);"><h3>إجمالي الطلاب ع السيستم</h3><div class="num" id="totalStudents">0</div></div>
             <div class="stat-card" style="border-color: #f59e0b;"><h3>حسابات الديمو النشطة</h3><div class="num" id="totalDemos">0</div></div>
         </div>
@@ -88,6 +89,31 @@
                 </tbody>
             </table>
         </div>
+
+
+        <!-- جدول طلبات الشراء الجديدة -->
+        <h2 class="section-title" style="color: #f59e0b;">🛒 طلبات الشراء الجديدة</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>العميل</th><th>رقم الواتس</th><th>الباقة</th><th>الدفع</th><th>المبلغ</th><th>كود الإحالة</th><th>عمولة المدرس</th><th>الحالة</th><th>إجراء</th></tr>
+                </thead>
+                <tbody id="ordersTable"><tr><td colspan="9" style="text-align: center;">جاري التحميل...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- جدول طلبات سحب الأرباح للمدرسين -->
+        <h2 class="section-title" style="color: #10b981;">💸 طلبات سحب أرباح الإحالات</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>كود المدرس</th><th>وسيلة السحب</th><th>رقم التحويل</th><th>المبلغ المطلوب</th><th>تاريخ الطلب</th><th>إجراء</th></tr>
+                </thead>
+                <tbody id="withdrawsTable"><tr><td colspan="6" style="text-align: center;">لا توجد طلبات سحب</td></tr></tbody>
+            </table>
+        </div>
+
+
 
         <h2 class="section-title">🌟 المدرسين المشتركين (Active Clients)</h2>
         <div class="table-container">
@@ -128,26 +154,102 @@
             }
         }
 
-        async function fetchSystemData() {
+       async function fetchSystemData() {
             try {
-                let [licRes, techRes, demoRes, idRes] = await Promise.all([
+                let [licRes, techRes, demoRes, idRes, ordRes, wdRes] = await Promise.all([
                     fetch(`${DB_URL}/licenses.json`),
                     fetch(`${DB_URL}/teachers.json`),
                     fetch(`${DB_URL}/demo_users.json`),
-                    fetch(`${DB_URL}/id_orders.json`)
+                    fetch(`${DB_URL}/id_orders.json`),
+                    fetch(`${DB_URL}/orders.json`),
+                    fetch(`${DB_URL}/withdraw_requests.json`)
                 ]);
                 
                 let licenses = await licRes.json();
                 let teachers = await techRes.json();
                 let demos = await demoRes.json();
                 let idOrders = await idRes.json();
+                let orders = await ordRes.json();
+                let withdraws = await wdRes.json();
 
                 renderClients(licenses, teachers);
                 renderDemos(demos);
                 renderIdOrders(idOrders);
+                renderOrders(orders); // تشغيل جدول الطلبات
+                renderWithdraws(withdraws); // تشغيل جدول السحب
             } catch (e) {
                 console.error("Error:", e);
             }
+        }
+
+         function renderWithdraws(requests) {
+            const tbody = document.getElementById("withdrawsTable"); tbody.innerHTML = "";
+            if (!requests) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد طلبات سحب</td></tr>`;
+            
+            Object.keys(requests).reverse().forEach(key => {
+                let r = requests[key];
+                let btn = r.status === 'paid' ? `<span style="color:var(--success)">تم التحويل ✅</span>` : `<button onclick="approveWithdraw('${key}')" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">تأكيد التحويل 💳</button>`;
+                
+                tbody.innerHTML += `<tr><td><strong>${r.promoCode}</strong></td><td>${r.method}</td><td style="color:var(--warning); font-weight:bold;">${r.number}</td><td style="color:var(--success); font-weight:bold;">${r.amount} ج</td><td>${new Date(r.timestamp).toLocaleDateString('ar-EG')}</td><td>${btn}</td></tr>`;
+            });
+        }
+
+                function renderClients(licenses, teachers) {
+            const tbody = document.getElementById("clientsTable"); tbody.innerHTML = "";
+            let tCount = 0, sCount = 0;
+            if (!licenses) return;
+
+            Object.keys(licenses).forEach(key => {
+                let lic = licenses[key]; if(lic.claimedBy) tCount++;
+                let stu = (teachers && teachers[key] && teachers[key].data && teachers[key].data.students) ? teachers[key].data.students.length : 0;
+                sCount += stu;
+                let stat = lic.status === 'active' ? `<span class="badge" style="background:var(--success)">نشط</span>` : `<span class="badge" style="background:var(--danger)">موقوف</span>`;
+                tbody.innerHTML += `<tr><td><strong>${lic.claimedBy || '-'}</strong></td><td style="color:var(--text-muted)">${key}</td><td>${lic.durationMonths == 99 ? 'مدى الحياة' : 'شهري'}</td><td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString() : '-'}</td><td>${stat}</td></tr>`;
+            });
+            document.getElementById("totalTeachers").innerText = tCount;
+            document.getElementById("totalStudents").innerText = sCount;
+        }
+
+        async function approveOrder(key) {
+            if(confirm("هل تأكدت من استلام المبلغ وتريد تأكيد الطلب؟ (قم بتوليد كود وإرساله للعميل)")) {
+                await fetch(`${DB_URL}/orders/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'تم الدفع والتفعيل ✅' }) });
+                fetchSystemData();
+            }
+        }
+        async function approveWithdraw(key) {
+            if(confirm("هل قمت بتحويل المبلغ للمدرس؟")) {
+                await fetch(`${DB_URL}/withdraw_requests/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'paid' }) });
+                fetchSystemData();
+            }
+        }
+    
+        function renderOrders(orders) {
+            const tbody = document.getElementById("ordersTable"); tbody.innerHTML = "";
+            let count = 0;
+            if (!orders) return tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">لا توجد طلبات جديدة</td></tr>`;
+            
+            Object.keys(orders).reverse().forEach(key => {
+                let o = orders[key]; count++;
+                let waLink = `https://wa.me/20${o.whatsapp.replace(/^0+/, '')}`;
+                let statusBadge = o.status.includes('تم') ? `<span class="badge" style="background:var(--success)">${o.status}</span>` : `<span class="badge" style="background:var(--warning)">${o.status}</span>`;
+                
+                let btn = o.status.includes('تم') ? `<span style="color:var(--text-muted)">منتهي</span>` : `<button onclick="approveOrder('${key}')" style="background:var(--success); color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">تأكيد وتفعيل ✅</button>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${o.teacherName}</strong></td>
+                        <td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${o.whatsapp}</a></td>
+                        <td>${o.plan}</td>
+                        <td>${o.paymentMethod}</td>
+                        <td style="color:var(--primary); font-weight:bold;">${o.finalPrice} ج</td>
+                        <td style="color:var(--warning); font-weight:bold; letter-spacing:1px;">${o.promoCodeUsed}</td>
+                        <td style="color:var(--success); font-weight:bold;">${o.commissionForAffiliate} ج</td>
+                        <td>${statusBadge}</td>
+                        <td>${btn}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById("totalOrders").innerText = count;
         }
 
         async function generateLicense() {

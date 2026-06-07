@@ -125,6 +125,9 @@
                 <li id="nav-broadcast"><a href="#" onclick="switchPage('broadcast')">الإرسال الجماعي 📢</a></li>
                 <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
                 <li id="nav-finance" class="admin-only"><a href="#" onclick="switchPage('finance')">الخزنة والماليات 💰</a></li>
+                <li id="nav-affiliate" style="margin-top: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px dashed #10b981;">
+    <a href="#" onclick="switchPage('affiliate')" style="color: #10b981; font-weight: 900;">نظام الإحالات 💸</a>
+</li>
                 <li id="nav-backup" class="admin-only"><a href="#" onclick="switchPage('backup')">لوحة الإدارة ⚙️</a></li>
                 <li style="margin-top: 20px;"><a href="#" onclick="openModal('settingsModal')" style="color: #8b5cf6; border: 1px solid #8b5cf6; text-align: center;">إعدادات السيرفر ⚙️</a></li>
                 <li style="margin-top: 10px;"><a href="#" onclick="logout()" style="color: var(--danger-color); border: 1px solid var(--danger-color); text-align: center;">تسجيل الخروج 🚪</a></li>
@@ -132,12 +135,19 @@
         </aside>
 
         <main class="main-content">
-            <header class="top-header no-print">
+ <header class="top-header no-print">
                 <div>
                     <h1 id="page-title">أهلاً بك يا شيفو 👋</h1>
                     <p id="page-desc">إليك نظرة عامة على نشاط اليوم</p>
                 </div>
-                <div style="display: flex; gap: 10px;">
+                <!-- ضفنا align-items: center عشان الزراير كلها تبقى على خط واحد -->
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    
+                    <!-- زرار الإحالة الجديد (صغير وشيك) -->
+                    <button class="theme-btn" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; border: none; font-weight: bold; transition: transform 0.3s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);" onclick="switchPage('affiliate')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        🎁 اربح 20,000 ج/شهرياً
+                    </button>
+
                     <button id="assistant-btn" class="theme-btn" style="border-color: var(--danger-color); color: var(--danger-color);" onclick="toggleAssistantMode()">🔒 قفل الإدارة</button>
                     <button id="theme-btn" class="theme-btn" onclick="toggleTheme()">☀️ الوضع الفاتح</button>
                 </div>
@@ -286,7 +296,7 @@
                 <section class="students-section"><div class="section-header"><h2>الطلاب تحت الملاحظة (خطر) 🚨</h2><button class="theme-btn" onclick="renderAtRiskStudents()">🔄 تحديث التحليل</button></div><p style="color: var(--text-muted); margin-bottom: 20px;">الطلاب الذين غابوا في آخر حصتين، أو رسبوا في آخر امتحانين.</p><div class="table-container"><table class="students-table"><thead><tr><th>الكود</th><th>اسم الطالب</th><th>المجموعة</th><th>المشكلة</th><th>إجراء</th></tr></thead><tbody id="atrisk-list"></tbody></table></div></section>
             </div>
 
-            //<div id="finance-view" class="view-section admin-only" style="display: none;">
+           <div id="finance-view" class="view-section admin-only" style="display: none;">
                 <section class="students-section">
                     <div class="section-header"><h2>الماليات (حساب الحصة) 💰</h2></div>
                     <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; background: var(--hover-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
@@ -466,6 +476,132 @@
                     </div>
                 </section>
             </div>
+
+
+            <!-- شاشة نظام الإحالات -->
+<div id="affiliate-view" class="view-section" style="display: none;">
+    <section class="students-section">
+        <div class="section-header">
+            <h2>نظام الإحالات والعمولات 💸</h2>
+            <p style="color: var(--text-muted);">شارك رابطك واحصل على عمولة عند إتمام الشراء أو اشتراك العميل.</p>
+        </div>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+            <!-- قسم إعدادات السحب -->
+            <div class="stat-card" style="flex: 1; min-width: 300px; border-top: 4px solid var(--primary-color);">
+                <h3 style="color: var(--primary-color); margin-bottom: 20px;">إعدادات السحب 💳</h3>
+                <div class="input-group">
+                    <label>طريقة السحب المفضلة</label>
+                    <select id="withdrawMethod" class="custom-input">
+                        <option value="vodafone">فودافون كاش</option>
+                        <option value="instapay">إنستا باي (InstaPay)</option>
+                        <option value="free_month">استبدال العمولات بأشهر مجانية (للاشتراك الشهري)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>رقم الحساب / الموبايل</label>
+                    <input type="text" id="withdrawNumber" class="custom-input" placeholder="01X XXXX XXXX">
+                </div>
+                <button class="save-btn" onclick="saveAffiliateSettings()">حفظ الإعدادات</button>
+            </div>
+
+            <!-- قسم كود الإحالة -->
+            <div class="stat-card" style="flex: 2; min-width: 400px; border-top: 4px solid var(--exam-color);">
+                <h3 style="color: var(--exam-color); margin-bottom: 15px;">شارك إحالتك 🔗</h3>
+                <div style="background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; border: 1px dashed var(--border-color);">
+                    <ul style="list-style-position: inside; color: var(--text-muted); line-height: 1.8;">
+                        <li><strong>عميل المدى الحياة:</strong> خصم <span style="color:var(--success-color)">500ج</span> للعميل ⬅️ عمولتك <span style="color:var(--success-color)">800ج</span>.</li>
+                        <li><strong>عميل الاشتراك الشهري:</strong> خصم <span style="color:var(--success-color)">100ج</span> للعميل ⬅️ عمولتك <span style="color:var(--success-color)">150ج</span> (أو شهر مجاني).</li>
+                    </ul>
+                </div>
+                
+                <div class="input-group">
+                    <label>كود الإحالة الخاص بك (Promo Code)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <!-- تم إصلاح الألوان لتعمل على الوضع الفاتح والداكن -->
+                        <input type="text" id="myAffiliateCode" class="custom-input" readonly style="letter-spacing: 3px; font-size: 20px; font-weight: bold; text-align: center; color: var(--primary-color); background: var(--hover-bg); border: 2px dashed var(--primary-color);">
+                        <button class="save-btn" style="width: auto; margin: 0; background-color: var(--exam-color);" onclick="copyAffiliateCode()">نسخ الكود</button>
+                    </div>
+                </div>
+                <button class="save-btn" style="background-color: var(--success-color); margin-top: 15px;" onclick="requestAffiliateWithdrawal()">💸 طلب سحب الأرباح الآن</button>
+            </div>
+            
+        </div>
+
+        
+        <!-- إحصائيات الإحالات -->
+        <div class="stats-grid">
+            
+            <div class="stat-card" style="background: linear-gradient(45deg, #f59e0b, #d97706); color: white; border: none;">
+                <h3 style="color: rgba(255,255,255,0.8);">مبالغ التحصيل المنتظرة ⏳</h3>
+                <p class="stat-number" style="color: white;" id="affPending">0 ج</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none;">
+                <h3 style="color: rgba(255,255,255,0.8);">مبالغ التحصيل المستلمة ✅</h3>
+                <p class="stat-number" style="color: white;" id="affReceived">0 ج</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(45deg, #8b5cf6, #6d28d9); color: white; border: none;">
+                <h3 style="color: rgba(255,255,255,0.8);">عدد عمليات الشراء 🛒</h3>
+                <p class="stat-number" style="color: white;" id="affPurchases">0</p>
+            </div>
+        </div>
+
+        <!-- جدول المعاملات -->
+        <div class="table-container" style="margin-top: 20px;">
+            <h3 style="padding: 15px; border-bottom: 1px solid var(--border-color);">المعاملات الأخيرة</h3>
+            <table class="students-table">
+                <thead>
+                    <tr><th>التاريخ</th><th>العميل (مشفر)</th><th>نوع الباقة</th><th>حالة العمولة</th><th>المبلغ المستحق</th></tr>
+                </thead>
+                <tbody id="affiliate-transactions">
+                    <tr><td colspan="5" style="text-align:center;">لا توجد إحالات حتى الآن. ابدأ بنشر كودك!</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- نافذة محاكاة الشراء (الـ Checkout) لاختبار الكود -->
+<div id="checkoutModal" class="modal">
+    <div class="modal-content" style="width: 500px; background: var(--bg-color);">
+        <span class="close-btn" onclick="closeModal('checkoutModal')">&times;</span>
+        <h2 style="color: var(--primary-color); margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">إتمام الشراء 🛒</h2>
+        
+        <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+            <div class="input-group">
+                <label>خطة الاشتراك</label>
+                <select id="checkoutPlan" class="custom-input" onchange="calculateCheckout()">
+                    <option value="lifetime">مدى الحياة (السعر الأصلي: 2500 ج.م)</option>
+                    <option value="monthly">اشتراك شهري (السعر الأصلي: 350 ج.م)</option>
+                </select>
+            </div>
+
+            <div class="input-group" style="margin-top: 20px;">
+                <label>🏷️ كود الإحالة (اختياري)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="promoCodeInput" class="custom-input" placeholder="أدخل الكود هنا...">
+                    <button type="button" class="save-btn" style="width: 100px; margin: 0; background: var(--exam-color);" onclick="applyPromoCode()">تطبيق</button>
+                </div>
+                <p id="promoMsg" style="font-size: 13px; margin-top: 5px; font-weight: bold;"></p>
+            </div>
+        </div>
+
+        <div style="background: rgba(59, 130, 246, 0.1); padding: 20px; border-radius: 12px; border: 1px dashed var(--primary-color);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>السعر الأساسي:</span> <strong id="checkoutBasePrice">2500 ج.م</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--danger-color);">
+                <span>قيمة الخصم:</span> <strong id="checkoutDiscount">0 ج.م</strong>
+            </div>
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 10px 0;">
+            <div style="display: flex; justify-content: space-between; font-size: 20px; color: var(--success-color);">
+                <span>الإجمالي للدفع:</span> <strong id="checkoutFinalPrice">2500 ج.م</strong>
+            </div>
+        </div>
+        
+        <button class="save-btn" style="width: 100%; font-size: 18px; margin-top: 20px;">تأكيد الدفع</button>
+    </div>
+</div>
 
         </main>
     </div> 
