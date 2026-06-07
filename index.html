@@ -531,15 +531,21 @@
         
         <!-- إحصائيات الإحالات -->
         <div class="stats-grid">
-            
+            <div class="stat-card" style="background: linear-gradient(135deg, #2563eb, #1e40af); color: white; border: none; transform: scale(1.02); box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);">
+                <h3 style="color: rgba(255,255,255,0.9); font-weight: bold;">الرصيد المتاح للسحب 💰</h3>
+                <p class="stat-number" style="color: white; font-size: 40px;" id="affAvailable">0 ج</p>
+            </div>
+
             <div class="stat-card" style="background: linear-gradient(45deg, #f59e0b, #d97706); color: white; border: none;">
-                <h3 style="color: rgba(255,255,255,0.8);">مبالغ التحصيل المنتظرة ⏳</h3>
+                <h3 style="color: rgba(255,255,255,0.8);">مبالغ منتظرة دفع العميل ⏳</h3>
                 <p class="stat-number" style="color: white;" id="affPending">0 ج</p>
             </div>
+            
             <div class="stat-card" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none;">
-                <h3 style="color: rgba(255,255,255,0.8);">مبالغ التحصيل المستلمة ✅</h3>
+                <h3 style="color: rgba(255,255,255,0.8);">إجمالي ما تم سحبه ✅</h3>
                 <p class="stat-number" style="color: white;" id="affReceived">0 ج</p>
             </div>
+            
             <div class="stat-card" style="background: linear-gradient(45deg, #8b5cf6, #6d28d9); color: white; border: none;">
                 <h3 style="color: rgba(255,255,255,0.8);">عدد عمليات الشراء 🛒</h3>
                 <p class="stat-number" style="color: white;" id="affPurchases">0</p>
