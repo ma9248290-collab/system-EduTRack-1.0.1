@@ -348,12 +348,8 @@
                 </div>
             </div>
 
-          <!-- ========================================== -->
-<!-- ⚙️ لوحة الإدارة والتحكم الشامل والصيانة -->
-<!-- ========================================== -->
 <div id="backup-view" class="view-section" style="display: none;">
     
-    <!-- ستايل مخصص للوحة الإدارة فقط عشان ميتعارضش مع باقي السيستم -->
     <style>
         .admin-panel-card { background: var(--card-bg); padding: 25px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
         .admin-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 20px; border-radius: 10px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.3s ease; color: #fff !important; text-decoration: none; }
@@ -366,17 +362,88 @@
         .admin-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         @media (max-width: 768px) { .admin-grid-2 { grid-template-columns: 1fr; } }
         .danger-zone { background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        
+        /* تنسيق قائمة اختيار المراحل الدراسية المنسدلة */
+        .multi-select-container { position: relative; width: 100%; font-family: 'Cairo', sans-serif; }
+        .multi-select-header { background: var(--hover-bg); border: 2px dashed var(--primary-color); padding: 15px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: var(--text-main); transition: 0.3s; }
+        .multi-select-header:hover { background: rgba(59, 130, 246, 0.1); }
+        .multi-select-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; margin-top: 5px; z-index: 1000; max-height: 250px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5); padding: 10px; }
+        .multi-select-dropdown.show { display: flex; flex-direction: column; gap: 8px; animation: fadeIn 0.3s ease; }
+        .level-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--hover-bg); border-radius: 6px; cursor: pointer; transition: 0.2s; color: var(--text-main); font-weight: bold; border-bottom: 1px solid var(--border-color); }
+        .level-item:hover { background: rgba(59, 130, 246, 0.1); border-right: 3px solid var(--primary-color); }
+        .level-item input { width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer;}
+        .selected-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+        .tag { background: var(--primary-color); color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); }
     </style>
+
+    <div class="admin-panel-card" style="border-top: 5px solid #8b5cf6;">
+        <h2 style="color: #8b5cf6; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">👤</span> بيانات الدخول والملف الشخصي
+        </h2>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: bold;">اسم المدرس</label>
+                <input type="text" id="settingTeacherName" class="custom-input" placeholder="اسم المدرس">
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: bold;">اسم السنتر</label>
+                <input type="text" id="settingCenterName" class="custom-input" placeholder="اسم السنتر">
+            </div>
+        </div>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: bold;">اليوزر نيم</label>
+                <input type="text" id="settingAdminUser" class="custom-input" placeholder="اليوزر نيم">
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: bold;">الباسورد</label>
+                <input type="text" id="settingAdminPass" class="custom-input" placeholder="الباسورد">
+            </div>
+        </div>
+        <div style="margin-bottom: 20px; max-width: 300px; margin-left: auto; margin-right: auto;">
+            <label style="font-size: 14px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: bold; text-align: center;">رمز الإدارة السري (PIN)</label>
+            <input type="text" id="settingAdminPin" class="custom-input" placeholder="رقم سري من 4 أرقام" maxlength="4" style="letter-spacing: 5px; text-align: center; font-weight: bold; font-size: 20px;">
+        </div>
+        <button class="save-btn" style="width: 100%; font-size: 16px; background-color: #8b5cf6;" onclick="saveAccountSettings()">💾 حفظ بيانات الحساب</button>
+    </div>
+
+    <div class="admin-panel-card" style="border-top: 5px solid var(--primary-color);">
+        <h2 style="color: var(--primary-color); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">⚙️</span> تخصيص المراحل الدراسية
+        </h2>
+        <p style="color: var(--text-muted); margin-bottom: 15px;">حدد المراحل الدراسية التي تعمل بها (ستظهر فقط في جميع القوائم المنسدلة):</p>
+        <div class="multi-select-container">
+            <div class="multi-select-header" onclick="document.getElementById('levelsDropdown').classList.toggle('show')">
+                <span>اضغط هنا لاختيار المراحل الدراسية 👇</span><span>🔽</span>
+            </div>
+            <div id="levelsDropdown" class="multi-select-dropdown"></div>
+        </div>
+        <div id="selectedLevelsTags" class="selected-tags"></div>
+    </div>
+
+    <div class="admin-panel-card" style="border-top: 5px solid #10b981;">
+        <h2 style="color: #10b981; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">💾</span> أدوات النسخ الاحتياطي اليدوي
+        </h2>
+        <div class="admin-grid-2">
+            <button class="admin-btn btn-success" onclick="exportData()">
+                <span>📥</span> تحميل نسخة احتياطية (JSON)
+            </button>
+            <button class="admin-btn" style="background-color: #475569;" onclick="document.getElementById('importFile').click()">
+                <span>📤</span> استرجاع نسخة من ملف
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+    </div>
 
     <div class="admin-panel-card" style="border-top: 5px solid #ef4444;">
         <h2 style="color: #ef4444; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">⚠️</span> منطقة العمليات الحساسة (تنظيف البيانات)
+            <span style="font-size: 24px;">⚠️</span> منطقة العمليات الحساسة
         </h2>
         <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
             تنبيه: العمليات أدناه نهائية وتمسح البيانات تماماً من الجهاز وتُحدث السحابة فوراً. جميع الأوامر محمية برقم الإدارة السري.
         </p>
         
-        <!-- أزرار المسح الأساسية -->
         <div class="admin-grid-2" style="margin-bottom: 20px;">
             <button class="admin-btn btn-danger" onclick="manageClearAction('students')">
                 <span>🗑️</span> مسح جميع الطلاب
@@ -386,25 +453,19 @@
             </button>
         </div>
 
-        <!-- مسح مرحلة معينة -->
         <div class="danger-zone">
             <h3 style="margin-bottom: 15px; font-size: 16px; color: #b91c1c; display: flex; align-items: center; gap: 8px;">
                 <span>🎓</span> تفريغ ومسح مرحلة دراسية محددة
             </h3>
             <div style="display: flex; gap: 15px; align-items: stretch; flex-wrap: wrap;">
                 <select id="clearLevelSelect" class="custom-input" style="flex: 2; margin: 0; min-width: 200px; border-color: #fca5a5; background: #fff;">
-                    <option value="">اختر المرحلة الدراسية المراد مسحها...</option>
-                    <option value="الأول الثانوي">الأول الثانوي</option>
-                    <option value="الثاني الثانوي">الثاني الثانوي</option>
-                    <option value="الثالث الثانوي">الثالث الثانوي</option>
-                </select>
+                    </select>
                 <button class="admin-btn btn-danger" onclick="manageClearAction('level')" style="flex: 1; margin: 0; min-width: 150px;">
                     <span>🗑️</span> تنفيذ المسح
                 </button>
             </div>
         </div>
 
-        <!-- أدوات صيانة إضافية -->
         <div class="admin-grid-2" style="margin-bottom: 30px;">
             <button class="admin-btn btn-warning" onclick="manageClearAction('behavior')">
                 <span>🌟</span> تصفير نقاط السلوك للكل
@@ -414,28 +475,9 @@
             </button>
         </div>
 
-        <!-- تدمير شامل للبيانات -->
         <button class="admin-btn btn-nuke" style="width: 100%; padding: 20px; font-size: 18px;" onclick="manageClearAction('all')">
             <span>🚨</span> مسح شامل وتصفير كافة بيانات السيستم (ضبط مصنع)
         </button>
-    </div>
-
-    <!-- أدوات النسخ الاحتياطي اليدوي -->
-    <div class="admin-panel-card" style="border-top: 5px solid #10b981;">
-        <h2 style="color: #10b981; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">💾</span> أدوات النسخ الاحتياطي اليدوي
-        </h2>
-        <div class="admin-grid-2">
-            <button class="admin-btn btn-success" onclick="exportData()">
-                <span>📥</span> تحميل نسخة احتياطية (JSON)
-            </button>
-            
-            <!-- زر الاسترجاع المخفي جواه الـ input -->
-            <button class="admin-btn" style="background-color: #475569;" onclick="document.getElementById('importFile').click()">
-                <span>📤</span> استرجاع نسخة من ملف
-            </button>
-            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-        </div>
     </div>
 </div>
 
@@ -761,9 +803,34 @@
     <div id="addSessionModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('addSessionModal')">&times;</span><h2>فتح حصة 🎯</h2><form id="addSessionForm"><div class="input-group"><label>الصف</label><select id="sessionLevelSelect" class="custom-input" onchange="filterGroupsByLevel('sessionLevelSelect', 'sessionGroupSelect')" required><option value="">اختر...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><label>المجموعة</label><select id="sessionGroupSelect" required class="custom-input"><option value="">اختر الصف أولاً...</option></select></div><div class="input-group"><label>التاريخ</label><input type="date" id="sessionDate" required class="custom-input"></div><div class="input-group"><label>الموضوع</label><input type="text" id="sessionTopic" class="custom-input"></div><div class="premium-box" style="margin-top: 20px; padding: 15px; border: 1px dashed var(--primary-color); border-radius: 8px; background: rgba(59, 130, 246, 0.05);"><h4 style="margin-bottom: 10px; color: var(--primary-color);">✨ أوتوماتيك:</h4><label style="display: flex; gap: 10px;"><input type="checkbox" id="autoExamCheck" onchange="toggleAutoInputs()"> إنشاء امتحان</label><input type="number" id="autoExamScore" placeholder="الدرجة؟" class="custom-input" style="display: none; margin-bottom: 15px;" min="1"><label style="display: flex; gap: 10px;"><input type="checkbox" id="autoHwCheck" onchange="toggleAutoInputs()"> تكليف واجب</label><input type="number" id="autoHwScore" placeholder="الدرجة؟" class="custom-input" style="display: none; margin-top: 10px;" min="1"></div><button type="submit" class="save-btn" style="margin-top: 20px;">إنشاء الحصة</button></form></div></div>
     <div id="addHwModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('addHwModal')">&times;</span><h2>واجب جديد</h2><form id="addHwForm"><div class="input-group"><select id="hwLevelSelect" class="custom-input" onchange="filterGroupsByLevel('hwLevelSelect', 'hwGroupSelect')" required><option value="">الصف...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><select id="hwGroupSelect" required class="custom-input"><option value="">المجموعة...</option></select></div><div class="input-group"><input type="text" id="hwName" required placeholder="الاسم/الصفحة" class="custom-input"></div><div class="input-group"><input type="number" id="hwMaxScore" required min="1" placeholder="الدرجة من" class="custom-input"></div><div class="input-group"><input type="date" id="hwDate" required class="custom-input"></div><button type="submit" class="save-btn" style="background-color: var(--hw-color);">إنشاء</button></form></div></div>
     <div id="addExamModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('addExamModal')">&times;</span><h2>امتحان جديد</h2><form id="addExamForm"><div class="input-group"><select id="examLevelSelect" class="custom-input" onchange="filterGroupsByLevel('examLevelSelect', 'examGroupSelect')" required><option value="">الصف...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><select id="examGroupSelect" required class="custom-input"><option value="">المجموعة...</option></select></div><div class="input-group"><input type="text" id="examName" required placeholder="الاسم" class="custom-input"></div><div class="input-group"><input type="number" id="examMaxScore" required min="1" placeholder="الدرجة من" class="custom-input"></div><div class="input-group"><input type="date" id="examDate" required class="custom-input"></div><button type="submit" class="save-btn exam-btn">إنشاء</button></form></div></div>
+    <div id="editExamModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('editExamModal')">&times;</span>
+            <h2 style="color: var(--exam-color); margin-bottom: 20px;">تعديل الامتحان ✏️</h2>
+            <form id="editExamForm">
+                <input type="hidden" id="editExamId">
+                <div class="input-group"><label>اسم الامتحان</label><input type="text" id="editExamName" required class="custom-input"></div>
+                <div class="input-group"><label>الدرجة من</label><input type="number" id="editExamMaxScore" required class="custom-input"></div>
+                <div class="input-group"><label>التاريخ</label><input type="date" id="editExamDate" required class="custom-input"></div>
+                <button type="submit" class="save-btn exam-btn">حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editHwModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('editHwModal')">&times;</span>
+            <h2 style="color: var(--hw-color); margin-bottom: 20px;">تعديل الواجب ✏️</h2>
+            <form id="editHwForm">
+                <input type="hidden" id="editHwId">
+                <div class="input-group"><label>اسم الواجب</label><input type="text" id="editHwName" required class="custom-input"></div>
+                <div class="input-group"><label>الدرجة من</label><input type="number" id="editHwMaxScore" required class="custom-input"></div>
+                <div class="input-group"><label>التاريخ</label><input type="date" id="editHwDate" required class="custom-input"></div>
+                <button type="submit" class="save-btn hw-btn">حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
     <div id="editSessionModal" class="modal"><div class="modal-content"><form id="editSessionForm"><input type="hidden" id="editSessionId"><div class="input-group"><input type="date" id="editSessionDate" class="custom-input"></div><div class="input-group"><input type="text" id="editSessionTopic" class="custom-input"></div><button type="submit" class="save-btn">حفظ</button></form></div></div>
-    <div id="editHwModal" class="modal"><div class="modal-content"><form id="editHwForm"><input type="hidden" id="editHwId"><div class="input-group"><input type="text" id="editHwName" class="custom-input"></div><div class="input-group"><input type="number" id="editHwMaxScore" class="custom-input"></div><div class="input-group"><input type="date" id="editHwDate" class="custom-input"></div><button type="submit" class="save-btn">حفظ</button></form></div></div>
-    <div id="editExamModal" class="modal"><div class="modal-content"><form id="editExamForm"><input type="hidden" id="editExamId"><div class="input-group"><input type="text" id="editExamName" class="custom-input"></div><div class="input-group"><input type="number" id="editExamMaxScore" class="custom-input"></div><div class="input-group"><input type="date" id="editExamDate" class="custom-input"></div><button type="submit" class="save-btn">حفظ</button></form></div></div>
     <div id="addStudentToGroupModal" class="modal"><div class="modal-content"><div style="display: flex; gap: 10px; margin-bottom: 20px;"><button class="theme-btn" onclick="switchAddStudentTab('existing')">طالب مسجل</button><button class="theme-btn" onclick="switchAddStudentTab('new')">طالب جديد</button></div><form id="addExistingStudentForm"><div class="input-group"><select id="existingStudentSelect" class="custom-input"></select></div><button type="submit" class="save-btn">إضافة للمجموعة</button></form><div id="newStudentTabContent" style="display: none;"><button type="button" class="save-btn" onclick="goToNewStudentForm()">انتقال لتسجيل طالب جديد</button></div></div></div>
 
 <!-- زرار فتح الشات -->
