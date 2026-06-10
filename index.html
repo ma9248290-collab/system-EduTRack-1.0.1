@@ -286,36 +286,41 @@
             </div>
 
             <div id="exams-view" class="view-section" style="display: none;">
-                <section id="exams-overview" class="students-section"><div class="section-header">
-    <h2>الامتحانات</h2>
-    <div style="display: flex; gap: 10px;">
-        <button class="add-btn" style="background-color: #3b82f6;" onclick="openOnlineExamBuilder()">+ امتحان إلكتروني 💻</button>
-        <button class="add-btn exam-btn" onclick="openModal('addExamModal')">+ امتحان ورقي 📝</button>
-    </div>
-</div><div class="stats-grid" id="exams-grid"></div></section>
-                <section id="exam-details-view" class="students-section" style="display: none;">
-                    <div class="section-header"><div><button class="theme-btn" onclick="backToExams()">🔙 عودة</button><h2 id="current-exam-title"></h2></div></div>
-                    <div class="barcode-scanner-box"><h4 style="color: var(--exam-color); margin-bottom: 10px;">📠 رصد سريع (بالكود أو الاسم)</h4><div style="display:flex;gap:10px;"><input type="text" id="examBarcodeCode" class="custom-input" style="flex:2" placeholder="كود الطالب أو اسمه..."><button class="icon-btn" onclick="startCameraScanner('examBarcodeCode')" style="margin: 0; background-color: var(--exam-color); color: white; border: none;">📷 كاميرا</button><button class="icon-btn voice-btn" id="voiceBtn_exam" onclick="toggleVoiceRecognition('exam', 'examBarcodeCode')">🎙️ رصد بالصوت</button><input type="number" id="examBarcodeGrade" class="custom-input" style="flex:1" placeholder="الدرجة"><button class="save-btn exam-btn" style="width:100px;margin:0;" onclick="submitExamBarcodeGrade()">رصد</button></div></div>
-                    <div class="table-container"><table class="students-table"><thead><tr><th>الكود</th><th>الطالب</th><th>الهاتف</th><th>السابق</th><th>الدرجة</th><th>يدوي</th></tr></thead><tbody id="grades-list"></tbody></table></div>
-                    <section id="online-exam-details-view" class="students-section" style="display: none;">
-                    <div class="section-header">
-                        <div>
-                            <button class="theme-btn" onclick="backToExams()">🔙 عودة</button>
-                            <h2 id="current-online-exam-title" style="color: #3b82f6; margin-top: 10px;"></h2>
-                        </div>
-                        <div class="header-actions">
-                            <span class="status-badge" id="online-exam-stats" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 15px;"></span>
-                        </div>
-                    </div>
-                    <div class="table-container">
-                        <table class="students-table">
-                            <thead><tr><th>كود الطالب</th><th>الاسم</th><th>المجموعة</th><th>الدرجة</th><th>الحالة</th><th>إجراء</th></tr></thead>
-                            <tbody id="online-exam-submissions-list"></tbody>
-                        </table>
-                    </div>
-                </section>
-                </section>
+    
+    <section id="exams-overview" class="students-section">
+        <div class="section-header">
+            <h2>الامتحانات</h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="add-btn" style="background-color: #3b82f6;" onclick="openOnlineExamBuilder()">+ امتحان إلكتروني 💻</button>
+                <button class="add-btn exam-btn" onclick="openModal('addExamModal')">+ امتحان ورقي 📝</button>
             </div>
+        </div>
+        <div class="stats-grid" id="exams-grid"></div>
+    </section>
+
+    <section id="exam-details-view" class="students-section" style="display: none;">
+        <div class="section-header"><div><button class="theme-btn" onclick="backToExams()">🔙 عودة</button><h2 id="current-exam-title"></h2></div></div>
+        <div class="barcode-scanner-box"><h4 style="color: var(--exam-color); margin-bottom: 10px;">📠 رصد سريع (بالكود أو الاسم)</h4><div style="display:flex;gap:10px;"><input type="text" id="examBarcodeCode" class="custom-input" style="flex:2" placeholder="كود الطالب أو اسمه..."><button class="icon-btn" onclick="startCameraScanner('examBarcodeCode')" style="margin: 0; background-color: var(--exam-color); color: white; border: none;">📷 كاميرا</button><button class="icon-btn voice-btn" id="voiceBtn_exam" onclick="toggleVoiceRecognition('exam', 'examBarcodeCode')">🎙️ رصد بالصوت</button><input type="number" id="examBarcodeGrade" class="custom-input" style="flex:1" placeholder="الدرجة"><button class="save-btn exam-btn" style="width:100px;margin:0;" onclick="submitExamBarcodeGrade()">رصد</button></div></div>
+        <div class="table-container"><table class="students-table"><thead><tr><th>الكود</th><th>الطالب</th><th>الهاتف</th><th>السابق</th><th>الدرجة</th><th>يدوي</th></tr></thead><tbody id="grades-list"></tbody></table></div>
+    </section> <section id="online-exam-details-view" class="students-section" style="display: none;">
+        <div class="section-header">
+            <div>
+                <button class="theme-btn" onclick="backToExams()">🔙 عودة</button>
+                <h2 id="current-online-exam-title" style="color: #3b82f6; margin-top: 10px;"></h2>
+            </div>
+            <div class="header-actions">
+                <span class="status-badge" id="online-exam-stats" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 15px;"></span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="students-table">
+                <thead><tr><th>كود الطالب</th><th>الاسم</th><th>المجموعة</th><th>الدرجة</th><th>الحالة</th><th>إجراء</th></tr></thead>
+                <tbody id="online-exam-submissions-list"></tbody>
+            </table>
+        </div>
+    </section>
+
+</div>
 
             <div id="atrisk-view" class="view-section" style="display: none;">
                 <section class="students-section"><div class="section-header"><h2>الطلاب تحت الملاحظة (خطر) 🚨</h2><button class="theme-btn" onclick="renderAtRiskStudents()">🔄 تحديث التحليل</button></div><p style="color: var(--text-muted); margin-bottom: 20px;">الطلاب الذين غابوا في آخر حصتين، أو رسبوا في آخر امتحانين.</p><div class="table-container"><table class="students-table"><thead><tr><th>الكود</th><th>اسم الطالب</th><th>المجموعة</th><th>المشكلة</th><th>إجراء</th></tr></thead><tbody id="atrisk-list"></tbody></table></div></section>
