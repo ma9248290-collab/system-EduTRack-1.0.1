@@ -297,6 +297,23 @@
                     <div class="section-header"><div><button class="theme-btn" onclick="backToExams()">🔙 عودة</button><h2 id="current-exam-title"></h2></div></div>
                     <div class="barcode-scanner-box"><h4 style="color: var(--exam-color); margin-bottom: 10px;">📠 رصد سريع (بالكود أو الاسم)</h4><div style="display:flex;gap:10px;"><input type="text" id="examBarcodeCode" class="custom-input" style="flex:2" placeholder="كود الطالب أو اسمه..."><button class="icon-btn" onclick="startCameraScanner('examBarcodeCode')" style="margin: 0; background-color: var(--exam-color); color: white; border: none;">📷 كاميرا</button><button class="icon-btn voice-btn" id="voiceBtn_exam" onclick="toggleVoiceRecognition('exam', 'examBarcodeCode')">🎙️ رصد بالصوت</button><input type="number" id="examBarcodeGrade" class="custom-input" style="flex:1" placeholder="الدرجة"><button class="save-btn exam-btn" style="width:100px;margin:0;" onclick="submitExamBarcodeGrade()">رصد</button></div></div>
                     <div class="table-container"><table class="students-table"><thead><tr><th>الكود</th><th>الطالب</th><th>الهاتف</th><th>السابق</th><th>الدرجة</th><th>يدوي</th></tr></thead><tbody id="grades-list"></tbody></table></div>
+                    <section id="online-exam-details-view" class="students-section" style="display: none;">
+                    <div class="section-header">
+                        <div>
+                            <button class="theme-btn" onclick="backToExams()">🔙 عودة</button>
+                            <h2 id="current-online-exam-title" style="color: #3b82f6; margin-top: 10px;"></h2>
+                        </div>
+                        <div class="header-actions">
+                            <span class="status-badge" id="online-exam-stats" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 15px;"></span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="students-table">
+                            <thead><tr><th>كود الطالب</th><th>الاسم</th><th>المجموعة</th><th>الدرجة</th><th>الحالة</th><th>إجراء</th></tr></thead>
+                            <tbody id="online-exam-submissions-list"></tbody>
+                        </table>
+                    </div>
+                </section>
                 </section>
             </div>
 
@@ -747,15 +764,14 @@
                 <form id="buildOnlineExamForm">
                     <div style="background: var(--hover-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
                         <div class="form-grid">
-                            <div class="input-group">
+                            <div class="input-group full-width">
                                 <label>عنوان الامتحان</label>
                                 <input type="text" id="onlineExamTitle" required class="custom-input" placeholder="مثال: امتحان الباب الأول">
                             </div>
-                            <div class="input-group">
-                                <label>المجموعة المستهدفة</label>
-                                <select id="onlineExamGroup" required class="custom-input">
-                                    <option value="">اختر المجموعة...</option>
-                                    </select>
+                            <div class="input-group full-width">
+                                <label>المجموعات المستهدفة (يمكن اختيار أكثر من مجموعة)</label>
+                                <div id="onlineExamGroupsContainer" style="display: flex; gap: 15px; flex-wrap: wrap; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); max-height: 120px; overflow-y: auto;">
+                                    </div>
                             </div>
                             <div class="input-group">
                                 <label>مدة الامتحان (بالدقائق)</label>
@@ -764,28 +780,39 @@
                             <div class="input-group" style="display: flex; align-items: flex-end; padding-bottom: 10px;">
                                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px; font-weight: bold; color: var(--success-color);">
                                     <input type="checkbox" id="onlineExamAutoShowResult" style="width: 20px; height: 20px; accent-color: var(--success-color);" checked>
-                                    إظهار النتيجة للطالب فوراً (التصحيح التلقائي)
+                                    إظهار النتيجة للطالب فوراً
                                 </label>
                             </div>
                         </div>
                     </div>
-
-                    <div id="examQuestionsContainer">
-                        </div>
-
+                    <div id="examQuestionsContainer"></div>
                     <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px dashed var(--primary-color);">
                         <p style="width: 100%; margin-bottom: 10px; font-weight: bold; color: var(--text-muted);">➕ أضف سؤالاً جديداً:</p>
                         <button type="button" class="theme-btn" style="flex: 1; border-color: #3b82f6; color: #3b82f6;" onclick="addQuestionBlock('mcq')">🔘 اختيار من متعدد</button>
                         <button type="button" class="theme-btn" style="flex: 1; border-color: #10b981; color: #10b981;" onclick="addQuestionBlock('tf')">✔️ صح وخطأ</button>
                         <button type="button" class="theme-btn" style="flex: 1; border-color: #f59e0b; color: #f59e0b;" onclick="addQuestionBlock('blank')">✍️ أكمل الفراغ</button>
-                        <button type="button" class="theme-btn" style="flex: 1; border-color: #8b5cf6; color: #8b5cf6;" onclick="addQuestionBlock('essay')">📝 مقالي (تصحيح يدوي)</button>
+                        <button type="button" class="theme-btn" style="flex: 1; border-color: #8b5cf6; color: #8b5cf6;" onclick="addQuestionBlock('essay')">📝 مقالي</button>
                     </div>
-
                 </form>
             </div>
-            
             <div style="padding-top: 15px; border-top: 1px solid var(--border-color); margin-top: 10px;">
                 <button type="button" class="save-btn" style="width: 100%; font-size: 18px;" onclick="saveOnlineExam()">🚀 نشر الامتحان الإلكتروني</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gradeOnlineExamModal" class="modal">
+        <div class="modal-content" style="width: 700px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <span class="close-btn" onclick="closeModal('gradeOnlineExamModal')">&times;</span>
+            <h2 style="color: var(--primary-color); margin-bottom: 15px;">📝 مراجعة وتقييم إجابات الطالب</h2>
+            <div style="display: flex; justify-content: space-between; background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <strong id="gradeStudentName" style="font-size: 18px;"></strong>
+                <span id="gradeStudentScore" style="color: var(--exam-color); font-weight: bold; font-size: 18px;"></span>
+            </div>
+            <div id="studentAnswersContainer" style="overflow-y: auto; padding-right: 10px; flex: 1;">
+                </div>
+            <div style="padding-top: 15px; margin-top: 10px;">
+                <button class="save-btn" onclick="saveManualGrades()">💾 حفظ الدرجات والتحديث</button>
             </div>
         </div>
     </div>

@@ -185,7 +185,12 @@
             container.innerHTML = "";
 
             // فلترة الامتحانات اللي تخص مجموعة الطالب ومفتوحة
-            let myExams = allOnlineExams.filter(e => e && e.group === currentStudent.group && e.status === "open");
+           // فلترة الامتحانات اللي تخص مجموعة الطالب ومفتوحة (يدعم لو الامتحان لمجموعة أو أكثر)
+            let myExams = allOnlineExams.filter(e => {
+                if(!e || e.status !== "open") return false;
+                if(Array.isArray(e.group)) return e.group.includes(currentStudent.group);
+                return e.group === currentStudent.group; // لو امتحان قديم متسجل كمجموعة واحدة
+            });
 
             if (myExams.length === 0) {
                 container.innerHTML = `<div style="text-align:center; padding: 20px; color: #6b7280; background: #f9fafb; border-radius: 12px; border: 1px dashed #d1d5db;">لا توجد امتحانات إلكترونية متاحة حالياً.</div>`;
