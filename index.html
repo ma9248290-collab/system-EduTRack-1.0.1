@@ -120,14 +120,16 @@
                 <li id="nav-attendance"><a href="#" onclick="switchPage('attendance')">سجل الحضور 📋</a></li>
                 <li id="nav-homework"><a href="#" onclick="switchPage('homework')">سجل الواجبات 📝</a></li>
                 <li id="nav-exams"><a href="#" onclick="switchPage('exams')">الامتحانات 📝</a></li>
+                <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
+                <li id="nav-reports"><a href="#" onclick="switchPage('reports')">التقارير الشاملة 📈</a></li>
                 <li id="nav-leaderboard"><a href="#" onclick="switchPage('leaderboard')">لوحة الشرف 🏆</a></li>
                 <li id="nav-atrisk"><a href="#" onclick="switchPage('atrisk')" style="color: var(--danger-color);">تحت الملاحظة 🚨</a></li>
                 <li id="nav-broadcast"><a href="#" onclick="switchPage('broadcast')">الإرسال الجماعي 📢</a></li>
-                <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
                 <li id="nav-finance" class="admin-only"><a href="#" onclick="switchPage('finance')">الخزنة والماليات 💰</a></li>
                 <li id="nav-affiliate" style="margin-top: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px dashed #10b981;">
     <a href="#" onclick="switchPage('affiliate')" style="color: #10b981; font-weight: 900;">نظام الإحالات 💸</a>
 </li>
+                <li id="nav-logs" class="admin-only"><a href="#" onclick="switchPage('logs')">سجل حركات النظام 🕵️‍♂️</a></li>
                 <li id="nav-backup" class="admin-only"><a href="#" onclick="switchPage('backup')">لوحة الإدارة ⚙️</a></li>
                 <li style="margin-top: 20px;"><a href="#" onclick="openModal('settingsModal')" style="color: #8b5cf6; border: 1px solid #8b5cf6; text-align: center;">إعدادات السيرفر ⚙️</a></li>
                 <li style="margin-top: 10px;"><a href="#" onclick="logout()" style="color: var(--danger-color); border: 1px solid var(--danger-color); text-align: center;">تسجيل الخروج 🚪</a></li>
@@ -649,6 +651,85 @@
         
         <button class="save-btn" style="width: 100%; font-size: 18px; margin-top: 20px;">تأكيد الدفع</button>
     </div>
+</div>
+
+
+        <div id="reports-view" class="view-section" style="display: none;">
+    <section class="students-section">
+        <div class="section-header">
+            <h2>استخراج التقارير 📊</h2>
+        </div>
+        
+        <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+            <div class="admin-grid-2" style="margin-bottom: 15px;">
+                <div class="input-group" style="margin: 0;">
+                    <label>نوع التقرير:</label>
+                    <select id="reportType" class="custom-input">
+                        <option value="attendance">تقرير الغياب والحضور</option>
+                        <option value="exams">تقرير درجات الامتحانات</option>
+                        <option value="homework">تقرير درجات الواجبات</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>المجموعة:</label>
+                    <select id="reportGroup" class="custom-input">
+                        <option value="all">جميع المجموعات</option>
+                        </select>
+                </div>
+            </div>
+            
+            <div class="admin-grid-2">
+                <div class="input-group" style="margin: 0;">
+                    <label>من تاريخ:</label>
+                    <input type="date" id="reportDateFrom" class="custom-input">
+                </div>
+                <div class="input-group" style="margin: 0;">
+                    <label>إلى تاريخ:</label>
+                    <input type="date" id="reportDateTo" class="custom-input">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="save-btn" style="flex: 2; margin: 0;" onclick="generateAdvancedReport()">⚙️ استخراج التقرير</button>
+                <button class="theme-btn" style="flex: 1; margin: 0; background: #10b981; color: white; border: none; font-weight: bold;" onclick="exportReportToExcel()">📥 تحميل شيت إكسيل</button>
+            </div>
+        </div>
+
+        <div class="table-container" style="overflow-x: auto; max-height: 500px;">
+            <table class="students-table" id="advanced-report-table">
+                <thead id="report-table-head">
+                    <tr><th>قم بتحديد الفلاتر واضغط استخراج التقرير</th></tr>
+                </thead>
+                <tbody id="report-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div id="logs-view" class="view-section admin-only" style="display: none;">
+    <section class="students-section">
+        <div class="section-header">
+            <div>
+                <h2 style="color: var(--primary-color);">سجل حركات النظام 🕵️‍♂️</h2>
+                <p style="color: var(--text-muted); font-size: 14px;">يحتفظ النظام بآخر 500 حركة تمت لضمان السرعة.</p>
+            </div>
+            <button class="icon-btn danger" onclick="clearSystemLogs()">🗑️ مسح السجل</button>
+        </div>
+        
+        <div class="table-container" style="max-height: 600px; overflow-y: auto;">
+            <table class="students-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">التاريخ والوقت</th>
+                        <th style="width: 15%;">نوع الحركة</th>
+                        <th>التفاصيل</th>
+                    </tr>
+                </thead>
+                <tbody id="system-logs-body">
+                    </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 
         </main>
