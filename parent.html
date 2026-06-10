@@ -3,185 +3,360 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة ولي الأمر | EduTrack</title>
+    <title>بوابة ولي الأمر والطالب | EduTrack</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #f3f4f6; margin: 0; color: #1f2937; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px 0; }
-        .container { background: white; width: 95%; max-width: 500px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); box-sizing: border-box; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); box-sizing: border-box; }
         .logo { text-align: center; color: #1e3a8a; font-size: 28px; font-weight: bold; margin-bottom: 5px; }
         .subtitle { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 30px; }
         .input-group { margin-bottom: 20px; }
         .input-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
-        .custom-input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .custom-input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; box-sizing: border-box; font-family: 'Cairo'; }
         .btn { width: 100%; background: #10b981; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn:hover { background: #059669; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
         .error { color: #ef4444; text-align: center; font-weight: bold; margin-top: 15px; display: none; }
         
         /* شاشة النتيجة */
-        #result-screen { display: none; }
         .student-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px dashed #e5e7eb; }
         .stat-box { display: flex; justify-content: space-between; padding: 15px; background: #fffbeb; border-radius: 8px; border-right: 4px solid #f59e0b; margin-top: 10px; }
         
-        /* الجداول والتفاصيل */
         .section-title { font-size: 16px; font-weight: bold; color: #1e3a8a; margin-top: 25px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .scrollable-section { max-height: 250px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .scrollable-section { max-height: 250px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 20px;}
         .detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .detail-table th, .detail-table td { padding: 12px 10px; text-align: right; border-bottom: 1px solid #f3f4f6; }
         .detail-table th { background: #f9fafb; color: #4b5563; position: sticky; top: 0; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .detail-table tr:last-child td { border-bottom: none; }
         
-        /* الشارات (Badges) */
         .badge-present { color: #059669; background: #d1fae5; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
         .badge-absent { color: #dc2626; background: #fee2e2; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
         .badge-none { color: #64748b; font-size: 12px; }
         .score-box { font-weight: bold; color: #1e3a8a; font-size: 14px; }
         .score-max { font-size: 11px; color: #94a3b8; }
+
+        /* ستايل الامتحانات الإلكترونية */
+        .exam-card { border: 1px solid #d1d5db; border-radius: 12px; padding: 15px; margin-bottom: 15px; background: #f9fafb; display: flex; justify-content: space-between; align-items: center;}
+        .q-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .q-title { font-size: 16px; font-weight: bold; color: #1e3a8a; margin-bottom: 15px; }
+        .q-options { display: flex; flex-direction: column; gap: 10px; }
+        .q-option-label { display: flex; align-items: center; gap: 10px; background: #fff; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 15px;}
+        .q-option-label:hover { border-color: #3b82f6; background: #eff6ff; }
+        .q-option-label input[type="radio"] { width: 18px; height: 18px; accent-color: #3b82f6; }
+        .timer-box { background: #fee2e2; color: #dc2626; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 20px; text-align: center; margin-bottom: 20px; border: 1px dashed #ef4444;}
     </style>
 </head>
 <body>
 
     <div class="container" id="login-screen">
         <div class="logo">EduTrack Portal</div>
-        <div class="subtitle">بوابة متابعة أولياء الأمور</div>
+        <div class="subtitle">بوابة الامتحانات ومتابعة أولياء الأمور</div>
         
         <div class="input-group">
             <label>كود الطالب</label>
             <input type="text" id="studentCode" class="custom-input" placeholder="أدخل كود الطالب">
         </div>
         <div class="input-group">
-            <label>رقم هاتف ولي الأمر</label>
+            <label>رقم هاتف ولي الأمر (للتأكيد)</label>
             <input type="text" id="parentPhone" class="custom-input" placeholder="أدخل رقمك المسجل بالسنتر">
         </div>
-        <button class="btn" onclick="fetchStudentData()">عرض التقرير 📊</button>
+        <button class="btn" onclick="fetchStudentData()">تسجيل الدخول 🚀</button>
         <div id="error-msg" class="error">البيانات غير صحيحة أو غير مسجلة!</div>
     </div>
 
-    <div class="container" id="result-screen">
+    <div class="container" id="result-screen" style="display: none;">
         <div class="student-header">
             <h2 id="s-name" style="margin: 0; color: #1e3a8a;">اسم الطالب</h2>
             <p id="s-group" style="margin: 5px 0 0 0; color: #6b7280; font-weight: bold;">المجموعة</p>
-            
             <div class="stat-box">
                 <span style="font-weight: bold; color: #4b5563;">🌟 نقاط التميز (السلوك)</span>
                 <span id="s-behavior" style="font-weight: bold; font-size: 18px; color: #f59e0b;">0</span>
             </div>
         </div>
+
+        <button class="btn" style="background: #3b82f6; margin-bottom: 20px; font-size: 18px;" onclick="showOnlineExams()">💻 الدخول للامتحانات الإلكترونية</button>
         
         <div class="section-title">📅 سجل الحضور والغياب</div>
         <div class="scrollable-section">
-            <table class="detail-table" id="attendance-details">
-                </table>
+            <table class="detail-table" id="attendance-details"></table>
         </div>
 
-        <div class="section-title">📝 سجل الامتحانات</div>
+        <div class="section-title">📝 سجل الامتحانات والواجبات (الورقية)</div>
         <div class="scrollable-section">
-            <table class="detail-table" id="exams-details">
-                </table>
-        </div>
-
-        <div class="section-title">📚 سجل الواجبات</div>
-        <div class="scrollable-section">
-            <table class="detail-table" id="hw-details">
-                </table>
+            <table class="detail-table" id="exams-details"></table>
         </div>
         
-        <button class="btn" style="margin-top: 25px; background: #64748b;" onclick="location.reload()">عودة للبحث 🔙</button>
+        <button class="btn" style="background: #64748b;" onclick="location.reload()">تسجيل خروج 🚪</button>
+    </div>
+
+    <div class="container" id="online-exams-list-screen" style="display: none;">
+        <div class="student-header"><h2>الامتحانات الإلكترونية 💻</h2></div>
+        <div id="available-exams-container">
+            </div>
+        <button class="btn" style="margin-top: 15px; background: #64748b;" onclick="backToProfile()">🔙 عودة للتقرير الشامل</button>
+    </div>
+
+    <div class="container" id="active-exam-screen" style="display: none; max-width: 800px;">
+        <h2 id="active-exam-title" style="text-align: center; color: #1e3a8a; margin-top: 0;">اسم الامتحان</h2>
+        <div class="timer-box">⏱️ الوقت المتبقي: <span id="exam-timer">00:00</span></div>
+        
+        <div id="exam-questions-render">
+            </div>
+
+        <button class="btn" id="submitExamBtn" style="margin-top: 25px;" onclick="submitOnlineExam()">✅ تسليم الإجابات</button>
     </div>
 
     <script>
+        let globalTeacherId = "";
+        let currentStudent = null;
+        let allOnlineExams = [];
+        let currentExam = null;
+        let examTimerInterval = null;
+
         async function fetchStudentData() {
             const code = document.getElementById("studentCode").value.trim();
             const phone = document.getElementById("parentPhone").value.trim();
             const errorMsg = document.getElementById("error-msg");
-            
             const urlParams = new URLSearchParams(window.location.search);
-            const teacherId = urlParams.get('id');
+            globalTeacherId = urlParams.get('id');
 
-            if (!code || !phone || !teacherId) {
-                errorMsg.style.display = "block";
-                errorMsg.innerText = !teacherId ? "رابط غير صالح! يرجى استخدام الرابط المرسل من المدرس." : "يرجى إدخال الكود ورقم الهاتف!";
-                return;
+            if (!code || !phone || !globalTeacherId) {
+                errorMsg.style.display = "block"; errorMsg.innerText = "يرجى إدخال البيانات والتأكد من صحة الرابط!"; return;
             }
 
             errorMsg.style.display = "none";
-            document.querySelector('.btn').innerText = "جاري البحث... ⏳";
+            document.querySelector('#login-screen .btn').innerText = "جاري التحميل... ⏳";
 
             try {
-                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${teacherId}/data.json`);
+                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await res.json();
 
                 if (!data || !data.students) throw new Error();
 
-                const student = data.students.find(s => s && s.code === code && s.parentPhone === phone);
-                
-                if (!student) {
-                    errorMsg.style.display = "block";
-                    errorMsg.innerText = "هذا الطالب غير مسجل لدينا، أو البيانات غير متطابقة!";
-                    document.querySelector('.btn').innerText = "عرض التقرير 📊";
+                currentStudent = data.students.find(s => s && s.code === code && s.parentPhone === phone);
+                if (!currentStudent) {
+                    errorMsg.style.display = "block"; errorMsg.innerText = "بيانات الطالب غير صحيحة!";
+                    document.querySelector('#login-screen .btn').innerText = "تسجيل الدخول 🚀";
                     return;
                 }
 
-                // --- تعبئة البيانات الأساسية ---
-                document.getElementById("s-name").innerText = student.name;
-                document.getElementById("s-group").innerText = student.group;
-                document.getElementById("s-behavior").innerText = student.behaviorPoints || 0;
+                allOnlineExams = data.onlineExams || []; // تخزين الامتحانات الإلكترونية
 
-                // --- 1. بناء جدول الحضور ---
-                let attHtml = `<tr><th>التاريخ</th><th>الحصة</th><th>الحالة</th></tr>`;
-                // جلب حصص المجموعة وعكسها عشان الأحدث يظهر فوق
-                let groupSessions = (data.classSessions || []).filter(s => s && s.group === student.group).reverse(); 
-                if (groupSessions.length === 0) {
-                    attHtml += `<tr><td colspan="3" style="text-align:center; color:#6b7280;">لا توجد حصص مسجلة</td></tr>`;
-                } else {
-                    groupSessions.forEach(s => {
-                        let status = s.attendance[student.phone];
-                        let badge = status === 'present' ? `<span class="badge-present">حاضر ✓</span>` : 
-                                   (status === 'absent' ? `<span class="badge-absent">غائب ✗</span>` : `<span class="badge-none">--</span>`);
-                        attHtml += `<tr><td>${s.date}</td><td>${s.topic || 'حصة'}</td><td>${badge}</td></tr>`;
-                    });
-                }
+                // تعبئة التقرير
+                document.getElementById("s-name").innerText = currentStudent.name;
+                document.getElementById("s-group").innerText = currentStudent.group;
+                document.getElementById("s-behavior").innerText = currentStudent.behaviorPoints || 0;
+
+                // الجداول (مدمجة ومختصرة عشان نوفر مساحة)
+                let attHtml = `<tr><th>التاريخ</th><th>الموضوع</th><th>الحالة</th></tr>`;
+                (data.classSessions || []).filter(s => s && s.group === currentStudent.group).reverse().forEach(s => {
+                    let stat = s.attendance[currentStudent.phone];
+                    let badge = stat === 'present' ? `<span class="badge-present">حاضر ✓</span>` : (stat === 'absent' ? `<span class="badge-absent">غائب ✗</span>` : `<span class="badge-none">--</span>`);
+                    attHtml += `<tr><td>${s.date}</td><td>${s.topic || 'حصة'}</td><td>${badge}</td></tr>`;
+                });
                 document.getElementById("attendance-details").innerHTML = attHtml;
 
-                // --- 2. بناء جدول الامتحانات ---
-                let examHtml = `<tr><th>التاريخ</th><th>الامتحان</th><th>الدرجة</th></tr>`;
-                let groupExams = (data.exams || []).filter(e => e && e.group === student.group).reverse();
-                if (groupExams.length === 0) {
-                    examHtml += `<tr><td colspan="3" style="text-align:center; color:#6b7280;">لا توجد امتحانات مسجلة</td></tr>`;
-                } else {
-                    groupExams.forEach(e => {
-                        let grade = e.grades[student.phone];
-                        let gradeText = grade !== undefined ? 
-                            `<span class="score-box">${grade} <span class="score-max">/ ${e.maxScore}</span></span>` : 
-                            `<span class="badge-none">لم يمتحن</span>`;
-                        examHtml += `<tr><td>${e.date}</td><td>${e.name}</td><td>${gradeText}</td></tr>`;
-                    });
-                }
-                document.getElementById("exams-details").innerHTML = examHtml;
+                let exHtml = `<tr><th>التاريخ</th><th>التقييم (ورقي)</th><th>الدرجة</th></tr>`;
+                (data.exams || []).concat(data.homeworks || []).filter(e => e && e.group === currentStudent.group).sort((a,b)=> new Date(b.date) - new Date(a.date)).forEach(e => {
+                    let grade = e.grades[currentStudent.phone];
+                    let text = grade !== undefined ? `<span class="score-box">${grade} <span class="score-max">/ ${e.maxScore}</span></span>` : `<span class="badge-none">لم يرصد</span>`;
+                    exHtml += `<tr><td>${e.date}</td><td>${e.name}</td><td>${text}</td></tr>`;
+                });
+                document.getElementById("exams-details").innerHTML = exHtml;
 
-                // --- 3. بناء جدول الواجبات ---
-                let hwHtml = `<tr><th>التاريخ</th><th>الواجب</th><th>الدرجة</th></tr>`;
-                let groupHw = (data.homeworks || []).filter(h => h && h.group === student.group).reverse();
-                if (groupHw.length === 0) {
-                    hwHtml += `<tr><td colspan="3" style="text-align:center; color:#6b7280;">لا توجد واجبات مسجلة</td></tr>`;
-                } else {
-                    groupHw.forEach(h => {
-                        let grade = h.grades[student.phone];
-                        let gradeText = grade !== undefined ? 
-                            `<span class="score-box">${grade} <span class="score-max">/ ${h.maxScore}</span></span>` : 
-                            `<span class="badge-none">لم يسلم</span>`;
-                        hwHtml += `<tr><td>${h.date}</td><td>${h.name}</td><td>${gradeText}</td></tr>`;
-                    });
-                }
-                document.getElementById("hw-details").innerHTML = hwHtml;
-
-                // إظهار النتيجة
                 document.getElementById("login-screen").style.display = "none";
                 document.getElementById("result-screen").style.display = "block";
 
             } catch (e) {
-                errorMsg.style.display = "block";
-                errorMsg.innerText = "حدث خطأ في الاتصال بالسحابة!";
-                document.querySelector('.btn').innerText = "عرض التقرير 📊";
+                errorMsg.style.display = "block"; errorMsg.innerText = "خطأ في الاتصال بالخادم!";
+                document.querySelector('#login-screen .btn').innerText = "تسجيل الدخول 🚀";
+            }
+        }
+
+        // =====================================
+        // 💻 دوال الامتحانات الإلكترونية
+        // =====================================
+
+        function showOnlineExams() {
+            document.getElementById("result-screen").style.display = "none";
+            document.getElementById("online-exams-list-screen").style.display = "block";
+            
+            const container = document.getElementById("available-exams-container");
+            container.innerHTML = "";
+
+            // فلترة الامتحانات اللي تخص مجموعة الطالب ومفتوحة
+            let myExams = allOnlineExams.filter(e => e && e.group === currentStudent.group && e.status === "open");
+
+            if (myExams.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 20px; color: #6b7280; background: #f9fafb; border-radius: 12px; border: 1px dashed #d1d5db;">لا توجد امتحانات إلكترونية متاحة حالياً.</div>`;
+                return;
+            }
+
+            myExams.forEach(exam => {
+                // التأكد إذا كان الطالب قد أتم الامتحان مسبقاً
+                let isSubmitted = exam.submissions && exam.submissions[currentStudent.phone];
+                
+                let actionBtn = "";
+                if (isSubmitted) {
+                    let scoreText = exam.autoShowResult ? `${isSubmitted.score} / ${exam.totalScore}` : "قيد المراجعة";
+                    actionBtn = `<div style="text-align:center;"><span style="color:#059669; font-weight:bold; display:block; font-size:12px;">تم التسليم ✅</span><span style="font-weight:bold; color:#1e3a8a;">${scoreText}</span></div>`;
+                } else {
+                    actionBtn = `<button class="btn" style="width: auto; padding: 8px 15px; font-size: 14px;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
+                }
+
+                container.innerHTML += `
+                    <div class="exam-card">
+                        <div>
+                            <h3 style="margin:0 0 5px 0; color:#1e3a8a;">${exam.title}</h3>
+                            <p style="margin:0; font-size:13px; color:#6b7280;">⏱️ المدة: ${exam.duration} دقيقة | 🎯 المجموع: ${exam.totalScore} درجة</p>
+                        </div>
+                        ${actionBtn}
+                    </div>
+                `;
+            });
+        }
+
+        function backToProfile() {
+            document.getElementById("online-exams-list-screen").style.display = "none";
+            document.getElementById("result-screen").style.display = "block";
+        }
+
+        function startExam(examId) {
+            currentExam = allOnlineExams.find(e => e.id === examId);
+            if(!currentExam) return;
+
+            if(!confirm(`هل أنت مستعد لبدء "${currentExam.title}"؟\nمدة الامتحان ${currentExam.duration} دقيقة، ولن تتمكن من الإيقاف بعد البدء.`)) return;
+
+            document.getElementById("online-exams-list-screen").style.display = "none";
+            document.getElementById("active-exam-screen").style.display = "block";
+            document.getElementById("active-exam-title").innerText = currentExam.title;
+
+            renderQuestions();
+            startTimer(currentExam.duration);
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById("exam-questions-render");
+            container.innerHTML = "";
+
+            currentExam.questions.forEach((q, index) => {
+                let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} <span style="color:#94a3b8; font-size:13px; font-weight:normal;">(${q.points} درجات)</span></div>`;
+                
+                if (q.type === 'mcq') {
+                    qHtml += `<div class="q-options">`;
+                    q.options.forEach((opt, optIndex) => {
+                        qHtml += `<label class="q-option-label"><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label>`;
+                    });
+                    qHtml += `</div>`;
+                } 
+                else if (q.type === 'tf') {
+                    qHtml += `
+                        <div class="q-options">
+                            <label class="q-option-label"><input type="radio" name="ans_${q.id}" value="true"> ✔️ عبارة صحيحة</label>
+                            <label class="q-option-label"><input type="radio" name="ans_${q.id}" value="false"> ❌ عبارة خاطئة</label>
+                        </div>`;
+                }
+                else if (q.type === 'blank') {
+                    qHtml += `<input type="text" id="ans_${q.id}" class="custom-input" placeholder="اكتب إجابتك هنا...">`;
+                }
+                else if (q.type === 'essay') {
+                    qHtml += `<textarea id="ans_${q.id}" class="custom-input" rows="4" placeholder="اكتب إجابتك المقالية بالتفصيل هنا..."></textarea>`;
+                }
+
+                qHtml += `</div>`;
+                container.innerHTML += qHtml;
+            });
+        }
+
+        function startTimer(durationMinutes) {
+            let timeInSeconds = durationMinutes * 60;
+            const timerDisplay = document.getElementById('exam-timer');
+            
+            examTimerInterval = setInterval(() => {
+                let m = Math.floor(timeInSeconds / 60);
+                let s = timeInSeconds % 60;
+                timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+                
+                if (timeInSeconds <= 0) {
+                    clearInterval(examTimerInterval);
+                    alert("انتهى وقت الامتحان! سيتم تسليم إجاباتك تلقائياً ⏳.");
+                    submitOnlineExam(true);
+                }
+                timeInSeconds--;
+            }, 1000);
+        }
+
+        async function submitOnlineExam(isTimeOut = false) {
+            if (!isTimeOut) {
+                if (!confirm("هل أنت متأكد من تسليم الامتحان نهائياً؟ لا يمكنك التعديل بعد التسليم.")) return;
+            }
+            
+            clearInterval(examTimerInterval);
+            const btn = document.getElementById("submitExamBtn");
+            btn.innerText = "جاري رفع الإجابات... ⏳";
+            btn.disabled = true;
+
+            let totalScore = 0;
+            let studentAnswers = {};
+            
+            // 🤖 التصحيح التلقائي (Auto-Grading)
+            currentExam.questions.forEach(q => {
+                let qScore = 0;
+                if (q.type === 'mcq') {
+                    let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`);
+                    let ansVal = selected ? parseInt(selected.value) : -1;
+                    studentAnswers[q.id] = ansVal;
+                    if (ansVal === q.correctAnswerIndex) qScore = q.points;
+                } 
+                else if (q.type === 'tf') {
+                    let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`);
+                    let ansVal = selected ? selected.value : "";
+                    studentAnswers[q.id] = ansVal;
+                    if (ansVal === String(q.correctAnswer)) qScore = q.points;
+                } 
+                else if (q.type === 'blank') {
+                    let ansVal = document.getElementById(`ans_${q.id}`).value.trim();
+                    studentAnswers[q.id] = ansVal;
+                    if (ansVal === q.correctAnswerText) qScore = q.points;
+                } 
+                else if (q.type === 'essay') {
+                    let ansVal = document.getElementById(`ans_${q.id}`).value.trim();
+                    studentAnswers[q.id] = ansVal;
+                    qScore = 0; // المقالي بيستنى المدرس يصححه ويديله الدرجة
+                }
+                totalScore += qScore;
+            });
+
+            // تجهيز بيانات التسليم
+            const examIndex = allOnlineExams.findIndex(e => e.id === currentExam.id);
+            const submissionData = {
+                score: totalScore,
+                maxScore: currentExam.totalScore,
+                answers: studentAnswers,
+                timestamp: new Date().toISOString()
+            };
+
+            // الرفع للفايربيز مباشرة في حساب المدرس
+            try {
+                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/onlineExams/${examIndex}/submissions/${currentStudent.phone}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(submissionData)
+                });
+
+                let msg = `تم تسليم الامتحان بنجاح! 🎉\n`;
+                if (currentExam.autoShowResult) {
+                    msg += `نتيجتك المبدئية (بدون الأسئلة المقالية إن وجدت) هي: ${totalScore} / ${currentExam.totalScore}`;
+                } else {
+                    msg += `ستظهر نتيجتك فور اعتمادها من قِبل المدرس.`;
+                }
+                
+                alert(msg);
+                location.reload(); // إعادة تحميل لرجوع الشاشة وعرض النتيجة
+            } catch (e) {
+                alert("حدث خطأ أثناء الاتصال بالخادم، يرجى المحاولة مرة أخرى.");
+                btn.innerText = "✅ تسليم الإجابات";
+                btn.disabled = false;
             }
         }
     </script>
