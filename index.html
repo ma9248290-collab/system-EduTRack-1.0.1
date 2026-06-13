@@ -64,7 +64,7 @@
         <!-- شاشة إيقاف الترخيص (Kill Switch) -->
     <div id="suspended-screen" class="login-overlay" style="display: none; z-index: 99999; background-color: rgba(20, 0, 0, 0.95);">
         <div class="login-card" style="width: 450px; text-align: center; border-top: 5px solid var(--danger-color);">
-            <div style="font-size: 60px; animation: bounceIn 1s infinite;">🛑</div>
+            <div class="octo-mascot octo-error" style="margin: 0 auto 15px auto; display: block; width: 100px; height: 100px;"></div>
             <h2 style="color: var(--danger-color); margin: 15px 0;">تم إيقاف النسخة!</h2>
             <p style="font-size: 16px; color: var(--text-muted); margin-bottom: 20px;">عفواً، تم إيقاف ترخيص استخدام هذا النظام من قبل الإدارة العليا. يرجى التواصل مع الدعم الفني أو تجديد الاشتراك لاستعادة الوصول لبياناتك.</p>
             <p style="font-size: 14px; color: var(--primary-color); font-weight: bold;">تواصل معنا: 01288599712</p>
@@ -74,6 +74,10 @@
 
     <div id="login-screen" class="login-overlay">
         <div class="login-card">
+        <div style="text-align: center; margin-top: 10px; margin-bottom: 0;">
+    <!-- الأخطبوط اللي بيشاور (متوسط الحجم وجوه الكارت) -->
+    <div class="octo-mascot octo-welcome" style="width: 90px; height: 90px;"></div>
+</div>
             <h2 class="logo" style="margin-bottom: 10px;">EduTrack <span class="dot">.</span></h2>
             <p style="color: var(--text-muted); margin-bottom: 30px;">نظام إدارة الدروس الخصوصية</p>
             <h3 style="margin-bottom: 20px; color: var(--text-main);">تسجيل الدخول</h3>
@@ -111,7 +115,13 @@
     <div class="dashboard-container" id="main-app" style="display: none;">
         
         <aside class="sidebar no-print">
-            <h2 class="logo">EduTrack <span class="dot">.</span></h2>
+            <div style="display: flex; align-items: center; justify-content: center; gap: -10px; margin-bottom: 30px;">
+    <!-- الأخطبوط اللي بيشاور (مصغر عشان يليق جنب اللوجو) -->
+    <div class="octo-mascot octo-welcome" style="width: 65px; height: 65px; min-width: 65px; margin: 0;"></div>
+    
+    <!-- كلمة اللوجو -->
+    <h2 class="logo" style="margin: 0;">EduTrack</h2>
+</div>
             <ul class="nav-links">
                 <li id="nav-dashboard" class="active"><a href="#" onclick="switchPage('dashboard')">الرئيسية 📊</a></li>
                 <li id="nav-schedule"><a href="#" onclick="switchPage('schedule')">الجدول الأسبوعي 📅</a></li>
@@ -328,7 +338,11 @@
 
            <div id="finance-view" class="view-section admin-only" style="display: none;">
                 <section class="students-section">
-                    <div class="section-header"><h2>الماليات (حساب الحصة) 💰</h2></div>
+                    <div class="section-header"><div class="section-header" style="display: flex; align-items: center; justify-content: space-between;">
+    <h2>الماليات (حساب الحصة) 💰</h2>
+    <!-- أخطبوط الفلوس -->
+    <div class="octo-mascot octo-finance" style="width: 80px; height: 80px;"></div>
+</div></div>
                     <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; background: var(--hover-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
                         <select id="financeLevelSelect" class="custom-input" style="flex: 1; min-width: 150px;" onchange="filterGroupsByLevel('financeLevelSelect', 'financeGroupSelect'); document.getElementById('financeSessionSelect').innerHTML='<option value=\'\'>اختر الحصة...</option>'; renderFinanceTable();"><option value="">1. اختر الصف...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select>
                         <select id="financeGroupSelect" class="custom-input" style="flex: 1; min-width: 150px;" onchange="filterSessionsForFinance(); renderFinanceTable();"><option value="">2. اختر المجموعة...</option></select>
@@ -341,7 +355,10 @@
             </div>
 
             <div id="leaderboard-view" class="view-section" style="display: none;">
-                <section class="students-section"><div class="section-header"><h2>لوحة الشرف 🏆</h2><div style="display: flex; gap: 10px;"><select id="leaderboardLevel" class="custom-input" style="width: 150px;" onchange="filterGroupsByLevel('leaderboardLevel', 'leaderboardGroup')"><option value="">الصف...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select><select id="leaderboardGroup" class="custom-input" style="width: 200px;" onchange="generateLeaderboard()"><option value="">المجموعة...</option></select></div></div><div id="leaderboard-results" class="stats-grid" style="grid-template-columns: 1fr;"></div></section>
+                <section class="students-section"><div class="section-header"><div style="display: flex; align-items: center; gap: 15px;">
+    <div class="octo-mascot octo-success" style="width: 70px; height: 70px;"></div>
+    <h2 style="margin: 0;">لوحة الشرف 🏆</h2>
+</div><div style="display: flex; gap: 10px;"><select id="leaderboardLevel" class="custom-input" style="width: 150px;" onchange="filterGroupsByLevel('leaderboardLevel', 'leaderboardGroup')"><option value="">الصف...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select><select id="leaderboardGroup" class="custom-input" style="width: 200px;" onchange="generateLeaderboard()"><option value="">المجموعة...</option></select></div></div><div id="leaderboard-results" class="stats-grid" style="grid-template-columns: 1fr;"></div></section>
             </div>
 
             <div id="broadcast-view" class="view-section" style="display:none;">
@@ -827,8 +844,19 @@
 
     <!-- النوافذ المنبثقة (Modals) مكانها الصح بره الـ main -->
 
-    <div id="customConfirmModal" class="modal"><div class="modal-content" style="width: 350px; text-align: center; margin: 20% auto;"><h3 id="confirmMessage" style="margin-bottom: 25px;">هل أنت متأكد؟</h3><div style="display: flex; gap: 10px;"><button id="confirmYesBtn" class="save-btn danger" style="background-color: var(--danger-color); margin:0;">نعم، تأكيد</button><button onclick="closeModal('customConfirmModal')" class="theme-btn" style="flex:1; margin:0;">إلغاء</button></div></div></div>
-    
+    <div id="customConfirmModal" class="modal">
+        <div class="modal-content" style="width: 350px; text-align: center; margin: 20% auto;">
+            <!-- 🐙 أخطبوط التحذير -->
+            <div class="octo-mascot octo-error" style="width: 80px; height: 80px; margin: 0 auto 15px auto; display: block;"></div>
+            
+            <h3 id="confirmMessage" style="margin-bottom: 25px; color: var(--text-main);">هل أنت متأكد؟</h3>
+            <div style="display: flex; gap: 10px;">
+                <button id="confirmYesBtn" class="save-btn danger" style="background-color: var(--danger-color); margin:0;">نعم، تأكيد</button>
+                <button onclick="closeModal('customConfirmModal')" class="theme-btn" style="flex:1; margin:0;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
     <div id="scannerModal" class="modal"><div class="modal-content" style="width: 400px; text-align: center;"><span class="close-btn" onclick="stopCameraScanner()">&times;</span><h2 style="margin-bottom: 15px; color: var(--primary-color);">مسح الباركود 📷</h2><div id="reader" style="width: 100%; min-height: 300px; border-radius: 12px; overflow: hidden; border: 2px dashed var(--primary-color);"></div><p style="margin-top: 15px; color: var(--text-muted); font-size: 14px;">وجه الكاميرا نحو الباركود للرصد</p></div></div>
     
     <div id="pinModal" class="modal"><div class="modal-content" style="width: 300px; text-align: center; margin: 20% auto;"><h3 style="margin-bottom: 15px;">الرقم السري للإدارة</h3><input type="password" id="adminPinInput" class="custom-input" placeholder="****" style="text-align: center; letter-spacing: 5px; font-size: 20px; margin-bottom: 15px;"><div style="display: flex; gap: 10px;"><button onclick="verifyPin()" class="save-btn" style="margin:0;">دخول</button><button onclick="closeModal('pinModal')" class="theme-btn" style="flex:1; margin:0;">إلغاء</button></div></div></div>
@@ -1005,7 +1033,10 @@
     <div id="addStudentToGroupModal" class="modal"><div class="modal-content"><div style="display: flex; gap: 10px; margin-bottom: 20px;"><button class="theme-btn" onclick="switchAddStudentTab('existing')">طالب مسجل</button><button class="theme-btn" onclick="switchAddStudentTab('new')">طالب جديد</button></div><form id="addExistingStudentForm"><div class="input-group"><select id="existingStudentSelect" class="custom-input"></select></div><button type="submit" class="save-btn">إضافة للمجموعة</button></form><div id="newStudentTabContent" style="display: none;"><button type="button" class="save-btn" onclick="goToNewStudentForm()">انتقال لتسجيل طالب جديد</button></div></div></div>
 
 <!-- زرار فتح الشات -->
-<button id="shefo-assistant-btn" onclick="openShefoChat()">🤖 كلم ميرا</button>
+<button id="shefo-assistant-btn" onclick="openShefoChat()" style="width: 75px; height: 75px; padding: 0; border-radius: 50%; display: flex; justify-content: center; align-items: center; opacity: 0.75; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.2);" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';" onmouseout="this.style.opacity='0.75'; this.style.transform='scale(1)';">
+    <!-- أخطبوط الدعم الفني مصغر -->
+    <div class="octo-mascot octo-support" style="width: 55px; height: 55px; min-width: 55px; margin: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></div>
+</button>
 
 <!-- نافذة شات ميرا (WhatsApp Style) -->
 <div id="shefo-chat-overlay" class="shefo-chat-overlay" style="display: none;">
@@ -1014,7 +1045,10 @@
         <div class="shefo-chat-header">
             <div class="shefo-header-info">
                <div class="shefo-avatar-chat" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; display: flex; justify-content: center; align-items: center; border-radius: 50%; width: 45px; height: 45px; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="shefo-avatar-chat" style="background: transparent; box-shadow: none; padding: 0;">
+    <!-- أخطبوط الدعم الفني مصغر -->
+    <div class="octo-mascot octo-support" style="width: 50px; height: 50px; background-size: 400% 200%;"></div>
+</div>
         <path d="M12 8V4H8"></path>
         <rect width="16" height="12" x="4" y="8" rx="2"></rect>
         <path d="M2 14h2"></path>
@@ -1024,7 +1058,7 @@
     </svg>
 </div>
                 <div class="shefo-name-status">
-                    <h3>ميرا الذكيه</h3>
+                    <h3>أوكتو</h3>
                     <p id="shefo-status">متصل الآن ✅</p>
                 </div>
             </div>

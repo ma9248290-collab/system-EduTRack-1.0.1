@@ -44,11 +44,27 @@
         .q-option-label:hover { border-color: #3b82f6; background: #eff6ff; }
         .q-option-label input[type="radio"] { width: 18px; height: 18px; accent-color: #3b82f6; }
         .timer-box { background: #fee2e2; color: #dc2626; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 20px; text-align: center; margin-bottom: 20px; border: 1px dashed #ef4444;}
+    
+        /* أوكتو في بوابة الطالب */
+.octo-mascot {
+    width: 90px; height: 90px;
+    background-image: url('octo-sprite.png');
+    background-size: 400% 200%;
+    background-repeat: no-repeat;
+    display: inline-block;
+    filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.1));
+    margin: 0 auto;
+}
+.octo-loading { background-position: 66.66% 100%; animation: bounceBot 2s infinite; }
+@keyframes bounceBot { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-10px);} }
     </style>
 </head>
 <body>
 
     <div class="container" id="login-screen">
+        <div style="text-align: center; margin-top: -60px; margin-bottom: 5px;">
+    <div class="octo-mascot octo-loading"></div>
+</div>
         <div class="logo">EduTrack Portal</div>
         <div class="subtitle">بوابة الامتحانات ومتابعة أولياء الأمور</div>
         
