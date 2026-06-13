@@ -62,8 +62,8 @@ function showToast(message, type = 'success') {
     // 🎵 تشغيل الصوت المناسب بناءً على نوع الإشعار
     try {
         if (type === 'success') {
-            successSound.currentTime = 0; // تصفير الصوت عشان لو ضغط مرتين ورا بعض
-            successSound.play().catch(e => {}); // catch لمنع ظهور خطأ في الكونسول لو المتصفح منع الصوت
+            successSound.currentTime = 0; 
+            successSound.play().catch(e => {}); 
         } else {
             errorSound.currentTime = 0;
             errorSound.play().catch(e => {});
@@ -79,7 +79,19 @@ function showToast(message, type = 'success') {
     }
     const toast = document.createElement('div'); 
     toast.className = `toast ${type}`;
-    toast.innerHTML = `<span style="margin-left: 10px;">${type === 'success' ? '✅' : '❌'}</span> <span>${message}</span>`;
+    
+    // تظبيط العرض عشان الأخطبوط يبقى جنب الكلام مظبوط
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+
+    // 🐙 تحديد شخصية الأخطبوط (نجاح أو خطأ)
+    const mascotClass = type === 'success' ? 'octo-success' : 'octo-error';
+
+    toast.innerHTML = `
+        <div class="octo-mascot ${mascotClass}" style="width: 35px; height: 35px; min-width: 35px; margin-left: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"></div>
+        <span style="font-weight: bold; font-size: 14px; line-height: 1.5;">${message}</span>
+    `;
+    
     container.appendChild(toast);
     
     // إخفاء الإشعار بعد 3 ثواني
@@ -385,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(document.getElementById("shefo-assistant-btn")) document.getElementById("shefo-assistant-btn").style.display = "block";
         switchPage('dashboard'); 
         setTimeout(renderDashboardCharts, 500); 
+        setTimeout(checkGlobalAnnouncements, 1500); // يفحص الإشعارات بعد الدخول بثانية ونص
         loadDataFromFirebase();
     } else {
         document.getElementById("login-screen").style.display = "flex";
@@ -532,7 +545,7 @@ async function loadDataFromFirebase() {
             expenses = (data.expenses || []).filter(i => i !== null);
             financeRecords = data.financeRecords || {};
             books = (data.books || []).filter(i => i !== null);
-            
+             onlineExams = (data.onlineExams || []).filter(i => i !== null);
             classSessions = (data.classSessions || []).filter(i => i !== null).map(s => ({...s, attendance: s.attendance || {}}));
             exams = (data.exams || []).filter(i => i !== null).map(e => ({...e, grades: e.grades || {}}));
             homeworks = (data.homeworks || []).filter(i => i !== null).map(h => ({...h, grades: h.grades || {}}));
@@ -546,7 +559,9 @@ async function loadDataFromFirebase() {
             localStorage.setItem("financeRecords", JSON.stringify(financeRecords));
             localStorage.setItem("expenses", JSON.stringify(expenses));
             localStorage.setItem("books", JSON.stringify(books));
-            
+           
+            localStorage.setItem("onlineExams", JSON.stringify(onlineExams));
+
             renderTable();
             if (document.getElementById("groups-list")) renderGroupCards();
             if (typeof renderBooksTable === "function") renderBooksTable();
@@ -562,11 +577,9 @@ async function loadDataFromFirebase() {
 
 async function syncDataToBot() {
     let isDemo = localStorage.getItem("is_demo_mode") === "true";
-
-    // لو مش ديمو، ومفيش فايربيز أو كود، اخرج
     if (!isDemo && (!isFirebaseLoaded || !licenseKey)) return; 
 
-    // ✅ تجميع كل البيانات
+    // تجميع البيانات وضمان وجود أري الامتحانات الإلكترونية بدون تضارب
     const dataToSync = {
         settings: {
             teacherName: localStorage.getItem("teacherName") || "المدير",
@@ -581,20 +594,18 @@ async function syncDataToBot() {
         adminPass: localStorage.getItem("adminPass"),
         adminPin: localStorage.getItem("adminPin"),
         
-        students, classSessions, exams, homeworks, schedule, groups, financeRecords, expenses, books
+        students, classSessions, exams, homeworks, schedule, groups, financeRecords, expenses, books,
+        onlineExams: onlineExams // ضفناها هنا عشان الفايربيز يحفظ هيكل الامتحانات
     };
 
-    // مزامنة مع السيرفر المحلي (الواتساب) - دي هنسيبها شغالة عشان يجرب يبعت واتساب!
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") {
         try {
             await fetch('http://localhost:3000/sync-database', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSync) });
         } catch (e) {}
     }
 
-    // 🛑 الإيقاف هنا لو الحساب تجريبي (عشان نمنع الرفع للفايربيز)
     if (isDemo) return;
 
-    // ✅ الرفعة السحرية للسحابة (الآن ستظهر البيانات في Firebase)
     try {
         await fetch(getFirebaseUrl(), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSync) });
     } catch (e) {}
@@ -745,29 +756,14 @@ document.getElementById("addStudentForm")?.addEventListener("submit", function(e
     students.push({ code, name, level, gender, phone, parentPhone, group, behaviorPoints: 0 }); 
     localStorage.setItem("students", JSON.stringify(students)); 
     
-    // --- 🚀 توليد رسالة الترحيب التلقائية متضمنة رابط البوابة الخاص بالمدرس ---
+    // 🔴 سطر السجل 
+    if(typeof addSystemLog === "function") addSystemLog("إضافة طالب 🎓", `تسجيل الطالب: ${name} (كود: ${code}) في ${group}`);
+
+    // إرسال واتساب للمدرس
     const currentKey = localStorage.getItem("licenseKey") || "";
     const portalLink = `https://system-edutrack.netlify.app/parent.html?id=${currentKey}`;
-    
-    const msg = `📢 *أهلاً بك في نظام ${localStorage.getItem("teacherName") || "السنتر"} التعليمي*
-    
-    تم تسجيل بيانات الطالب بنجاح في نظام المتابعة الإلكترونية.
-    
-    👤 *اسم الطالب:* ${name}
-    🏫 *الصف:* ${level}
-    👥 *المجموعة:* ${group}
-    🎓 *كود الطالب:* ${code}
-    
-    🔗 *رابط بوابة المتابعة الخاصة بك للدرجات والغياب:*
-    ${portalLink}
-    
-    (💡 يرجى الاحتفاظ بكود الطالب ورابط البوابة لمتابعة تقارير الحصص أولاً بأول).`;
-    
-    // إرسال الرسالة في الخلفية لولي الأمر
-    if (typeof sendAutoWhatsApp === "function") {
-        sendAutoWhatsApp(parentPhone, msg);
-    }
-    // ---------------------------------------------------------------------
+    const msg = `📢 *أهلاً بك في نظام ${localStorage.getItem("teacherName") || "السنتر"} التعليمي*\nتم تسجيل بيانات الطالب بنجاح.\n👤 *اسم الطالب:* ${name}\n🎓 *كود الطالب:* ${code}\n🔗 *رابط بوابة المتابعة:* ${portalLink}`;
+    if (typeof sendAutoWhatsApp === "function") sendAutoWhatsApp(parentPhone, msg);
 
     this.reset(); closeModal('addStudentModal'); renderTable(); showToast("تم تسجيل الطالب وإرسال رابط البوابة"); 
 });
@@ -816,7 +812,17 @@ function onScanFailure() {}
 // ==========================================
 // 10. تكملة ملف الطالب وتعديل بياناته
 // ==========================================
-function deleteStudentFromProfile() { customConfirm("حذف الطالب نهائياً؟", () => { students = students.filter(s => s.code !== currentStudentProfileCode); localStorage.setItem("students", JSON.stringify(students)); backToStudents(); renderTable(); showToast("تم الحذف"); }); }
+function deleteStudentFromProfile() { 
+    customConfirm("حذف الطالب نهائياً؟", () => { 
+        const student = students.find(s => s.code === currentStudentProfileCode);
+        if(typeof addSystemLog === "function" && student) addSystemLog("حذف طالب 🗑️", `تم مسح الطالب: ${student.name} (كود: ${student.code}) نهائياً من النظام`);
+        
+        students = students.filter(s => s.code !== currentStudentProfileCode); 
+        localStorage.setItem("students", JSON.stringify(students)); 
+        backToStudents(); renderTable(); showToast("تم الحذف"); 
+    }); 
+}
+
 function changeBehaviorPoints(points) { const student = students.find(s => s.code === currentStudentProfileCode); if(student) { student.behaviorPoints = (student.behaviorPoints || 0) + points; localStorage.setItem("students", JSON.stringify(students)); document.getElementById("profile-behavior-points").innerText = student.behaviorPoints; showToast(points > 0 ? "تم إضافة نقاط تميز 🌟" : "تم خصم نقاط 🤫"); } }
 
 function openEditStudentModal() { 
@@ -880,8 +886,13 @@ document.getElementById("addGroupFormModal")?.addEventListener("submit", functio
     const groupLevel = document.getElementById("newGroupLevel").value; 
     if (!groupName) return showToast("يرجى كتابة اسم المجموعة!", "error");
     if(groups.some(g => g.name === groupName)) return showToast("هذه المجموعة موجودة بالفعل!", "error"); 
+    
     groups.push({ name: groupName, level: groupLevel }); 
     localStorage.setItem("groups", JSON.stringify(groups)); 
+    
+    // 🔴 سطر السجل 
+    if(typeof addSystemLog === "function") addSystemLog("إنشاء مجموعة 📚", `تم إنشاء مجموعة جديدة باسم: ${groupName} (${groupLevel})`);
+
     showToast("تم الإضافة بنجاح"); 
     this.reset(); closeModal('addGroupModal'); renderGroupCards(); 
 });
@@ -959,6 +970,10 @@ document.getElementById("addSessionForm")?.addEventListener("submit", function(e
     if(document.getElementById("autoExamCheck").checked) exams.push({ id: Date.now().toString()+"_e", group, name: `امتحان: ${topic}`, maxScore: document.getElementById("autoExamScore").value, date, status: "open", grades: {} }); 
     if(document.getElementById("autoHwCheck").checked) homeworks.push({ id: Date.now().toString()+"_h", group, name: `واجب: ${topic}`, maxScore: document.getElementById("autoHwScore").value, date, status: "open", grades: {} }); 
     localStorage.setItem("classSessions", JSON.stringify(classSessions)); localStorage.setItem("exams", JSON.stringify(exams)); localStorage.setItem("homeworks", JSON.stringify(homeworks)); 
+    
+    // 🔴 سطر السجل 
+    if(typeof addSystemLog === "function") addSystemLog("فتح حصة 🎯", `فتح حصة جديدة لمجموعة: ${group} بموضوع: ${topic}`);
+
     this.reset(); toggleAutoInputs(); closeModal('addSessionModal'); renderSessionCards(); showToast("تم الإنشاء"); 
 });
 
@@ -1003,7 +1018,6 @@ document.getElementById('attendanceBarcode')?.addEventListener('keypress', funct
 // 13. الامتحانات والواجبات (Exams & HW)
 // ==========================================
 document.getElementById("addExamForm")?.addEventListener("submit", function(e) { e.preventDefault(); exams.push({ id: Date.now().toString(), group: document.getElementById("examGroupSelect").value, name: document.getElementById("examName").value, maxScore: document.getElementById("examMaxScore").value, date: document.getElementById("examDate").value, status: "open", grades: {} }); localStorage.setItem("exams", JSON.stringify(exams)); this.reset(); closeModal('addExamModal'); renderExamCards(); showToast("تم الإنشاء"); });
-function renderExamCards() { const grid = document.getElementById("exams-grid"); if(!grid) return; grid.innerHTML = ""; [...exams].reverse().forEach(exam => { const isClosed = exam.status === 'closed'; grid.innerHTML += `<div class="session-card exam-card"><div class="session-header-card"><div><div class="exam-group-name">${exam.name}</div><div class="session-date">${exam.group}</div></div><span class="status-badge ${isClosed ? 'status-closed' : 'status-open'}">${isClosed?'مغلق':'مفتوح'}</span></div><div class="session-actions"><button class="enter-btn enter-exam-btn" onclick="openExamDetails('${exam.id}')" ${isClosed?'disabled':''}>رصد</button><button class="icon-btn danger admin-only" onclick="deleteExam('${exam.id}')">🗑️</button></div></div>`; }); }
 function deleteExam(id) { customConfirm("حذف الامتحان؟", () => { exams = exams.filter(e => e.id !== id); localStorage.setItem("exams", JSON.stringify(exams)); renderExamCards(); }); }
 function openExamDetails(id) { currentActiveExamId = id; const e = exams.find(e => e.id === id); document.getElementById("exams-overview").style.display = "none"; document.getElementById("exam-details-view").style.display = "block"; document.getElementById("current-exam-title").innerText = e.name; renderGradesTable(e, "grades-list", saveExamGrade, currentActiveExamId, 'exam'); }
 function backToExams() { document.getElementById("exams-overview").style.display = "block"; document.getElementById("exam-details-view").style.display = "none"; renderExamCards(); }
@@ -1021,9 +1035,56 @@ window.submitExamBarcodeGrade = function() {
         }
     }
 };
+// ==========================================
+// ✏️ رسم كروت الامتحانات والواجبات (بإضافة زرار التعديل)
+// ==========================================
+
+
+function openEditExamModal(id) {
+    const exam = exams.find(e => e.id === id); if(!exam) return;
+    document.getElementById('editExamId').value = exam.id;
+    document.getElementById('editExamName').value = exam.name;
+    document.getElementById('editExamMaxScore').value = exam.maxScore;
+    document.getElementById('editExamDate').value = exam.date;
+    openModal('editExamModal');
+}
+
+document.getElementById('editExamForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('editExamId').value;
+    const examIndex = exams.findIndex(e => e.id === id);
+    if(examIndex > -1) {
+        exams[examIndex].name = document.getElementById('editExamName').value.trim();
+        exams[examIndex].maxScore = document.getElementById('editExamMaxScore').value;
+        exams[examIndex].date = document.getElementById('editExamDate').value;
+        localStorage.setItem("exams", JSON.stringify(exams)); closeModal('editExamModal'); renderExamCards(); showToast("تم تعديل بيانات الامتحان بنجاح ✏️");
+    }
+});
+
+
+
+function openEditHwModal(id) {
+    const hw = homeworks.find(h => h.id === id); if(!hw) return;
+    document.getElementById('editHwId').value = hw.id;
+    document.getElementById('editHwName').value = hw.name;
+    document.getElementById('editHwMaxScore').value = hw.maxScore;
+    document.getElementById('editHwDate').value = hw.date;
+    openModal('editHwModal');
+}
+
+document.getElementById('editHwForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('editHwId').value;
+    const hwIndex = homeworks.findIndex(h => h.id === id);
+    if(hwIndex > -1) {
+        homeworks[hwIndex].name = document.getElementById('editHwName').value.trim();
+        homeworks[hwIndex].maxScore = document.getElementById('editHwMaxScore').value;
+        homeworks[hwIndex].date = document.getElementById('editHwDate').value;
+        localStorage.setItem("homeworks", JSON.stringify(homeworks)); closeModal('editHwModal'); renderHwCards(); showToast("تم تعديل بيانات الواجب بنجاح ✏️");
+    }
+});
 
 document.getElementById("addHwForm")?.addEventListener("submit", function(e) { e.preventDefault(); homeworks.push({ id: Date.now().toString(), group: document.getElementById("hwGroupSelect").value, name: document.getElementById("hwName").value, maxScore: document.getElementById("hwMaxScore").value, date: document.getElementById("hwDate").value, status: "open", grades: {} }); localStorage.setItem("homeworks", JSON.stringify(homeworks)); this.reset(); closeModal('addHwModal'); renderHwCards(); });
-function renderHwCards() { const grid = document.getElementById("hw-grid"); if(!grid) return; grid.innerHTML = ""; [...homeworks].reverse().forEach(hw => { const isClosed = hw.status === 'closed'; grid.innerHTML += `<div class="session-card hw-card"><div class="session-header-card"><div><div class="hw-group-name">${hw.name}</div><div class="session-date">${hw.group}</div></div><span class="status-badge ${isClosed ? 'status-closed' : 'status-open'}">${isClosed?'مغلق':'مفتوح'}</span></div><div class="session-actions"><button class="enter-btn enter-hw-btn" onclick="openHwDetails('${hw.id}')" ${isClosed?'disabled':''}>تقييم</button><button class="icon-btn danger admin-only" onclick="deleteHw('${hw.id}')">🗑️</button></div></div>`; }); }
 function deleteHw(id) { customConfirm("حذف الواجب؟", () => { homeworks = homeworks.filter(h => h.id !== id); localStorage.setItem("homeworks", JSON.stringify(homeworks)); renderHwCards(); }); }
 function openHwDetails(id) { currentActiveHwId = id; const hw = homeworks.find(h => h.id === id); document.getElementById("hw-overview").style.display = "none"; document.getElementById("hw-details-view").style.display = "block"; document.getElementById("current-hw-title").innerText = hw.name; renderGradesTable(hw, "hw-grades-list", saveHwGrade, currentActiveHwId, 'hw'); }
 function backToHw() { document.getElementById("hw-overview").style.display = "block"; document.getElementById("hw-details-view").style.display = "none"; renderHwCards(); }
@@ -1441,7 +1502,10 @@ async function startBroadcast() {
     btn.innerText = "بدء الحملة الإعلانية 🚀";
     btn.style.opacity = "1";
     btn.style.cursor = "pointer";
-
+// 🔴 سطر السجل 
+    if(typeof addSystemLog === "function" && successCount > 0) {
+        addSystemLog("إرسال جماعي 📢", `تم إرسال إعلان بنجاح لعدد ${successCount} شخص. محتوى الرسالة: ${msg.substring(0, 20)}...`);
+    }
     // تشغيل الأنيميشن
     showSuccessAnimation(successCount, validTasks.length);
 }
@@ -1552,6 +1616,10 @@ document.getElementById("receiveBookPaymentForm")?.addEventListener("submit", fu
     if (book) {
         book.receivedAmount += amount;
         localStorage.setItem("books", JSON.stringify(books));
+        
+        // 🔴 سطر السجل 
+        if(typeof addSystemLog === "function") addSystemLog("استلام نقدية 💰", `تم استلام مبلغ ${amount} ج.م من سنتر ${book.centerName} عن كتاب: ${book.bookName}`);
+
         closeModal("receiveBookPaymentModal"); renderBooksTable(); showToast(`تم استلام ${amount} ج.م بنجاح!`);
     }
 });
@@ -1878,3 +1946,1047 @@ document.getElementById('demoRegistrationForm')?.addEventListener('submit', func
     showToast(`أهلاً بك يا مستر ${name}! بدأت تجربتك المجانية ⏳`);
     setTimeout(() => { location.reload(); }, 1000);
 });
+
+
+// ==========================================
+// 💳 إرسال وحفظ طلبات كروت الـ ID البلاستيكية
+// ==========================================
+document.getElementById('requestIdCardsForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const teacherName = document.getElementById('idCardTeacherName').value.trim();
+    const phone = document.getElementById('idCardTeacherPhone').value.trim();
+    const address = document.getElementById('idCardAddress').value.trim();
+    const fromCode = document.getElementById('idCardFrom').value;
+    const toCode = document.getElementById('idCardTo').value;
+    
+    if (!isValidEgyptianPhone(phone)) {
+        showToast("يرجى إدخال رقم واتساب مصري صحيح!", "error"); return;
+    }
+
+    // رفع الطلب لقاعدة بيانات الإدارة العليا (dashb.html)
+    fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/id_orders/${Date.now()}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            teacherName: teacherName,
+            phone: phone,
+            address: address,
+            fromCode: fromCode,
+            toCode: toCode,
+            timestamp: new Date().toISOString()
+        })
+    });
+
+    closeModal('requestIdCardsModal');
+    this.reset();
+    
+    // إشعار التأكيد الداخلي
+    showToast("تم إتمام الطلب وسيتم التواصل معك قريبا لاستلام الشحنه 🚚");
+});
+
+// ==========================================
+// 💸 نظام الإحالات المتكامل (Stats & Checkout)
+// ==========================================
+
+const DB_URL = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com";
+window.availableAffiliateBalance = 0; // متغير جلوبال لتخزين الرصيد المتاح للسحب
+
+// 1. توليد كود إحالة عشوائي وفريد ومستحيل يتكرر
+function getMyAffiliateCode() {
+    let savedPromo = localStorage.getItem("my_promo_code");
+    if (savedPromo) return savedPromo; // لو ليه كود قبل كده هيفضل ثابت معاه
+
+    // لو معندوش، هنولد كود عشوائي من 8 حروف وأرقام
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomPart = '';
+    for (let i = 0; i < 8; i++) {
+        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    let uniqueCode = "REF-" + randomPart;
+    localStorage.setItem("my_promo_code", uniqueCode); // حفظه في جهازه
+    
+    return uniqueCode;
+}
+
+// 2. تحديث الشاشة وجلب الإحصائيات الحقيقية من الفايربيز (محمية ومربوطة بتأكيد الإدارة)
+async function fetchAffiliateStats() {
+    const myCode = getMyAffiliateCode();
+    
+    try {
+        let [ordRes, wdRes] = await Promise.all([
+            fetch(`${DB_URL}/orders.json`),
+            fetch(`${DB_URL}/withdraw_requests.json`)
+        ]);
+
+        let orders = await ordRes.json() || {};
+        let withdraws = await wdRes.json() || {};
+
+        let confirmedEarned = 0; // العمولات المؤكدة (العميل دفع والإدارة أكدت)
+        let pendingEarned = 0;   // العمولات المعلقة (العميل سجل ولسه مدفعش)
+        let purchasesCount = 0;  // عدد عمليات الشراء الناجحة
+        
+        let tbody = document.getElementById("affiliate-transactions");
+        if(tbody) tbody.innerHTML = "";
+
+        Object.keys(orders).reverse().forEach(key => {
+            let o = orders[key];
+            
+            // لو الكود المستخدم هو كود المدرس ده
+            if (o.promoCodeUsed === myCode) {
+                let comm = parseFloat(o.commissionForAffiliate) || 0;
+                let date = new Date(o.timestamp).toLocaleDateString('ar-EG');
+                let maskedName = o.teacherName.substring(0, 3) + "***"; // تشفير الاسم
+                
+                // لو الإدارة أكدت الدفع (مؤكدة ✅)
+                if (o.status && o.status.includes('تم')) {
+                    confirmedEarned += comm;
+                    purchasesCount++;
+                    if(tbody) tbody.innerHTML += `<tr><td>${date}</td><td>${maskedName}</td><td>${o.plan}</td><td><span class="badge" style="background: rgba(16, 185, 129, 0.1); color:var(--success); font-weight:bold;">مؤكدة ✅</span></td><td style="color:var(--success); font-weight:bold;">${comm} ج</td></tr>`;
+                } 
+                // لو لسه قيد الانتظار (معلقة ⏳)
+                else {
+                    pendingEarned += comm;
+                    if(tbody) tbody.innerHTML += `<tr><td>${date}</td><td>${maskedName}</td><td>${o.plan}</td><td><span class="badge" style="background: rgba(245, 158, 11, 0.1); color:#f59e0b; font-weight:bold;">منتظرة دفع العميل ⏳</span></td><td style="color:#f59e0b; font-weight:bold;">${comm} ج</td></tr>`;
+                }
+            }
+        });
+
+        if (tbody && tbody.innerHTML === "") {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">لا توجد إحالات حتى الآن. شارك كودك للبدء!</td></tr>`;
+        }
+
+        // حساب المسحوبات (اللي المدرس سحبها أو طلب سحبها)
+        let totalWithdrawnPaid = 0;
+        let totalWithdrawnPending = 0;
+
+        Object.keys(withdraws).forEach(key => {
+            let w = withdraws[key];
+            if (w.promoCode === myCode) {
+                if (w.status === 'paid') totalWithdrawnPaid += parseFloat(w.amount);
+                else totalWithdrawnPending += parseFloat(w.amount);
+            }
+        });
+
+        // 🛑 السحر هنا: الرصيد المتاح للسحب بيتحسب من (العمولات المؤكدة فقط) ناقص المسحوبات
+        window.availableAffiliateBalance = confirmedEarned - (totalWithdrawnPaid + totalWithdrawnPending);
+
+        // تحديث المربعات الملونة في الشاشة
+        if(document.getElementById("affPending")) document.getElementById("affPending").innerText = `${pendingEarned} ج`;
+        if(document.getElementById("affReceived")) document.getElementById("affReceived").innerText = `${totalWithdrawnPaid} ج`;
+       if(document.getElementById("affAvailable")) document.getElementById("affAvailable").innerText = `${window.availableAffiliateBalance} ج`;
+        if(document.getElementById("affPurchases")) document.getElementById("affPurchases").innerText = purchasesCount;
+
+    } catch (e) {
+        console.log("Error fetching stats:", e);
+    }
+}
+
+// 3. دالة تهيئة صفحة الإحالة عند فتحها
+function initAffiliatePage() {
+    document.getElementById("myAffiliateCode").value = getMyAffiliateCode();
+    
+    let savedSettings = JSON.parse(localStorage.getItem("affiliateSettings"));
+    if (savedSettings) {
+        document.getElementById("withdrawMethod").value = savedSettings.method;
+        document.getElementById("withdrawNumber").value = savedSettings.number;
+    }
+    
+    // تشغيل جلب الداتا لايف
+    fetchAffiliateStats();
+}
+
+function copyAffiliateCode() {
+    const codeInput = document.getElementById("myAffiliateCode");
+    codeInput.select();
+    navigator.clipboard.writeText(codeInput.value).then(() => {
+        showToast("تم نسخ كود الإحالة بنجاح! 📋");
+    });
+}
+
+function saveAffiliateSettings() {
+    const method = document.getElementById("withdrawMethod").value;
+    const number = document.getElementById("withdrawNumber").value;
+    
+    if (method !== 'free_month' && !number) {
+        return showToast("يرجى إدخال رقم الحساب للسحب!", "error");
+    }
+
+    localStorage.setItem("affiliateSettings", JSON.stringify({ method, number }));
+    showToast("تم حفظ إعدادات السحب بنجاح ✅");
+}
+
+
+// 4. طلب السحب المحكوم بالرصيد المتاح
+window.requestAffiliateWithdrawal = async function() {
+    let savedSettings = JSON.parse(localStorage.getItem("affiliateSettings"));
+    if (!savedSettings || (!savedSettings.number && savedSettings.method !== 'free_month')) {
+        return showToast("يجب حفظ إعدادات السحب (رقم المحفظة) أولاً!", "error");
+    }
+
+    if (window.availableAffiliateBalance < 150) {
+        return showToast("عفواً، رصيدك المتاح أقل من الحد الأدنى للسحب (150 ج.م).", "error");
+    }
+
+    // إظهار الرصيد المتاح وسؤاله هيسحب كام
+    let amountToWithdraw = prompt(`رصيدك المتاح للسحب هو ${window.availableAffiliateBalance} ج.م\nأدخل المبلغ المراد سحبه:`, window.availableAffiliateBalance);
+    
+    if (!amountToWithdraw) return; // لو داس كنسل
+
+    amountToWithdraw = parseFloat(amountToWithdraw);
+
+    if (isNaN(amountToWithdraw) || amountToWithdraw < 150) {
+        return showToast("المبلغ غير صالح أو أقل من الحد الأدنى!", "error");
+    }
+
+    // الفلترة الذكية (لو طلب أكتر من اللي حيلته)
+    if (amountToWithdraw > window.availableAffiliateBalance) {
+        return showToast(`رصيدك المتاح لا يكفي! أقصى مبلغ يمكنك سحبه هو ${window.availableAffiliateBalance} ج.م`, "error");
+    }
+
+    const requestData = {
+        promoCode: getMyAffiliateCode(),
+        method: savedSettings.method,
+        number: savedSettings.number,
+        amount: amountToWithdraw,
+        timestamp: new Date().toISOString(),
+        status: 'pending'
+    };
+
+    try {
+        await fetch(`${DB_URL}/withdraw_requests.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        showToast("تم إرسال طلب السحب للإدارة بنجاح! 💸");
+        
+        // خصم المبلغ وهمياً من الشاشة لتجنب طلب السحب مرتين ورا بعض
+        window.availableAffiliateBalance -= amountToWithdraw;
+        document.getElementById("affPending").innerText = `${window.availableAffiliateBalance} ج`;
+
+    } catch (e) {
+        showToast("حدث خطأ أثناء الإرسال", "error");
+    }
+};
+
+// 🛒 دوال الـ Checkout زي ما هي شغالة مفيش تغيير فيها
+const PRICING = {
+    lifetime: { base: 2500, discount: 500 },
+    monthly: { base: 350, discount: 100 }
+};
+
+let currentPromoApplied = false;
+
+function calculateCheckout() {
+    const plan = document.getElementById("checkoutPlan").value;
+    const basePrice = PRICING[plan].base;
+    let discount = 0;
+
+    if (currentPromoApplied) discount = PRICING[plan].discount;
+    const finalPrice = basePrice - discount;
+
+    document.getElementById("checkoutBasePrice").innerText = `${basePrice} ج.م`;
+    document.getElementById("checkoutDiscount").innerText = `${discount} ج.م`;
+    document.getElementById("checkoutFinalPrice").innerText = `${finalPrice} ج.م`;
+}
+
+function applyPromoCode() {
+    const code = document.getElementById("promoCodeInput").value.trim().toUpperCase();
+    const msgLabel = document.getElementById("promoMsg");
+    const plan = document.getElementById("checkoutPlan").value;
+
+    if (code.startsWith("REF-") && code.length >= 8) {
+        if (code === getMyAffiliateCode()) {
+            currentPromoApplied = false;
+            msgLabel.style.color = "var(--danger-color)";
+            msgLabel.innerText = "❌ لا يمكنك استخدام كود الإحالة الخاص بك!";
+            calculateCheckout();
+            return;
+        }
+
+        currentPromoApplied = true;
+        let discountVal = PRICING[plan].discount;
+        msgLabel.style.color = "var(--success-color)";
+        
+        if (plan === 'monthly') {
+            msgLabel.innerText = `✅ كود صحيح! تم خصم ${discountVal}ج من اشتراك الشهر الأول.`;
+        } else {
+            msgLabel.innerText = `✅ كود صحيح! تم خصم ${discountVal}ج على اشتراك مدى الحياة.`;
+        }
+    } else {
+        currentPromoApplied = false;
+        msgLabel.style.color = "var(--danger-color)";
+        msgLabel.innerText = "❌ الكود غير صحيح أو منتهي الصلاحية.";
+    }
+    
+    calculateCheckout();
+}
+
+function openCheckout() {
+    currentPromoApplied = false;
+    document.getElementById("promoCodeInput").value = "";
+    document.getElementById("promoMsg").innerText = "";
+    calculateCheckout();
+    openModal('checkoutModal');
+}
+
+// رسم كروت الواجبات (بزرار التعديل الجديد)
+function renderHwCards() { 
+    const grid = document.getElementById("hw-grid"); if(!grid) return; grid.innerHTML = ""; 
+    [...homeworks].reverse().forEach(hw => { 
+        const isClosed = hw.status === 'closed'; 
+        grid.innerHTML += `
+        <div class="session-card hw-card">
+            <div class="session-header-card">
+                <div><div class="hw-group-name">${hw.name}</div><div class="session-date">${hw.group} | ${hw.date}</div></div>
+                <span class="status-badge ${isClosed ? 'status-closed' : 'status-open'}">${isClosed?'مغلق':'مفتوح'}</span>
+            </div>
+            <div class="session-actions">
+                <button class="enter-btn enter-hw-btn" onclick="openHwDetails('${hw.id}')" ${isClosed?'disabled':''}>تقييم</button>
+                <button class="icon-btn admin-only" style="background-color: #ffffff; color: black;" onclick="openEditHwModal('${hw.id}')" title="تعديل">✏️ تعديل</button>
+                <button class="icon-btn danger admin-only" onclick="deleteHw('${hw.id}')">🗑️</button>
+            </div>
+        </div>`; 
+    }); 
+}
+
+// رسم كروت الامتحانات (بزرار التعديل الجديد)
+function renderExamCards() { 
+    const grid = document.getElementById("exams-grid"); if(!grid) return; grid.innerHTML = ""; 
+    [...exams].reverse().forEach(exam => { 
+        const isClosed = exam.status === 'closed'; 
+        grid.innerHTML += `
+        <div class="session-card exam-card">
+            <div class="session-header-card">
+                <div><div class="exam-group-name">${exam.name}</div><div class="session-date">${exam.group} | ${exam.date}</div></div>
+                <span class="status-badge ${isClosed ? 'status-closed' : 'status-open'}">${isClosed?'مغلق':'مفتوح'}</span>
+            </div>
+            <div class="session-actions">
+                <button class="enter-btn enter-exam-btn" onclick="openExamDetails('${exam.id}')" ${isClosed?'disabled':''}>رصد</button>
+                <button class="icon-btn admin-only" style="background-color: #ffffff; color: black;" onclick="openEditExamModal('${exam.id}')" title="تعديل">✏️ تعديل</button>
+                <button class="icon-btn danger admin-only" onclick="deleteExam('${exam.id}')">🗑️</button>
+            </div>
+        </div>`; 
+    }); 
+}
+
+
+
+// ==========================================
+// 🌟 1. إدارة بيانات الحساب والسيرفر (الاسم، اليوزر، الباسورد)
+// ==========================================
+window.saveAccountSettings = function() {
+    const tName = document.getElementById('settingTeacherName').value.trim();
+    const cName = document.getElementById('settingCenterName').value.trim();
+    const aUser = document.getElementById('settingAdminUser').value.trim();
+    const aPass = document.getElementById('settingAdminPass').value.trim();
+    const aPin = document.getElementById('settingAdminPin').value.trim();
+
+    if (!tName || !aUser || !aPass || !aPin) {
+        return showToast("يرجى ملء جميع البيانات الأساسية (الاسم، اليوزر، الباسورد، والـ PIN)!", "error");
+    }
+
+    localStorage.setItem('teacherName', tName);
+    localStorage.setItem('centerName', cName);
+    localStorage.setItem('adminUser', aUser);
+    localStorage.setItem('adminPass', aPass);
+    localStorage.setItem('adminPin', aPin);
+    
+    window.adminPin = aPin; // تحديث الـ PIN في السيستم حالاً
+    
+    // تحديث رسالة الترحيب فوق
+    const titleElement = document.getElementById('page-title');
+    if (titleElement && titleElement.innerText.includes('أهلاً بك')) {
+        titleElement.innerText = `أهلاً بك مستر ${tName} 👋`;
+    }
+    
+    showToast("تم تحديث بيانات الحساب وكلمة المرور بنجاح! 💾");
+    if (typeof syncDataToBot === "function") syncDataToBot(); // المزامنة مع السحابة
+};
+
+
+// ==========================================
+// 🌟 2. تخصيص المراحل الدراسية (القائمة المنسدلة الذكية)
+// ==========================================
+const ALL_LEVELS = [
+    "الصف الأول الابتدائي", "الصف الثاني الابتدائي", "الصف الثالث الابتدائي",
+    "الصف الرابع الابتدائي", "الصف الخامس الابتدائي", "الصف السادس الابتدائي",
+    "الصف الأول الإعدادي", "الصف الثاني الإعدادي", "الصف الثالث الإعدادي",
+    "الصف الأول الثانوي", "الصف الثاني الثانوي", "الصف الثالث الثانوي"
+];
+
+let safeLevels = ["الصف الأول الثانوي", "الصف الثاني الثانوي", "الصف الثالث الثانوي"];
+try {
+    let stored = JSON.parse(localStorage.getItem("activeLevels"));
+    if (Array.isArray(stored) && stored.length > 0) safeLevels = stored;
+} catch(e) {}
+window.activeLevels = safeLevels;
+
+window.renderAdminLevels = function() {
+    const dropdown = document.getElementById("levelsDropdown");
+    const tagsContainer = document.getElementById("selectedLevelsTags");
+    if(!dropdown || !tagsContainer) return;
+
+    let dropdownHTML = "";
+    ALL_LEVELS.forEach(level => {
+        let isChecked = (Array.isArray(window.activeLevels) && window.activeLevels.includes(level)) ? "checked" : "";
+        dropdownHTML += `
+            <label class="level-item" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--hover-bg); border-radius: 6px; cursor: pointer; transition: 0.2s; color: var(--text-main); font-weight: bold; margin-bottom: 3px; border-bottom: 1px solid var(--border-color);">
+                <input type="checkbox" value="${level}" class="level-checkbox" ${isChecked} onchange="updateActiveLevels()" style="width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer;">
+                <span style="flex: 1;">${level}</span>
+            </label>`;
+    });
+    dropdown.innerHTML = dropdownHTML;
+
+    let tagsHTML = "";
+    if(Array.isArray(window.activeLevels)) {
+        window.activeLevels.forEach(level => {
+            tagsHTML += `<span class="tag" style="background: var(--primary-color); color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);">🎓 ${level}</span>`;
+        });
+    }
+    tagsContainer.innerHTML = tagsHTML;
+};
+
+window.updateActiveLevels = function() {
+    const checkboxes = document.querySelectorAll(".level-checkbox:checked");
+    let selected = Array.from(checkboxes).map(cb => cb.value);
+
+    if(selected.length === 0) {
+        showToast("يجب اختيار مرحلة دراسية واحدة على الأقل!", "error");
+        selected = ["الصف الأول الثانوي"];
+        setTimeout(renderAdminLevels, 50); 
+    } else {
+        window.activeLevels = selected;
+        const tagsContainer = document.getElementById("selectedLevelsTags");
+        if(tagsContainer) {
+            let tagsHTML = "";
+            window.activeLevels.forEach(level => {
+                tagsHTML += `<span class="tag" style="background: var(--primary-color); color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);">🎓 ${level}</span>`;
+            });
+            tagsContainer.innerHTML = tagsHTML;
+        }
+    }
+    localStorage.setItem("activeLevels", JSON.stringify(window.activeLevels));
+    if (typeof populateLevelDropdowns === "function") populateLevelDropdowns();
+    if (typeof syncDataToBot === "function") syncDataToBot();
+};
+
+window.populateLevelDropdowns = function() {
+    const levelSelectIds = [
+        "studentLevel", "editStudentLevel", "sessionLevelSelect", "hwLevelSelect", 
+        "examLevelSelect", "financeLevelSelect", "leaderboardLevel", "schedLevel", 
+        "newGroupLevel", "editGroupLevel", "clearLevelSelect"
+    ];
+    
+    levelSelectIds.forEach(id => {
+        const select = document.getElementById(id);
+        if(select) {
+            const firstOption = select.options[0]?.text.includes("اختر") ? select.options[0].outerHTML : '<option value="">اختر المرحلة...</option>';
+            let selectHTML = firstOption;
+            if(Array.isArray(window.activeLevels)){
+                window.activeLevels.forEach(level => { selectHTML += `<option value="${level}">${level}</option>`; });
+            }
+            select.innerHTML = selectHTML;
+        }
+    });
+};
+
+// قفل القائمة لو المدرس ضغط في أي مكان بره الصندوق
+document.addEventListener('click', function(e) {
+    const container = document.querySelector('.multi-select-container');
+    const dropdown = document.getElementById('levelsDropdown');
+    if (container && dropdown && !container.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
+
+// ==========================================
+// 🌟 3. تشغيل الأكواد تلقائياً وربطها بلوحة الإدارة
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (typeof renderAdminLevels === "function") renderAdminLevels();
+        if (typeof populateLevelDropdowns === "function") populateLevelDropdowns();
+    }, 500);
+});
+
+const originalSwitchPage = window.switchPage;
+window.switchPage = function(pageId) {
+    if (originalSwitchPage) originalSwitchPage(pageId);
+    
+    if (pageId === "backup") { 
+        // 1. ارسم المراحل
+        if (typeof renderAdminLevels === "function") renderAdminLevels();
+        
+        // 2. املأ بيانات المدرس في الخانات أول ما يفتح التاب
+        if(document.getElementById('settingTeacherName')) {
+            document.getElementById('settingTeacherName').value = localStorage.getItem('teacherName') || '';
+            document.getElementById('settingCenterName').value = localStorage.getItem('centerName') || '';
+            document.getElementById('settingAdminUser').value = localStorage.getItem('adminUser') || '';
+            document.getElementById('settingAdminPass').value = localStorage.getItem('adminPass') || '';
+            document.getElementById('settingAdminPin').value = localStorage.getItem('adminPin') || '';
+        }
+    }
+};
+
+
+// ==========================================
+// 🕵️‍♂️ 1. نظام السجل والمراقبة (Audit Trail)
+// ==========================================
+let systemLogs = JSON.parse(localStorage.getItem("systemLogs")) || [];
+
+// دالة تسجيل أي حركة (بتحتفظ بآخر 500 حركة بس)
+window.addSystemLog = function(actionType, details) {
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('ar-EG') + " - " + formatTime12(`${now.getHours()}:${now.getMinutes()}`);
+    
+    // إضافة الحركة الجديدة في أول المصفوفة
+    systemLogs.unshift({
+        date: formattedDate,
+        type: actionType,
+        details: details
+    });
+
+    // قص المصفوفة لو زادت عن 500 عشان السيستم ميهنجش
+    if (systemLogs.length > 500) {
+        systemLogs = systemLogs.slice(0, 500);
+    }
+    
+    localStorage.setItem("systemLogs", JSON.stringify(systemLogs));
+    if (document.getElementById("logs-view").style.display === "block") renderSystemLogs();
+};
+
+window.renderSystemLogs = function() {
+    const tbody = document.getElementById("system-logs-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (systemLogs.length === 0) {
+        return tbody.innerHTML = `<tr><td colspan="3" style="text-align: center;">السجل فارغ تماماً</td></tr>`;
+    }
+
+    systemLogs.forEach(log => {
+        // تلوين نوع الحركة عشان تكون مريحة للعين
+        let typeColor = "#3b82f6"; // أزرق افتراضي
+        if (log.type.includes("إضافة") || log.type.includes("فتح") || log.type.includes("استلام")) typeColor = "#10b981"; // أخضر
+        if (log.type.includes("حذف") || log.type.includes("مسح") || log.type.includes("إلغاء")) typeColor = "#ef4444"; // أحمر
+        if (log.type.includes("تعديل") || log.type.includes("قفل") || log.type.includes("رصد")) typeColor = "#f59e0b"; // برتقالي
+
+        tbody.innerHTML += `
+            <tr>
+                <td style="font-size: 13px; color: var(--text-muted);">${log.date}</td>
+                <td><span style="background: ${typeColor}20; color: ${typeColor}; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 13px; border: 1px solid ${typeColor}50;">${log.type}</span></td>
+                <td style="font-weight: bold;">${log.details}</td>
+            </tr>
+        `;
+    });
+};
+
+window.clearSystemLogs = function() {
+    customConfirm("هل أنت متأكد من مسح سجل الحركات بالكامل؟", () => {
+        systemLogs = [];
+        localStorage.setItem("systemLogs", JSON.stringify(systemLogs));
+        renderSystemLogs();
+        showToast("تم تفريغ السجل بنجاح 🗑️");
+    });
+};
+
+
+// ==========================================
+// 📈 2. نظام التقارير الشاملة وتصدير الإكسيل
+// ==========================================
+window.generateAdvancedReport = function() {
+    const type = document.getElementById("reportType").value;
+    const groupFilter = document.getElementById("reportGroup").value;
+    const fromDate = document.getElementById("reportDateFrom").value;
+    const toDate = document.getElementById("reportDateTo").value;
+    
+    const thead = document.getElementById("report-table-head");
+    const tbody = document.getElementById("report-table-body");
+    
+    thead.innerHTML = ""; tbody.innerHTML = "";
+
+    // 1. تحديد الداتا بناءً على النوع المختار (حصص ولا امتحانات ولا واجبات)
+    let sourceData = [];
+    let itemName = ""; // اسم العمود (حصة / امتحان / واجب)
+    if (type === 'attendance') { sourceData = classSessions; itemName = "الغياب (الحالة)"; }
+    else if (type === 'exams') { sourceData = exams; itemName = "الامتحان (الدرجة)"; }
+    else if (type === 'homework') { sourceData = homeworks; itemName = "الواجب (الدرجة)"; }
+
+    // 2. فلترة الداتا بالتاريخ والمجموعة
+    let filteredItems = sourceData.filter(item => {
+        let matchGroup = (groupFilter === 'all') || (item.group === groupFilter);
+        let matchDate = true;
+        if (fromDate) matchDate = matchDate && (new Date(item.date) >= new Date(fromDate));
+        if (toDate) matchDate = matchDate && (new Date(item.date) <= new Date(toDate));
+        return matchGroup && matchDate;
+    }).sort((a,b) => new Date(a.date) - new Date(b.date)); // ترتيب تصاعدي بالزمن
+
+    if (filteredItems.length === 0) {
+        thead.innerHTML = `<tr><th>لا توجد بيانات مطابقة لهذه الفلاتر</th></tr>`;
+        return;
+    }
+
+    // 3. فلترة الطلاب (لو اختار مجموعة معينة نجيب طلابها بس، لو الكل نجيب الكل)
+    let targetStudents = students;
+    if (groupFilter !== 'all') targetStudents = students.filter(s => s.group === groupFilter);
+
+    // 4. رسم رأس الجدول (الهيدر)
+    let headHtml = `<tr><th>كود الطالب</th><th>الاسم</th><th>المجموعة</th>`;
+    filteredItems.forEach(item => {
+        let title = type === 'attendance' ? item.date : `${item.name} (${item.date})`;
+        headHtml += `<th>${title}</th>`;
+    });
+    headHtml += `</tr>`;
+    thead.innerHTML = headHtml;
+
+    // 5. رسم جسم الجدول (الطلاب ونتائجهم)
+    targetStudents.forEach(st => {
+        let rowHtml = `<tr>
+            <td style="font-weight: bold; color: var(--primary-color);">${st.code}</td>
+            <td>${st.name}</td>
+            <td>${st.group}</td>`;
+        
+        filteredItems.forEach(item => {
+            let cellValue = "--";
+            
+            if (type === 'attendance') {
+                let stat = item.attendance[st.phone];
+                if (stat === 'present') cellValue = "حاضر";
+                else if (stat === 'absent') cellValue = "غائب";
+            } 
+            else if (type === 'exams' || type === 'homework') {
+                if (item.grades && item.grades[st.phone] !== undefined) {
+                    cellValue = `${item.grades[st.phone]} / ${item.maxScore}`;
+                } else {
+                    cellValue = "لم يُمتحن/لم يُسلم";
+                }
+            }
+            rowHtml += `<td>${cellValue}</td>`;
+        });
+        
+        rowHtml += `</tr>`;
+        tbody.innerHTML += rowHtml;
+    });
+    
+    showToast("تم استخراج التقرير بنجاح! 📊");
+};
+
+// 📥 دالة تصدير الجدول لإكسيل باستخدام مكتبة XLSX الموجودة عندك
+window.exportReportToExcel = function() {
+    const table = document.getElementById("advanced-report-table");
+    if (!table || table.rows.length <= 1) {
+        return showToast("لا يوجد تقرير لتصديره! قم باستخراج تقرير أولاً.", "error");
+    }
+    
+    // تحويل الـ HTML Table لـ شيت إكسيل
+    const wb = XLSX.utils.table_to_book(table, {sheet: "التقرير"});
+    
+    // تسمية الملف بالتاريخ
+    const dateStr = new Date().toLocaleDateString('ar-EG').replace(/\//g, '-');
+    const typeStr = document.getElementById("reportType").options[document.getElementById("reportType").selectedIndex].text;
+    const fileName = `EduTrack_${typeStr}_${dateStr}.xlsx`;
+    
+    XLSX.writeFile(wb, fileName);
+    showToast("تم تحميل شيت الإكسيل بنجاح! 📥");
+};
+
+
+// ==========================================
+// 🔧 3. دمج الصفحات الجديدة مع نظام التنقل
+// ==========================================
+// دي عشان لما تفتح صفحة التقارير، يملأ قائمة المجموعات أوتوماتيك
+const oldSwitchPageForReports = window.switchPage;
+window.switchPage = function(pageId) {
+    if (oldSwitchPageForReports) oldSwitchPageForReports(pageId);
+    
+    if (pageId === "reports") {
+        document.getElementById("page-title").innerText = "التقارير الشاملة 📈";
+        document.getElementById("page-desc").innerText = "استخراج فلاتر وتصدير شيتات الإكسيل";
+        
+        // ملء قائمة المجموعات في الفلتر
+        const groupSelect = document.getElementById("reportGroup");
+        groupSelect.innerHTML = '<option value="all">جميع المجموعات</option>';
+        groups.forEach(g => { groupSelect.innerHTML += `<option value="${g.name}">${g.name}</option>`; });
+    }
+    
+    if (pageId === "logs") {
+        document.getElementById("page-title").innerText = "سجل حركات النظام 🕵️‍♂️";
+        document.getElementById("page-desc").innerText = "مراقبة كل صغيرة وكبيرة تحدث في النظام";
+        renderSystemLogs();
+    }
+};
+
+// ==========================================
+// 🔗 تشغيل صفحة الإحالات وجلب الكود والإحصائيات
+// ==========================================
+const checkAffiliateSwitch = window.switchPage;
+window.switchPage = function(pageId) {
+    if (checkAffiliateSwitch) checkAffiliateSwitch(pageId);
+    
+    // أول ما يفتح صفحة الإحالات، شغل الدالة اللي بتجيب الكود والداتا
+    if (pageId === "affiliate") {
+        if (typeof initAffiliatePage === "function") {
+            initAffiliatePage();
+        }
+    }
+};
+
+
+// ==========================================
+// 💻 نظام الامتحانات الإلكترونية المتطور (Online Exams)
+// ==========================================
+let onlineExams = JSON.parse(localStorage.getItem("onlineExams")) || [];
+let currentGradingExamId = null;
+let currentGradingStudentPhone = null;
+
+// تعديل رسم كروت الامتحانات لدمج الورقي والإلكتروني
+const originalRenderExamCards = window.renderExamCards;
+window.renderExamCards = function() {
+    originalRenderExamCards(); // رسم الورقي أولاً
+    const grid = document.getElementById("exams-grid"); if(!grid) return;
+    
+    // رسم الإلكتروني
+    [...onlineExams].reverse().forEach(exam => { 
+        const isClosed = exam.status === 'closed';
+        const subCount = exam.submissions ? Object.keys(exam.submissions).length : 0;
+        let groupsText = Array.isArray(exam.group) ? exam.group.join("، ") : exam.group;
+        
+        grid.innerHTML += `
+        <div class="session-card exam-card" style="border-top: 4px solid #3b82f6;">
+            <div class="session-header-card">
+                <div>
+                    <div class="exam-group-name" style="color: #3b82f6;">💻 ${exam.title}</div>
+                    <div class="session-date" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${groupsText}">${groupsText} | ${exam.date}</div>
+                </div>
+                <span class="status-badge ${isClosed ? 'status-closed' : 'status-open'}">${isClosed?'مغلق':'مفتوح'}</span>
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted); margin-top: 10px;">تم التسليم: <strong>${subCount}</strong> ورقة</div>
+            <div class="session-actions">
+                <button class="enter-btn" style="background: #3b82f6;" onclick="openOnlineExamDetails('${exam.id}')">عرض النتائج</button>
+                <button class="icon-btn admin-only" onclick="toggleOnlineExamStatus('${exam.id}')" title="فتح/قفل">${isClosed?'🔓':'🔒'}</button>
+                <button class="icon-btn danger admin-only" onclick="deleteOnlineExam('${exam.id}')">🗑️</button>
+            </div>
+        </div>`; 
+    }); 
+};
+
+// فتح منشئ الامتحانات (بدعم اختيار مجموعات متعددة)
+window.openOnlineExamBuilder = function() {
+    const groupContainer = document.getElementById("onlineExamGroupsContainer");
+    groupContainer.innerHTML = groups.map(g => `<label style="display:flex; align-items:center; gap:5px; cursor:pointer; background: var(--card-bg); padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border-color);"><input type="checkbox" class="exam-group-cb" value="${g.name}" style="accent-color: var(--primary-color); width: 16px; height: 16px;"> ${g.name}</label>`).join('');
+    
+    document.getElementById("examQuestionsContainer").innerHTML = "";
+    document.getElementById("onlineExamTitle").value = "";
+    document.getElementById("onlineExamDuration").value = "60";
+    addQuestionBlock('mcq'); openModal('buildOnlineExamModal');
+};
+
+// حفظ الامتحان
+window.saveOnlineExam = function() {
+    const title = document.getElementById("onlineExamTitle").value.trim();
+    const selectedGroups = Array.from(document.querySelectorAll('.exam-group-cb:checked')).map(cb => cb.value);
+    const duration = document.getElementById("onlineExamDuration").value;
+    const autoShowResult = document.getElementById("onlineExamAutoShowResult").checked;
+    
+    if (!title || selectedGroups.length === 0 || !duration) return showToast("يرجى إكمال العنوان واختيار مجموعة واحدة على الأقل!", "error");
+    
+    const questionBlocks = document.querySelectorAll(".question-block");
+    if (questionBlocks.length === 0) return showToast("يجب إضافة سؤال واحد على الأقل!", "error");
+
+    let questions = []; let isValid = true; let totalScore = 0;
+    questionBlocks.forEach((block, index) => {
+        let qType = block.getAttribute("data-type");
+        let qText = block.querySelector(".q-text").value.trim();
+        let qPoints = parseFloat(block.querySelector(".q-points").value);
+        if (!qText || isNaN(qPoints)) isValid = false;
+        totalScore += qPoints;
+        let questionObj = { id: "q_" + index, type: qType, text: qText, points: qPoints };
+
+        if (qType === 'mcq') {
+            let options = Array.from(block.querySelectorAll(".q-opt")).map(o => o.value.trim());
+            if (options.some(o => o === "")) isValid = false; 
+            let correctRadio = block.querySelector(`input[type="radio"]:checked`);
+            if (!correctRadio) { showToast(`السؤال رقم ${index + 1} بلا إجابة صحيحة!`, "error"); isValid = false; }
+            else { questionObj.options = options; questionObj.correctAnswerIndex = parseInt(correctRadio.value); }
+        } 
+        else if (qType === 'tf') {
+            let correctRadio = block.querySelector(`input[type="radio"]:checked`);
+            if (!correctRadio) { showToast(`السؤال رقم ${index + 1} حدد صح أم خطأ!`, "error"); isValid = false; }
+            else { questionObj.correctAnswer = correctRadio.value === "true"; }
+        }
+        else if (qType === 'blank') {
+            let correctAns = block.querySelector(".q-correct-blank").value.trim();
+            if (!correctAns) isValid = false;
+            questionObj.correctAnswerText = correctAns;
+        }
+        questions.push(questionObj);
+    });
+
+    if (!isValid) return showToast("يرجى مراجعة الأسئلة وتعبئة الحقول الفارغة!", "error");
+
+    onlineExams.push({
+        id: "online_" + Date.now().toString(),
+        title: title, group: selectedGroups, duration: parseInt(duration), autoShowResult: autoShowResult,
+        status: "open", date: new Date().toLocaleDateString('en-CA'), totalScore: totalScore, questions: questions, submissions: {}
+    });
+
+    localStorage.setItem("onlineExams", JSON.stringify(onlineExams));
+    if(typeof addSystemLog === "function") addSystemLog("امتحان إلكتروني 💻", `تم نشر امتحان (${title})`);
+    closeModal('buildOnlineExamModal'); renderExamCards(); showToast(`تم نشر الامتحان بنجاح 🚀`);
+    if(typeof syncDataToBot === "function") syncDataToBot();
+};
+
+window.deleteOnlineExam = function(id) { customConfirm("حذف الامتحان الإلكتروني وجميع إجابات الطلاب؟", () => { onlineExams = onlineExams.filter(e => e.id !== id); localStorage.setItem("onlineExams", JSON.stringify(onlineExams)); renderExamCards(); showToast("تم الحذف"); }); };
+window.toggleOnlineExamStatus = function(id) { const ex = onlineExams.find(e => e.id === id); if(ex) { ex.status = ex.status === 'open' ? 'closed' : 'open'; localStorage.setItem("onlineExams", JSON.stringify(onlineExams)); renderExamCards(); showToast(ex.status === 'open' ? "تم فتح الامتحان للطلاب" : "تم إغلاق الامتحان"); } };
+
+// 📊 عرض تفاصيل الامتحان والطلاب (مرتبين بالأعلى درجة)
+
+
+const originalBackToExams = window.backToExams;
+window.backToExams = function() {
+    originalBackToExams();
+    document.getElementById("online-exam-details-view").style.display = "none";
+};
+
+// 📝 نافذة التصحيح اليدوي للمدرس
+window.openGradeSubmission = function(examId, studentPhone) {
+    currentGradingExamId = examId; currentGradingStudentPhone = studentPhone;
+    const exam = onlineExams.find(e => e.id === examId);
+    const sub = exam.submissions[studentPhone];
+    const st = students.find(s => s.phone === studentPhone);
+    
+    document.getElementById("gradeStudentName").innerText = `إجابات: ${st ? st.name : 'طالب'}`;
+    document.getElementById("gradeStudentScore").innerText = `المجموع الحالي: ${sub.score} / ${exam.totalScore}`;
+    
+    const container = document.getElementById("studentAnswersContainer"); container.innerHTML = "";
+    
+    exam.questions.forEach((q, idx) => {
+        let studentAns = sub.answers[q.id];
+        let qHtml = `<div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+            <p style="font-weight: bold; margin-bottom: 10px; color: var(--text-main);">${idx+1}. ${q.text} <span style="font-size:12px; color:var(--text-muted);">(${q.points} درجات)</span></p>`;
+        
+        if (q.type === 'mcq') {
+            let ansText = studentAns !== undefined && studentAns !== -1 ? q.options[studentAns] : "لم يُجب";
+            let isCorrect = studentAns === q.correctAnswerIndex;
+            qHtml += `<p style="color: ${isCorrect ? 'var(--success-color)' : 'var(--danger-color)'}; font-weight: bold;">إجابة الطالب: ${ansText} ${isCorrect ? '✅' : '❌'}</p>`;
+            if(!isCorrect) qHtml += `<p style="color: var(--success-color); font-size: 13px;">الإجابة الصحيحة: ${q.options[q.correctAnswerIndex]}</p>`;
+        } 
+        else if (q.type === 'essay') {
+            let manualGrade = sub.manualGrades ? sub.manualGrades[q.id] : "";
+            qHtml += `
+            <div style="background: var(--card-bg); padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; margin-bottom: 10px;">
+                <p style="margin: 0; color: #3b82f6;"><strong>ما كتبه الطالب:</strong></p>
+                <p style="margin-top: 5px; white-space: pre-wrap;">${studentAns || "لم يكتب شيئاً"}</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="color: var(--exam-color); font-weight: bold;">الدرجة المستحقة:</label>
+                <input type="number" id="grade_${q.id}" class="custom-input manual-grade-input" style="width: 100px; text-align: center;" value="${manualGrade}" max="${q.points}" min="0">
+                <span style="color: var(--text-muted);">من ${q.points}</span>
+            </div>`;
+        }
+        else {
+            qHtml += `<p style="color: var(--text-muted);">إجابة الطالب: <strong>${studentAns || "لم يُجب"}</strong></p>`;
+        }
+        
+        qHtml += `</div>`;
+        container.innerHTML += qHtml;
+    });
+    openModal('gradeOnlineExamModal');
+};
+
+// عرض تفاصيل الامتحان وجلب الإجابات لايف من العقدة المؤمنة
+window.openOnlineExamDetails = async function(id) {
+    const exam = onlineExams.find(e => e.id === id); if(!exam) return;
+    document.getElementById("exams-overview").style.display = "none";
+    document.getElementById("online-exam-details-view").style.display = "block";
+    document.getElementById("current-online-exam-title").innerText = `💻 ${exam.title}`;
+    
+    let tbody = document.getElementById("online-exam-submissions-list");
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">جاري جلب تسليمات الطلاب من السحابة... ⏳</td></tr>`;
+
+    try {
+        // جلب الإجابات لايف من العقدة المستقلة المحمية
+        let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${licenseKey}/onlineSubmissions/${id}.json`);
+        let subs = await res.json() || {};
+        exam.submissions = subs; // حفظ مؤقت في الذاكرة لعملية التصحيح
+        
+        let subsArray = Object.keys(subs).map(phone => ({ phone: phone, data: subs[phone] }));
+        subsArray.sort((a, b) => b.data.score - a.data.score); // الترتيب بالأعلى درجة
+        
+        document.getElementById("online-exam-stats").innerText = `إجمالي التسليمات: ${subsArray.length}`;
+        tbody.innerHTML = "";
+        
+        if(subsArray.length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لم يقم أي طالب بتسليم الامتحان حتى الآن</td></tr>`;
+
+        subsArray.forEach(sub => {
+            let st = students.find(s => s.phone === sub.phone);
+            let name = st ? st.name : "طالب غير معروف";
+            let code = st ? st.code : "--";
+            let group = st ? st.group : "--";
+            
+            let needsGrading = exam.questions.some(q => q.type === 'essay' && sub.data.answers[q.id] !== undefined && sub.data.manualGrades?.[q.id] === undefined);
+            let statusBadge = needsGrading ? `<span class="badge-absent" style="background:#fef3c7; color:#d97706;">يحتاج تقييم مقالي ⚠️</span>` : `<span class="badge-present">مكتمل التقييم ✅</span>`;
+            let scoreColor = needsGrading ? "#d97706" : "#059669";
+
+            tbody.innerHTML += `<tr>
+                <td><strong>${code}</strong></td><td>${name}</td><td>${group}</td>
+                <td><strong style="color:${scoreColor}; font-size: 16px;">${sub.data.score} / ${exam.totalScore}</strong></td>
+                <td>${statusBadge}</td>
+                <td><button class="btn-present" style="background: #3b82f6;" onclick="openGradeSubmission('${exam.id}', '${sub.phone}')">عرض وتصحيح 📝</button></td>
+            </tr>`;
+        });
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger-color);">خطأ أثناء جلب البيانات من السحابة!</td></tr>`;
+    }
+};
+
+// حفظ الدرجات المقالية في العقدة المؤمنة
+window.saveManualGrades = async function() {
+    const exam = onlineExams.find(e => e.id === currentGradingExamId);
+    const sub = exam.submissions[currentGradingStudentPhone];
+    if(!sub.manualGrades) sub.manualGrades = {};
+    
+    exam.questions.filter(q => q.type === 'essay').forEach(q => {
+        let input = document.getElementById(`grade_${q.id}`);
+        if(input && input.value !== "") {
+            let val = parseFloat(input.value);
+            if(val > q.points) val = q.points;
+            let oldVal = sub.manualGrades[q.id] || 0;
+            sub.score = (sub.score - oldVal) + val;
+            sub.manualGrades[q.id] = val;
+        }
+    });
+
+    try {
+        // رفع التعديل مباشرة للمكان المحمي
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${licenseKey}/onlineSubmissions/${currentGradingExamId}/${currentGradingStudentPhone}.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sub)
+        });
+        closeModal('gradeOnlineExamModal');
+        openOnlineExamDetails(currentGradingExamId);
+        showToast("تم تحديث درجة الطالب بنجاح! 💾");
+    } catch(e) {
+        showToast("خطأ في حفظ الدرجة على السحابة!", "error");
+    }
+};
+
+// ==========================================
+// 🛠️ دوال بناء الأسئلة والمزامنة (اللي كانت ناقصة)
+// ==========================================
+window.addQuestionBlock = function(type) {
+    const container = document.getElementById("examQuestionsContainer");
+    const qId = Date.now().toString() + Math.floor(Math.random() * 1000); 
+    
+    let qHTML = `<div class="question-block" id="qb_${qId}" data-type="${type}" style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 2px solid var(--border-color); margin-bottom: 20px; position: relative;">
+        <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 10px; left: 10px; background: none; border: none; color: var(--danger-color); font-size: 20px; cursor: pointer;">🗑️</button>
+        
+        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+            <div style="flex: 3;">
+                <label style="color: var(--primary-color); font-weight: bold;">نص السؤال:</label>
+                <textarea class="custom-input q-text" rows="2" required placeholder="اكتب سؤالك هنا..."></textarea>
+            </div>
+            <div style="flex: 1;">
+                <label style="color: var(--exam-color); font-weight: bold;">درجة السؤال:</label>
+                <input type="number" class="custom-input q-points" value="1" min="1" required>
+            </div>
+        </div>
+    `;
+
+    if (type === 'mcq') {
+        qHTML += `
+            <div class="options-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="display:flex; align-items:center; gap:5px;"><input type="radio" name="ans_${qId}" value="0" required> <input type="text" class="custom-input q-opt" placeholder="الاختيار الأول (أ)" required></div>
+                <div style="display:flex; align-items:center; gap:5px;"><input type="radio" name="ans_${qId}" value="1"> <input type="text" class="custom-input q-opt" placeholder="الاختيار الثاني (ب)" required></div>
+                <div style="display:flex; align-items:center; gap:5px;"><input type="radio" name="ans_${qId}" value="2"> <input type="text" class="custom-input q-opt" placeholder="الاختيار الثالث (ج)" required></div>
+                <div style="display:flex; align-items:center; gap:5px;"><input type="radio" name="ans_${qId}" value="3"> <input type="text" class="custom-input q-opt" placeholder="الاختيار الرابع (د)" required></div>
+            </div>
+            <p style="font-size: 12px; color: var(--success-color); margin-top: 10px;">* حدد الدائرة بجوار الاختيار الصحيح ليقوم النظام بتصحيحه تلقائياً.</p>
+        `;
+    } 
+    else if (type === 'tf') {
+        qHTML += `
+            <div style="display: flex; gap: 20px;">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px; font-weight:bold; color:var(--success-color);"><input type="radio" name="ans_${qId}" value="true" required style="width:18px; height:18px;"> عبارة صحيحة ✔️</label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px; font-weight:bold; color:var(--danger-color);"><input type="radio" name="ans_${qId}" value="false" style="width:18px; height:18px;"> عبارة خاطئة ❌</label>
+            </div>
+        `;
+    }
+    else if (type === 'blank') {
+        qHTML += `
+            <div>
+                <label>الإجابة الصحيحة المطابقة (للتصحيح التلقائي):</label>
+                <input type="text" class="custom-input q-correct-blank" required placeholder="اكتب الكلمة الناقصة بالظبط...">
+            </div>
+        `;
+    }
+    else if (type === 'essay') {
+        qHTML += `
+            <div style="background: rgba(139, 92, 246, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed var(--exam-color);">
+                <p style="color: var(--exam-color); font-size: 14px; margin: 0;">📝 هذا السؤال سيحله الطالب في مربع نص كبير. ستحتاج إلى مراجعته وتصحيحه يدوياً من لوحة التحكم لتحديد الدرجة.</p>
+            </div>
+        `;
+    }
+
+    qHTML += `</div>`;
+    container.insertAdjacentHTML('beforeend', qHTML);
+    
+    const scrollArea = document.getElementById("examBuilderScrollArea");
+    if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+};
+
+// مزامنة الامتحانات الإلكترونية مع الفايربيز
+const syncBotOriginalOnline = window.syncDataToBot;
+window.syncDataToBot = async function() {
+    if (syncBotOriginalOnline) await syncBotOriginalOnline();
+    
+    let isDemo = localStorage.getItem("is_demo_mode") === "true";
+    if (!isDemo && isFirebaseLoaded && licenseKey) {
+        try {
+            await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${licenseKey}/data/onlineExams.json`, { 
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(onlineExams) 
+            });
+        } catch (e) {}
+    }
+};
+
+// ==========================================
+// 📢 نظام إشعارات الإدارة العليا (Global Announcements)
+// ==========================================
+let currentAnnouncementId = null;
+
+async function checkGlobalAnnouncements() {
+    try {
+        // سحب الإشعار من العقدة العامة في السيرفر
+        let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/global_announcement.json`);
+        let ann = await res.json();
+        
+        if (ann && ann.id) {
+            let dismissedId = localStorage.getItem("dismissed_announcement");
+            // لو المدرس مقفلش الإشعار ده قبل كده، اظهرهوله
+            if (dismissedId !== ann.id) {
+                currentAnnouncementId = ann.id;
+                document.getElementById("globalAnnTitle").innerText = ann.title || "📢 تنبيه من إدارة EduTrack";
+                // استبدال المسافات عشان لو كاتب برجراف يظهر منسق
+                document.getElementById("globalAnnMessage").innerHTML = ann.message.replace(/\n/g, '<br>');
+                openModal('globalAnnouncementModal');
+            }
+        }
+    } catch(e) {
+        console.log("No global announcements at the moment.");
+    }
+}
+
+window.dismissGlobalAnnouncement = function() {
+    if (currentAnnouncementId) {
+        // حفظ الـ ID في المتصفح عشان ميظهرش تاني
+        localStorage.setItem("dismissed_announcement", currentAnnouncementId);
+    }
+    closeModal('globalAnnouncementModal');
+};

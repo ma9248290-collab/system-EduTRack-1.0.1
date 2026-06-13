@@ -130,6 +130,7 @@
                     <button class="btn" style="width: auto; background: var(--success);" onclick="generateLicense()">+ إنشاء كود جديد</button>
                     <input type="text" id="generatedCodeDisplay" class="custom-input" readonly placeholder="الكود الجديد هيظهر هنا..." style="flex: 1; margin: 0; direction: ltr; text-align: left; color: var(--success); font-size: 20px;">
                 </div>
+                <button onclick="publishGlobalAnnouncement()" style="background: #f97316; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">📢 إرسال إشعار عام للمدرسين</button>
             </div>
 
             <div id="orders-tab" class="tab-content">
@@ -421,6 +422,33 @@
         async function updateDemoStatus(key, status) { await fetch(`${DB_URL}/demo_users/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: status }) }); fetchSystemData(); }
         async function deleteDemo(key) { await fetch(`${DB_URL}/demo_users/${key}.json`, { method: 'DELETE' }); fetchSystemData(); }
         async function approveWithdraw(key) { if(confirm("هل قمت بتحويل المبلغ؟")) { await fetch(`${DB_URL}/withdraw_requests/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'paid' }) }); fetchSystemData(); } }
+    
+        async function publishGlobalAnnouncement() {
+    const title = prompt("اكتب عنوان الإشعار (مثال: تحديث هام V2.0):");
+    if (!title) return;
+    
+    const message = prompt("اكتب نص الإشعار (هنا يمكنك كتابة تفاصيل التحديث):");
+    if (!message) return;
+
+    // بنكريت ID جديد برقم اللحظة عشان يظهر للكل كإشعار جديد
+    const newAnn = {
+        id: "ann_" + Date.now(),
+        title: title,
+        message: message,
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/global_announcement.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newAnn)
+        });
+        alert("تم إرسال الإشعار! سيظهر لجميع المدرسين فور فتح النظام.");
+    } catch (e) {
+        alert("حدث خطأ أثناء إرسال الإشعار.");
+    }
+}
     </script>
 </body>
 </html>

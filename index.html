@@ -843,7 +843,18 @@
     </div> 
 
     <!-- النوافذ المنبثقة (Modals) مكانها الصح بره الـ main -->
-
+<div id="globalAnnouncementModal" class="modal" style="z-index: 1000000;">
+        <div class="modal-content" style="width: 450px; text-align: center; border-top: 5px solid var(--primary-color);">
+            <div class="octo-mascot octo-welcome" style="width: 80px; height: 80px; margin: 0 auto 15px auto;"></div>
+            
+            <h2 id="globalAnnTitle" style="color: var(--primary-color); margin-bottom: 15px; font-size: 22px;">تحديث جديد!</h2>
+            
+            <div id="globalAnnMessage" style="color: var(--text-main); font-size: 15px; line-height: 1.8; margin-bottom: 25px; background: var(--hover-bg); padding: 20px; border-radius: 8px; border: 1px dashed var(--border-color); text-align: right;">
+                </div>
+            
+            <button class="save-btn" style="width: 100%; font-size: 16px;" onclick="dismissGlobalAnnouncement()">فهمت، شكراً 👍</button>
+        </div>
+    </div>
     <div id="customConfirmModal" class="modal">
         <div class="modal-content" style="width: 350px; text-align: center; margin: 20% auto;">
             <!-- 🐙 أخطبوط التحذير -->
