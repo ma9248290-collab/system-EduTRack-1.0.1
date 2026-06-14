@@ -393,9 +393,17 @@
                     return;
                 }
 
-                // 🔥 تحسين سحري: تحديد الصف الدراسي للطالب بربطه بالمجموعة لفلترة الكورسات
-                let studentGroupObj = (data.groups || []).find(g => g.name === currentStudent.group);
+                /// 🔥 تحسين سحري: استنتاج الصف الدراسي للطالب بذكاء شديد
+                let studentGroupObj = (data.groups || []).find(g => typeof g === 'object' && g.name === currentStudent.group);
                 currentStudent.level = studentGroupObj ? studentGroupObj.level : "غير محدد";
+
+                // استنتاج الصف لو الداتا قديمة في السيرفر (مهم جداً للفلترة)
+                if (currentStudent.level === "غير محدد") {
+                    let gName = currentStudent.group || "";
+                    if (gName.includes("1ث") || gName.includes("الأول")) currentStudent.level = "الصف الأول الثانوي";
+                    else if (gName.includes("2ث") || gName.includes("الثاني")) currentStudent.level = "الصف الثاني الثانوي";
+                    else if (gName.includes("3ث") || gName.includes("الثالث")) currentStudent.level = "الصف الثالث الثانوي";
+                }
 
                 localStorage.setItem("edu_student_code", code);
                 localStorage.setItem("edu_parent_phone", phone);
@@ -455,12 +463,13 @@
         function renderStudentLectures() {
             const container = document.getElementById("tab-lectures");
             
-            // الفلترة الذكية بالصف الحالي للطالب ومجموعته لضمان التوافق
+            // الفلترة الذكية بالصف الحالي للطالب 
             let myLectures = window.allLectures.filter(l => 
                 l.level === 'all' || 
                 l.level === currentStudent.level || 
                 l.group === 'all' || 
-                l.group === currentStudent.group
+                l.group === currentStudent.group ||
+                !l.level // احتياطي للكورسات القديمة جداً
             );
             
             if(myLectures.length === 0) {
