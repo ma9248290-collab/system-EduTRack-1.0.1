@@ -130,9 +130,9 @@
                 <li id="nav-attendance"><a href="#" onclick="switchPage('attendance')">سجل الحضور 📋</a></li>
                 <li id="nav-homework"><a href="#" onclick="switchPage('homework')">سجل الواجبات 📝</a></li>
                 <li id="nav-exams"><a href="#" onclick="switchPage('exams')">الامتحانات 📝</a></li>
-                <a href="#" onclick="switchPage('platform-page')" class="nav-item">
+                <li id="nav-platform" onclick="switchPage('platform')">
     <span>💻</span> إدارة المنصة
-</a>
+</li>
                 <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
                 <li id="nav-reports"><a href="#" onclick="switchPage('reports')">التقارير الشاملة 📈</a></li>
                 <li id="nav-leaderboard"><a href="#" onclick="switchPage('leaderboard')">لوحة الشرف 🏆</a></li>
@@ -530,23 +530,16 @@
         </button>
     </div>
 </div>
-<!-- ========================================== -->
-<!-- 💻 صفحة إدارة المنصة (أكواد - فيديوهات - امتحانات) -->
-<!-- ========================================== -->
-<div id="platform-page" class="page-content" style="display: none;">
-    <div class="header-section" style="margin-bottom: 20px;">
-        <h2 style="color: var(--secondary-color); margin-bottom: 5px;">💻 إدارة المنصة التعليمية</h2>
-        <p style="color: var(--text-muted); margin: 0;">تحكم في المحتوى الرقمي، المحفظة، والامتحانات</p>
-    </div>
 
-    <!-- 🗂️ التابات الداخلية للصفحة -->
+
+            <div id="platform-view" class="view-section" style="display: none;">
+    
     <div style="display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">
         <button class="save-btn" id="tab-btn-codes" onclick="switchPlatformTab('codes')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--primary-color);">💳 أكواد الشحن</button>
         <button class="save-btn" id="tab-btn-lectures" onclick="switchPlatformTab('lectures')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color);">🎬 المحاضرات</button>
         <button class="save-btn" id="tab-btn-exams" onclick="switchPlatformTab('exams')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color);">📝 الامتحانات الإلكترونية</button>
     </div>
 
-    <!-- 💳 قسم أكواد الشحن -->
     <div id="platform-codes" class="platform-section">
         <div class="card" style="margin-bottom: 20px;">
             <h3 style="color: var(--primary-color); margin-top: 0;">توليد أكواد شحن جديدة 💳</h3>
@@ -567,13 +560,11 @@
             <div style="overflow-x: auto;">
                 <table class="custom-table" id="codes-table">
                     <tr><th>الكود</th><th>القيمة</th><th>الحالة</th><th>تاريخ الإنشاء</th></tr>
-                    <!-- سيتم تعبئتها بالجافاسكريبت -->
-                </table>
+                    </table>
             </div>
         </div>
     </div>
 
-    <!-- 🎬 قسم المحاضرات المرئية -->
     <div id="platform-lectures" class="platform-section" style="display: none;">
         <div class="card" style="margin-bottom: 20px;">
             <h3 style="color: var(--primary-color); margin-top: 0;">إضافة محاضرة جديدة 🎬</h3>
@@ -585,9 +576,8 @@
                 <div class="input-group">
                     <label>المجموعة المستهدفة</label>
                     <select id="lecGroup" class="custom-input">
-                        <!-- المفروض تتملي من دالة المجموعات بتاعتك -->
                         <option value="all">كل المجموعات</option>
-                    </select>
+                        </select>
                 </div>
                 <div class="input-group" style="grid-column: span 2;">
                     <label>رابط الفيديو (YouTube أو Drive)</label>
@@ -599,20 +589,18 @@
         <div class="card">
             <h3 style="margin-top: 0; color: var(--secondary-color);">المحاضرات المنشورة</h3>
             <div id="lectures-list" style="display: flex; flex-direction: column; gap: 10px;">
-                <!-- سيتم التعبئة -->
-            </div>
+                </div>
         </div>
     </div>
 
-    <!-- 📝 قسم الامتحانات الإلكترونية -->
     <div id="platform-exams" class="platform-section" style="display: none;">
-        <!-- ⚠️ انسخ كل محتوى شاشة الامتحانات الإلكترونية القديمة بتاعتك وحطه هنا بالظبط -->
         <div class="card" style="text-align: center; padding: 40px;">
             <h3 style="color: var(--primary-color);">منطقة الامتحانات الإلكترونية</h3>
             <p style="color: var(--text-muted);">قم بنقل أدوات إنشاء الامتحانات هنا.</p>
         </div>
     </div>
 </div>
+
             <!-- صفحة إدارة الكتب -->
             <div id="books-view" class="view-section" style="display: none;">
                 <section class="students-section">
@@ -650,8 +638,6 @@
                     </div>
                 </section>
             </div>
-
-            
 
 
             <!-- شاشة نظام الإحالات -->
@@ -864,9 +850,67 @@
     </section>
 </div>
 
+<div id="buildOnlineExamModal" class="modal">
+        <div class="modal-content" style="width: 800px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <span class="close-btn" onclick="closeModal('buildOnlineExamModal')">&times;</span>
+            <h2 style="color: var(--primary-color); margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">🛠️ صانع الامتحانات الإلكترونية</h2>
+            
+            <div style="overflow-y: auto; padding-right: 10px; flex: 1;" id="examBuilderScrollArea">
+                <form id="buildOnlineExamForm">
+                    <div style="background: var(--hover-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+                        <div class="form-grid">
+                            <div class="input-group full-width">
+                                <label>عنوان الامتحان</label>
+                                <input type="text" id="onlineExamTitle" required class="custom-input" placeholder="مثال: امتحان الباب الأول">
+                            </div>
+                            <div class="input-group full-width">
+                                <label>المجموعات المستهدفة (يمكن اختيار أكثر من مجموعة)</label>
+                                <div id="onlineExamGroupsContainer" style="display: flex; gap: 15px; flex-wrap: wrap; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); max-height: 120px; overflow-y: auto;">
+                                    </div>
+                            </div>
+                            <div class="input-group">
+                                <label>مدة الامتحان (بالدقائق)</label>
+                                <input type="number" id="onlineExamDuration" required class="custom-input" placeholder="مثال: 60" min="1">
+                            </div>
+                            <div class="input-group" style="display: flex; align-items: flex-end; padding-bottom: 10px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px; font-weight: bold; color: var(--success-color);">
+                                    <input type="checkbox" id="onlineExamAutoShowResult" style="width: 20px; height: 20px; accent-color: var(--success-color);" checked>
+                                    إظهار النتيجة للطالب فوراً
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="examQuestionsContainer"></div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px dashed var(--primary-color);">
+                        <p style="width: 100%; margin-bottom: 10px; font-weight: bold; color: var(--text-muted);">➕ أضف سؤالاً جديداً:</p>
+                        <button type="button" class="theme-btn" style="flex: 1; border-color: #3b82f6; color: #3b82f6;" onclick="addQuestionBlock('mcq')">🔘 اختيار من متعدد</button>
+                        <button type="button" class="theme-btn" style="flex: 1; border-color: #10b981; color: #10b981;" onclick="addQuestionBlock('tf')">✔️ صح وخطأ</button>
+                        <button type="button" class="theme-btn" style="flex: 1; border-color: #f59e0b; color: #f59e0b;" onclick="addQuestionBlock('blank')">✍️ أكمل الفراغ</button>
+                        <button type="button" class="theme-btn" style="flex: 1; border-color: #8b5cf6; color: #8b5cf6;" onclick="addQuestionBlock('essay')">📝 مقالي</button>
+                    </div>
+                </form>
+            </div>
+            <div style="padding-top: 15px; border-top: 1px solid var(--border-color); margin-top: 10px;">
+                <button type="button" class="save-btn" style="width: 100%; font-size: 18px;" onclick="saveOnlineExam()">🚀 نشر الامتحان الإلكتروني</button>
+            </div>
+        </div>
+    </div>
 
-
-    
+    <div id="gradeOnlineExamModal" class="modal">
+        <div class="modal-content" style="width: 700px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <span class="close-btn" onclick="closeModal('gradeOnlineExamModal')">&times;</span>
+            <h2 style="color: var(--primary-color); margin-bottom: 15px;">📝 مراجعة وتقييم إجابات الطالب</h2>
+            <div style="display: flex; justify-content: space-between; background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <strong id="gradeStudentName" style="font-size: 18px;"></strong>
+                <span id="gradeStudentScore" style="color: var(--exam-color); font-weight: bold; font-size: 18px;"></span>
+            </div>
+            <div id="studentAnswersContainer" style="overflow-y: auto; padding-right: 10px; flex: 1;">
+                </div>
+            <div style="padding-top: 15px; margin-top: 10px;">
+                <button class="save-btn" onclick="saveManualGrades()">💾 حفظ الدرجات والتحديث</button>
+            </div>
+        </div>
+    </div>
 
         </main>
     </div> 
