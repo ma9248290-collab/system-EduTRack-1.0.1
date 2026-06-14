@@ -178,7 +178,7 @@
                 <div class="nav-item" onclick="switchTab('tab-exams')">📝 الامتحانات</div>
                 <div class="nav-item" onclick="switchTab('tab-lectures')">🎬 المحاضرات</div>
                 <div class="nav-item" onclick="switchTab('tab-wallet')">💰 محفظتي</div>
-                <div class="nav-item" style="color: #ef4444; margin-top: auto;" onclick="location.reload()">🚪 خروج</div>
+                <div class="nav-item" style="color: #ef4444; margin-top: auto;" onclick="logoutStudent()">🚪 خروج</div>
             </aside>
 
             <main class="content-area">
@@ -312,27 +312,64 @@
         let currentExam = null;
         let examTimerInterval = null;
 
+        // ==========================================
+        // 🚀 نظام الدخول التلقائي (حفظ الجلسة)
+        // ==========================================
+        window.onload = function() {
+            // فحص ذاكرة المتصفح أول ما الصفحة تفتح
+            const savedCode = localStorage.getItem("edu_student_code");
+            const savedPhone = localStorage.getItem("edu_parent_phone");
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlTeacherId = urlParams.get('id');
+            const savedTeacherId = localStorage.getItem("edu_teacher_id");
+
+            globalTeacherId = urlTeacherId || savedTeacherId;
+
+            // لو لقينا بيانات محفوظة، نكتبها في المربعات وندخل أوتوماتيك
+            if (savedCode && savedPhone && globalTeacherId) {
+                document.getElementById("studentCode").value = savedCode;
+                document.getElementById("parentPhone").value = savedPhone;
+                fetchStudentData(true); // true معناها ده دخول تلقائي
+            }
+        };
+
+        // ==========================================
+        // 🚪 دالة تسجيل الخروج
+        // ==========================================
+        function logoutStudent() {
+            // مسح الذاكرة عشان ميخشش تلقائي تاني
+            localStorage.removeItem("edu_student_code");
+            localStorage.removeItem("edu_parent_phone");
+            localStorage.removeItem("edu_teacher_id");
+            location.reload(); // عمل ريفريش لصفحة الدخول
+        }
+
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            if(event) event.currentTarget.classList.add('active');
         }
 
-        async function fetchStudentData() {
+        async function fetchStudentData(isAutoLogin = false) {
             const code = document.getElementById("studentCode").value.trim();
             const phone = document.getElementById("parentPhone").value.trim();
             const errorMsg = document.getElementById("error-msg");
             const btn = document.querySelector('#login-screen .btn');
-            const urlParams = new URLSearchParams(window.location.search);
-            globalTeacherId = urlParams.get('id');
+            
+            if (!globalTeacherId) {
+                const urlParams = new URLSearchParams(window.location.search);
+                globalTeacherId = urlParams.get('id');
+            }
 
             if (!code || !phone || !globalTeacherId) {
-                errorMsg.style.display = "block"; errorMsg.innerText = "تأكد من إدخال البيانات وأن الرابط صحيح!"; return;
+                if(!isAutoLogin) { errorMsg.style.display = "block"; errorMsg.innerText = "تأكد من إدخال البيانات وأن الرابط صحيح!"; }
+                return;
             }
 
             errorMsg.style.display = "none";
-            btn.innerText = "جاري الدخول... ⏳";
+            btn.innerHTML = `<div class="octo-mascot octo-loading" style="width: 25px; height: 25px; margin-left: 10px;"></div> جاري الدخول...`;
 
             try {
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
@@ -343,9 +380,14 @@
                 currentStudent = data.students.find(s => s && s.code === code && s.parentPhone === phone);
                 if (!currentStudent) {
                     errorMsg.style.display = "block"; errorMsg.innerText = "البيانات غير مسجلة!";
-                    btn.innerText = "دخول للمنصة 🚀";
+                    btn.innerHTML = "دخول للمنصة 🚀";
                     return;
                 }
+
+                // 💾 حفظ بيانات الطالب في الذاكرة بعد التأكد من صحتها
+                localStorage.setItem("edu_student_code", code);
+                localStorage.setItem("edu_parent_phone", phone);
+                localStorage.setItem("edu_teacher_id", globalTeacherId);
 
                 allOnlineExams = data.onlineExams || [];
 
@@ -385,7 +427,7 @@
 
             } catch (e) {
                 errorMsg.style.display = "block"; errorMsg.innerText = "خطأ في الاتصال!";
-                btn.innerText = "دخول للمنصة 🚀";
+                btn.innerHTML = "دخول للمنصة 🚀";
             }
         }
 
