@@ -954,6 +954,34 @@
         </div>
     </div>
 
+    <div id="platform-exam-details-section" style="display: none;">
+            <div class="section-header" style="margin-bottom: 20px;">
+                <div>
+                    <button class="theme-btn" onclick="backToPlatformExams()" style="margin-bottom: 15px; border-color: var(--primary-color); color: var(--primary-color);">🔙 عودة للامتحانات</button>
+                    <h2 id="platform-exam-title" style="color: #3b82f6; margin-top: 10px;"></h2>
+                </div>
+                <div class="header-actions">
+                    <span class="status-badge" id="platform-exam-stats" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 15px; font-weight: bold; padding: 10px 15px;"></span>
+                </div>
+            </div>
+            <div class="table-container card">
+                <table class="students-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>كود الطالب</th>
+                            <th>الاسم</th>
+                            <th>المجموعة</th>
+                            <th>الدرجة</th>
+                            <th>الحالة</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="platform-exam-submissions-list">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
         </main>
     </div> 
 
