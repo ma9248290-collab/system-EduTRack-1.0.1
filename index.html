@@ -530,46 +530,7 @@
         </button>
     </div>
 </div>
-
-            <!-- صفحة إدارة الكتب -->
-            <div id="books-view" class="view-section" style="display: none;">
-                <section class="students-section">
-                    <div class="section-header">
-                        <h2>حسابات الكتب والسناتر 📘</h2>
-                        <div class="header-actions">
-                            <input type="text" id="searchBooksInput" placeholder="بحث باسم الكتاب أو السنتر..." class="custom-input" onkeyup="searchBooks()" style="width: 250px;">
-                            <button class="add-btn" onclick="openModal('addBookModal')" style="background-color: #0ea5e9;">+ تسليم كتب لسنتر</button>
-                        </div>
-                    </div>
-                    
-                    <div class="stats-grid" style="margin-bottom: 20px;">
-                        <div class="stat-card" style="border-top: 4px solid var(--primary-color);"><h3>إجمالي المبلغ</h3><p class="stat-number" id="books-total-expected">0 ج.م</p></div>
-                        <div class="stat-card" style="border-top: 4px solid var(--success-color);"><h3>إجمالي المستلم</h3><p class="stat-number" id="books-total-received">0 ج.م</p></div>
-                        <div class="stat-card" style="border-top: 4px solid var(--danger-color);"><h3>المتبقي بالسناتر</h3><p class="stat-number" id="books-total-remaining">0 ج.م</p></div>
-                    </div>
-
-                    <div class="table-container">
-                        <table class="students-table">
-                            <thead>
-                                <tr>
-                                    <th>الكتاب</th>
-                                    <th>السنتر</th>
-                                    <th>الكمية</th>
-                                    <th>السعر</th>
-                                    <th>العمولة</th>
-                                    <th>المطلوب سداده</th>
-                                    <th>تم استلام</th>
-                                    <th>المتبقي</th>
-                                    <th>إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="books-list"></tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
-
-            <!-- ========================================== -->
+<!-- ========================================== -->
 <!-- 💻 صفحة إدارة المنصة (أكواد - فيديوهات - امتحانات) -->
 <!-- ========================================== -->
 <div id="platform-page" class="page-content" style="display: none;">
@@ -647,11 +608,50 @@
     <div id="platform-exams" class="platform-section" style="display: none;">
         <!-- ⚠️ انسخ كل محتوى شاشة الامتحانات الإلكترونية القديمة بتاعتك وحطه هنا بالظبط -->
         <div class="card" style="text-align: center; padding: 40px;">
-            <h3 style="color: var(--exam-color);">تم نقل الامتحانات الإلكترونية هنا بنجاح!</h3>
-            <p style="color: var(--text-muted);">انقل الـ HTML الخاص بإنشاء وإدارة الامتحانات ليظهر في هذه المساحة.</p>
+            <h3 style="color: var(--primary-color);">منطقة الامتحانات الإلكترونية</h3>
+            <p style="color: var(--text-muted);">قم بنقل أدوات إنشاء الامتحانات هنا.</p>
         </div>
     </div>
 </div>
+            <!-- صفحة إدارة الكتب -->
+            <div id="books-view" class="view-section" style="display: none;">
+                <section class="students-section">
+                    <div class="section-header">
+                        <h2>حسابات الكتب والسناتر 📘</h2>
+                        <div class="header-actions">
+                            <input type="text" id="searchBooksInput" placeholder="بحث باسم الكتاب أو السنتر..." class="custom-input" onkeyup="searchBooks()" style="width: 250px;">
+                            <button class="add-btn" onclick="openModal('addBookModal')" style="background-color: #0ea5e9;">+ تسليم كتب لسنتر</button>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-grid" style="margin-bottom: 20px;">
+                        <div class="stat-card" style="border-top: 4px solid var(--primary-color);"><h3>إجمالي المبلغ</h3><p class="stat-number" id="books-total-expected">0 ج.م</p></div>
+                        <div class="stat-card" style="border-top: 4px solid var(--success-color);"><h3>إجمالي المستلم</h3><p class="stat-number" id="books-total-received">0 ج.م</p></div>
+                        <div class="stat-card" style="border-top: 4px solid var(--danger-color);"><h3>المتبقي بالسناتر</h3><p class="stat-number" id="books-total-remaining">0 ج.م</p></div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="students-table">
+                            <thead>
+                                <tr>
+                                    <th>الكتاب</th>
+                                    <th>السنتر</th>
+                                    <th>الكمية</th>
+                                    <th>السعر</th>
+                                    <th>العمولة</th>
+                                    <th>المطلوب سداده</th>
+                                    <th>تم استلام</th>
+                                    <th>المتبقي</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="books-list"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            
 
 
             <!-- شاشة نظام الإحالات -->
