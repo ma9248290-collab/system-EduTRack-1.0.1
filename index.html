@@ -130,9 +130,9 @@
                 <li id="nav-attendance"><a href="#" onclick="switchPage('attendance')">سجل الحضور 📋</a></li>
                 <li id="nav-homework"><a href="#" onclick="switchPage('homework')">سجل الواجبات 📝</a></li>
                 <li id="nav-exams"><a href="#" onclick="switchPage('exams')">الامتحانات 📝</a></li>
-                <li id="nav-platform" onclick="switchPage('platform')">
+                <li id="nav-platform"><a href="#" onclick="switchPage('platform')">
     <span>💻</span> إدارة المنصة
-</li>
+</a></li>
                 <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
                 <li id="nav-reports"><a href="#" onclick="switchPage('reports')">التقارير الشاملة 📈</a></li>
                 <li id="nav-leaderboard"><a href="#" onclick="switchPage('leaderboard')">لوحة الشرف 🏆</a></li>
@@ -594,10 +594,24 @@
     </div>
 
     <div id="platform-exams" class="platform-section" style="display: none;">
-        <div class="card" style="text-align: center; padding: 40px;">
-            <h3 style="color: var(--primary-color);">منطقة الامتحانات الإلكترونية</h3>
-            <p style="color: var(--text-muted);">قم بنقل أدوات إنشاء الامتحانات هنا.</p>
+        
+        <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h3 style="color: var(--primary-color); margin: 0 0 5px 0;">إدارة الامتحانات الإلكترونية 💻</h3>
+                <p style="color: var(--text-muted); margin: 0; font-size: 14px;">قم بإنشاء وتعديل الامتحانات المباشرة للطلاب</p>
+            </div>
+            <button class="save-btn" style="width: auto; padding: 12px 25px; font-size: 15px; background: var(--success-color);" onclick="openOnlineExamBuilder()">
+                ➕ إنشاء امتحان إلكتروني جديد
+            </button>
         </div>
+
+        <div id="online-exams-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px; background: var(--bg-color); border-radius: 12px; border: 1px dashed var(--border-color);">
+                <div class="octo-mascot octo-loading" style="width: 50px; height: 50px; margin-bottom: 10px;"></div>
+                <br>جاري تحميل الامتحانات الإلكترونية... ⏳
+            </div>
+        </div>
+
     </div>
 </div>
 
