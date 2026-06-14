@@ -594,20 +594,45 @@
 
     <div id="platform-exams" class="platform-section" style="display: none;">
         
-        <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-            <div>
-                <h3 style="color: var(--primary-color); margin: 0 0 5px 0;">إدارة الامتحانات الإلكترونية 💻</h3>
-                <p style="color: var(--text-muted); margin: 0; font-size: 14px;">قم بإنشاء وتعديل الامتحانات المباشرة للطلاب</p>
+        <div id="platform-exams-list-container">
+            <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h3 style="color: var(--primary-color); margin: 0 0 5px 0;">إدارة الامتحانات الإلكترونية 💻</h3>
+                    <p style="color: var(--text-muted); margin: 0; font-size: 14px;">قم بإنشاء وتعديل الامتحانات المباشرة للطلاب</p>
+                </div>
+                <button class="save-btn" style="width: auto; padding: 12px 25px; font-size: 15px; background: var(--success-color);" onclick="openOnlineExamBuilder()">
+                    ➕ إنشاء امتحان إلكتروني جديد
+                </button>
             </div>
-            <button class="save-btn" style="width: auto; padding: 12px 25px; font-size: 15px; background: var(--success-color);" onclick="openOnlineExamBuilder()">
-                ➕ إنشاء امتحان إلكتروني جديد
-            </button>
+            
+            <div id="online-exams-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;"></div>
         </div>
 
-        <div id="online-exams-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
-            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px; background: var(--bg-color); border-radius: 12px; border: 1px dashed var(--border-color);">
-                <div class="octo-mascot octo-loading" style="width: 50px; height: 50px; margin-bottom: 10px;"></div>
-                <br>جاري تحميل الامتحانات الإلكترونية... ⏳
+        <div id="online-exam-details-section" style="display: none;">
+            <div class="section-header" style="margin-bottom: 20px;">
+                <div>
+                    <button class="theme-btn" onclick="backToPlatformExams()" style="margin-bottom: 15px; border-color: var(--primary-color); color: var(--primary-color);">🔙 عودة للامتحانات</button>
+                    <h2 id="current-online-exam-title" style="color: #3b82f6; margin-top: 10px;"></h2>
+                </div>
+                <div class="header-actions">
+                    <span class="status-badge" id="online-exam-stats" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 15px; font-weight: bold; padding: 10px 15px;"></span>
+                </div>
+            </div>
+            <div class="table-container card">
+                <table class="students-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>كود الطالب</th>
+                            <th>الاسم</th>
+                            <th>المجموعة</th>
+                            <th>الدرجة</th>
+                            <th>الحالة</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="online-exam-submissions-list">
+                        </tbody>
+                </table>
             </div>
         </div>
 
@@ -909,19 +934,23 @@
         </div>
     </div>
 
-    <div id="gradeOnlineExamModal" class="modal">
-        <div class="modal-content" style="width: 700px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
-            <span class="close-btn" onclick="closeModal('gradeOnlineExamModal')">&times;</span>
-            <h2 style="color: var(--primary-color); margin-bottom: 15px;">📝 مراجعة وتقييم إجابات الطالب</h2>
-            <div style="display: flex; justify-content: space-between; background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                <strong id="gradeStudentName" style="font-size: 18px;"></strong>
-                <span id="gradeStudentScore" style="color: var(--exam-color); font-weight: bold; font-size: 18px;"></span>
+    <div id="gradeOnlineExamModal" class="modal" style="z-index: 1000000;">
+        <div class="modal-content" style="width: 750px; max-width: 95%; max-height: 90vh; overflow-y: auto; border-top: 5px solid var(--primary-color);">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: var(--secondary-color);">📝 تقييم إجابات الطالب</h2>
+                <span class="close" onclick="closeModal('gradeOnlineExamModal')" style="font-size: 28px; cursor: pointer; color: var(--danger-color);">&times;</span>
             </div>
-            <div id="studentAnswersContainer" style="overflow-y: auto; padding-right: 10px; flex: 1;">
+
+            <div style="display: flex; justify-content: space-between; background: var(--bg-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 16px; border: 1px solid var(--border-color);">
+                <span id="gradeStudentName" style="color: var(--secondary-color);"></span>
+                <span id="gradeStudentScore" style="color: var(--success-color); font-size: 18px;"></span>
+            </div>
+
+            <div id="studentAnswersContainer" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
                 </div>
-            <div style="padding-top: 15px; margin-top: 10px;">
-                <button class="save-btn" onclick="saveManualGrades()">💾 حفظ الدرجات والتحديث</button>
-            </div>
+
+            <button class="save-btn" style="width: 100%; font-size: 18px; padding: 15px; box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);" onclick="saveManualGrades()">💾 حفظ الدرجات والتعديلات</button>
         </div>
     </div>
 
