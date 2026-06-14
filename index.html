@@ -569,6 +569,90 @@
                 </section>
             </div>
 
+            <!-- ========================================== -->
+<!-- 💻 صفحة إدارة المنصة (أكواد - فيديوهات - امتحانات) -->
+<!-- ========================================== -->
+<div id="platform-page" class="page-content" style="display: none;">
+    <div class="header-section" style="margin-bottom: 20px;">
+        <h2 style="color: var(--secondary-color); margin-bottom: 5px;">💻 إدارة المنصة التعليمية</h2>
+        <p style="color: var(--text-muted); margin: 0;">تحكم في المحتوى الرقمي، المحفظة، والامتحانات</p>
+    </div>
+
+    <!-- 🗂️ التابات الداخلية للصفحة -->
+    <div style="display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">
+        <button class="save-btn" id="tab-btn-codes" onclick="switchPlatformTab('codes')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--primary-color);">💳 أكواد الشحن</button>
+        <button class="save-btn" id="tab-btn-lectures" onclick="switchPlatformTab('lectures')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color);">🎬 المحاضرات</button>
+        <button class="save-btn" id="tab-btn-exams" onclick="switchPlatformTab('exams')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color);">📝 الامتحانات الإلكترونية</button>
+    </div>
+
+    <!-- 💳 قسم أكواد الشحن -->
+    <div id="platform-codes" class="platform-section">
+        <div class="card" style="margin-bottom: 20px;">
+            <h3 style="color: var(--primary-color); margin-top: 0;">توليد أكواد شحن جديدة 💳</h3>
+            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div class="input-group" style="flex: 1; min-width: 150px;">
+                    <label>القيمة المالية للكود (ج.م)</label>
+                    <input type="number" id="codeAmount" class="custom-input" placeholder="مثال: 50">
+                </div>
+                <div class="input-group" style="flex: 1; min-width: 150px;">
+                    <label>عدد الأكواد المطلوبة</label>
+                    <input type="number" id="codeCount" class="custom-input" placeholder="مثال: 10">
+                </div>
+                <button class="save-btn" style="width: auto; height: 48px; padding: 0 30px;" onclick="generateChargeCodes()">توليد الأكواد 🚀</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3 style="margin-top: 0; color: var(--secondary-color);">الأكواد المتاحة للطباعة</h3>
+            <div style="overflow-x: auto;">
+                <table class="custom-table" id="codes-table">
+                    <tr><th>الكود</th><th>القيمة</th><th>الحالة</th><th>تاريخ الإنشاء</th></tr>
+                    <!-- سيتم تعبئتها بالجافاسكريبت -->
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎬 قسم المحاضرات المرئية -->
+    <div id="platform-lectures" class="platform-section" style="display: none;">
+        <div class="card" style="margin-bottom: 20px;">
+            <h3 style="color: var(--primary-color); margin-top: 0;">إضافة محاضرة جديدة 🎬</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group">
+                    <label>عنوان المحاضرة</label>
+                    <input type="text" id="lecTitle" class="custom-input" placeholder="مثال: الباب الأول - الحصة الأولى">
+                </div>
+                <div class="input-group">
+                    <label>المجموعة المستهدفة</label>
+                    <select id="lecGroup" class="custom-input">
+                        <!-- المفروض تتملي من دالة المجموعات بتاعتك -->
+                        <option value="all">كل المجموعات</option>
+                    </select>
+                </div>
+                <div class="input-group" style="grid-column: span 2;">
+                    <label>رابط الفيديو (YouTube أو Drive)</label>
+                    <input type="url" id="lecUrl" class="custom-input" placeholder="https://...">
+                </div>
+                <button class="save-btn" style="grid-column: span 2;" onclick="saveLecture()">نشر المحاضرة 🚀</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3 style="margin-top: 0; color: var(--secondary-color);">المحاضرات المنشورة</h3>
+            <div id="lectures-list" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- سيتم التعبئة -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 📝 قسم الامتحانات الإلكترونية -->
+    <div id="platform-exams" class="platform-section" style="display: none;">
+        <!-- ⚠️ انسخ كل محتوى شاشة الامتحانات الإلكترونية القديمة بتاعتك وحطه هنا بالظبط -->
+        <div class="card" style="text-align: center; padding: 40px;">
+            <h3 style="color: var(--exam-color);">تم نقل الامتحانات الإلكترونية هنا بنجاح!</h3>
+            <p style="color: var(--text-muted);">انقل الـ HTML الخاص بإنشاء وإدارة الامتحانات ليظهر في هذه المساحة.</p>
+        </div>
+    </div>
+</div>
+
 
             <!-- شاشة نظام الإحالات -->
 <div id="affiliate-view" class="view-section" style="display: none;">
@@ -782,89 +866,7 @@
 
 
 
-    <!-- ========================================== -->
-<!-- 💻 صفحة إدارة المنصة (أكواد - فيديوهات - امتحانات) -->
-<!-- ========================================== -->
-<div id="platform-page" class="page-content" style="display: none;">
-    <div class="header-section" style="margin-bottom: 20px;">
-        <h2 style="color: var(--secondary-color); margin-bottom: 5px;">💻 إدارة المنصة التعليمية</h2>
-        <p style="color: var(--text-muted); margin: 0;">تحكم في المحتوى الرقمي، المحفظة، والامتحانات</p>
-    </div>
-
-    <!-- 🗂️ التابات الداخلية للصفحة -->
-    <div style="display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">
-        <button class="save-btn" id="tab-btn-codes" onclick="switchPlatformTab('codes')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--primary-color);">💳 أكواد الشحن</button>
-        <button class="save-btn" id="tab-btn-lectures" onclick="switchPlatformTab('lectures')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color);">🎬 المحاضرات</button>
-        <button class="save-btn" id="tab-btn-exams" onclick="switchPlatformTab('exams')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color);">📝 الامتحانات الإلكترونية</button>
-    </div>
-
-    <!-- 💳 قسم أكواد الشحن -->
-    <div id="platform-codes" class="platform-section">
-        <div class="card" style="margin-bottom: 20px;">
-            <h3 style="color: var(--primary-color); margin-top: 0;">توليد أكواد شحن جديدة 💳</h3>
-            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-                <div class="input-group" style="flex: 1; min-width: 150px;">
-                    <label>القيمة المالية للكود (ج.م)</label>
-                    <input type="number" id="codeAmount" class="custom-input" placeholder="مثال: 50">
-                </div>
-                <div class="input-group" style="flex: 1; min-width: 150px;">
-                    <label>عدد الأكواد المطلوبة</label>
-                    <input type="number" id="codeCount" class="custom-input" placeholder="مثال: 10">
-                </div>
-                <button class="save-btn" style="width: auto; height: 48px; padding: 0 30px;" onclick="generateChargeCodes()">توليد الأكواد 🚀</button>
-            </div>
-        </div>
-        <div class="card">
-            <h3 style="margin-top: 0; color: var(--secondary-color);">الأكواد المتاحة للطباعة</h3>
-            <div style="overflow-x: auto;">
-                <table class="custom-table" id="codes-table">
-                    <tr><th>الكود</th><th>القيمة</th><th>الحالة</th><th>تاريخ الإنشاء</th></tr>
-                    <!-- سيتم تعبئتها بالجافاسكريبت -->
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- 🎬 قسم المحاضرات المرئية -->
-    <div id="platform-lectures" class="platform-section" style="display: none;">
-        <div class="card" style="margin-bottom: 20px;">
-            <h3 style="color: var(--primary-color); margin-top: 0;">إضافة محاضرة جديدة 🎬</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="input-group">
-                    <label>عنوان المحاضرة</label>
-                    <input type="text" id="lecTitle" class="custom-input" placeholder="مثال: الباب الأول - الحصة الأولى">
-                </div>
-                <div class="input-group">
-                    <label>المجموعة المستهدفة</label>
-                    <select id="lecGroup" class="custom-input">
-                        <!-- المفروض تتملي من دالة المجموعات بتاعتك -->
-                        <option value="all">كل المجموعات</option>
-                    </select>
-                </div>
-                <div class="input-group" style="grid-column: span 2;">
-                    <label>رابط الفيديو (YouTube أو Drive)</label>
-                    <input type="url" id="lecUrl" class="custom-input" placeholder="https://...">
-                </div>
-                <button class="save-btn" style="grid-column: span 2;" onclick="saveLecture()">نشر المحاضرة 🚀</button>
-            </div>
-        </div>
-        <div class="card">
-            <h3 style="margin-top: 0; color: var(--secondary-color);">المحاضرات المنشورة</h3>
-            <div id="lectures-list" style="display: flex; flex-direction: column; gap: 10px;">
-                <!-- سيتم التعبئة -->
-            </div>
-        </div>
-    </div>
-
-    <!-- 📝 قسم الامتحانات الإلكترونية -->
-    <div id="platform-exams" class="platform-section" style="display: none;">
-        <!-- ⚠️ انسخ كل محتوى شاشة الامتحانات الإلكترونية القديمة بتاعتك وحطه هنا بالظبط -->
-        <div class="card" style="text-align: center; padding: 40px;">
-            <h3 style="color: var(--exam-color);">تم نقل الامتحانات الإلكترونية هنا بنجاح!</h3>
-            <p style="color: var(--text-muted);">انقل الـ HTML الخاص بإنشاء وإدارة الامتحانات ليظهر في هذه المساحة.</p>
-        </div>
-    </div>
-</div>
+    
 
         </main>
     </div> 
