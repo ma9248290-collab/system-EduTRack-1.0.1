@@ -541,38 +541,39 @@
             document.addEventListener('keydown', blockKeys);
         };
 
-       window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex) {
+window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex) {
             // 1. تشغيل الفيديو في المشغل
             let embedUrl = url;
             if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
             else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
             document.getElementById("video-iframe").src = embedUrl;
 
-            // 2. 📊 إرسال بيانات التراكر للفايربيز في الخلفية بدون ما الطالب يحس
+            // 2. 📊 إرسال بيانات التراكر للفايربيز (تم تصليح مشكلة الوقت)
             if(courseId && currentStudent) {
                 try {
                     let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
                     
-                    // جلب الداتا القديمة عشان نزود المشاهدات
+                    // جلب الداتا القديمة
                     let res = await fetch(trackingUrl);
-                    let oldData = await res.json() || { views: 0 };
+                    let oldData = await res.json();
+                    let currentViews = (oldData && oldData.views) ? oldData.views : 0;
                     
+                    // تظبيط التاريخ والوقت بالطريقة القياسية
                     let now = new Date();
-                    let dateStr = now.toLocaleDateString('ar-EG') + " " + formatTime12(`${now.getHours()}:${now.getMinutes()}`);
+                    let dateStr = now.toLocaleDateString('ar-EG') + " | " + now.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
 
                     let newData = {
-                        videoTitle: videoTitle,
-                        views: oldData.views + 1,
+                        videoTitle: videoTitle || "المحاضرة",
+                        views: currentViews + 1,
                         lastSeen: dateStr
                     };
 
                     await fetch(trackingUrl, {
                         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newData)
                     });
-                } catch(e) { console.log("Tracking Error:", e); }
+                } catch(e) { console.error("Tracking Error:", e); }
             }
         };
-
         // تعديل دالة openCoursePlayer عشان تمرر البيانات دي لدالة التشغيل
         window.openCoursePlayer = function(courseId) {
             let course = window.allLectures.find(l => l.id === courseId);
