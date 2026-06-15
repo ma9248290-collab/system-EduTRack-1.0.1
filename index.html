@@ -598,8 +598,8 @@
                 </div>
 
                 <div class="input-group" style="grid-column: span 2;">
-                    <label>صورة غلاف الكورس (رابط الصورة - اختياري)</label>
-                    <input type="url" id="lecImage" class="custom-input" placeholder="https://...">
+                    <label>صورة غلاف الكورس (رفع من الجهاز PNG/JPG)</label>
+                    <input type="file" id="lecImageFile" class="custom-input" accept="image/png, image/jpeg, image/jpg">
                 </div>
 
                 <div class="input-group" style="grid-column: span 2; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary-color);">
@@ -1422,9 +1422,9 @@
                     </div>
 
                     <div class="input-group" style="grid-column: span 2;">
-                        <label>صورة الغلاف (رابط)</label>
-                        <input type="url" id="editLecImage" class="custom-input">
-                    </div>
+                        <label>تغيير صورة الغلاف (اختر صورة جديدة أو اتركها كما هي)</label>
+                        <input type="file" id="editLecImageFile" class="custom-input" accept="image/png, image/jpeg, image/jpg">
+                        <input type="hidden" id="editLecImageBase64"> </div>
 
                     <div class="input-group" style="grid-column: span 2; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b;">
                         <label style="color: var(--secondary-color); font-size: 16px; margin-bottom: 10px;">فيديوهات الكورس 🎥</label>
