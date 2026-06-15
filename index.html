@@ -130,9 +130,7 @@
                 <li id="nav-attendance"><a href="#" onclick="switchPage('attendance')">سجل الحضور 📋</a></li>
                 <li id="nav-homework"><a href="#" onclick="switchPage('homework')">سجل الواجبات 📝</a></li>
                 <li id="nav-exams"><a href="#" onclick="switchPage('exams')">الامتحانات 📝</a></li>
-                <li id="nav-platform"><a href="#" onclick="switchPage('platform')">
-    <span>💻</span> إدارة المنصة
-</a></li>
+                <li id="nav-platform"><a href="#" onclick="switchPage('platform')">إدارة المنصة💻</a></li>
                 <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
                 <li id="nav-reports"><a href="#" onclick="switchPage('reports')">التقارير الشاملة 📈</a></li>
                 <li id="nav-leaderboard"><a href="#" onclick="switchPage('leaderboard')">لوحة الشرف 🏆</a></li>
@@ -566,19 +564,24 @@
 
     <div id="platform-lectures" class="platform-section" style="display: none;">
         <div class="card" style="margin-bottom: 20px;">
-            <h3 style="color: var(--primary-color); margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">إضافة كورس / محاضرة جديدة 🎬</h3>
+            <h3 style="color: var(--primary-color); margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">إضافة كورس جديد 🎬</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                 
                 <div class="input-group full-width" style="grid-column: span 2;">
-                    <label>اسم الكورس أو المحاضرة</label>
+                    <label>اسم الكورس</label>
                     <input type="text" id="lecTitle" class="custom-input" placeholder="مثال: كورس المراجعة النهائية - الباب الأول">
                 </div>
                 
-               <div class="input-group">
+                <div class="input-group">
                     <label>الصف الدراسي المستهدف</label>
-                    <select id="lecLevel" class="custom-input">
-                        <option value="all">كل الصفوف (عام)</option>
-                        </select>
+                    <select id="lecLevel" class="custom-input"><option value="all">كل الصفوف (عام)</option></select>
+                </div>
+
+                <div class="input-group">
+                    <label style="color: var(--success-color); font-weight: bold;">ربط الكورس بحصة (مجانًا لمن حضرها)</label>
+                    <select id="lecLinkedSession" class="custom-input">
+                        <option value="">بدون ربط (يعتمد على السعر فقط)</option>
+                    </select>
                 </div>
 
                 <div class="input-group">
@@ -589,24 +592,30 @@
                     </select>
                 </div>
 
-                <div class="input-group" id="priceContainer" style="display: none; grid-column: span 2;">
-                    <label>سعر الكورس (يُخصم من محفظة الطالب)</label>
+                <div class="input-group" id="priceContainer" style="display: none;">
+                    <label>سعر الكورس (يُخصم من المحفظة لمن كان غائباً)</label>
                     <input type="number" id="lecPrice" class="custom-input" placeholder="مثال: 150" min="0">
                 </div>
 
                 <div class="input-group" style="grid-column: span 2;">
                     <label>صورة غلاف الكورس (رابط الصورة - اختياري)</label>
-                    <input type="url" id="lecImage" class="custom-input" placeholder="https://... (لو سبتها فاضية السيستم هيحط صورة افتراضية شيك)">
+                    <input type="url" id="lecImage" class="custom-input" placeholder="https://...">
                 </div>
 
-                <div class="input-group" style="grid-column: span 2;">
-                    <label>رابط الفيديو (YouTube, Drive, Vimeo)</label>
-                    <input type="url" id="lecUrl" class="custom-input" placeholder="https://...">
+                <div class="input-group" style="grid-column: span 2; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary-color);">
+                    <label style="color: var(--secondary-color); font-size: 16px; margin-bottom: 10px;">فيديوهات الكورس 🎥</label>
+                    <div id="courseVideosContainer">
+                        <div class="video-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" class="custom-input vid-title" placeholder="عنوان الفيديو (مثال: الجزء الأول)" style="flex: 1;">
+                            <input type="url" class="custom-input vid-url" placeholder="رابط الفيديو (YouTube, Drive)" style="flex: 2;">
+                        </div>
+                    </div>
+                    <button class="theme-btn" style="width: auto; padding: 8px 15px; margin-top: 5px;" onclick="addCourseVideoRow()">➕ إضافة فيديو آخر للكورس</button>
                 </div>
 
                 <div class="input-group" style="grid-column: span 2;">
                     <label>وصف الكورس (يظهر للطالب)</label>
-                    <textarea id="lecDesc" class="custom-input" rows="3" placeholder="اكتب تفاصيل الكورس وما يحتويه..."></textarea>
+                    <textarea id="lecDesc" class="custom-input" rows="3" placeholder="اكتب تفاصيل الكورس..."></textarea>
                 </div>
 
                 <button class="save-btn" style="grid-column: span 2; font-size: 18px; padding: 15px;" onclick="saveLecture()">نشر الكورس للطلاب 🚀</button>
@@ -615,8 +624,7 @@
 
         <div class="card">
             <h3 style="margin-top: 0; color: var(--secondary-color); margin-bottom: 15px;">الكورسات المنشورة</h3>
-            <div id="lectures-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
-                </div>
+            <div id="lectures-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;"></div>
         </div>
     </div>
 
