@@ -541,12 +541,64 @@
             document.addEventListener('keydown', blockKeys);
         };
 
-        window.playCourseVideo = function(url) {
-            // تحويل رابط اليوتيوب العادي لرابط Embed عشان يشتغل جوه الموقع
+       window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex) {
+            // 1. تشغيل الفيديو في المشغل
             let embedUrl = url;
             if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
             else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
             document.getElementById("video-iframe").src = embedUrl;
+
+            // 2. 📊 إرسال بيانات التراكر للفايربيز في الخلفية بدون ما الطالب يحس
+            if(courseId && currentStudent) {
+                try {
+                    let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
+                    
+                    // جلب الداتا القديمة عشان نزود المشاهدات
+                    let res = await fetch(trackingUrl);
+                    let oldData = await res.json() || { views: 0 };
+                    
+                    let now = new Date();
+                    let dateStr = now.toLocaleDateString('ar-EG') + " " + formatTime12(`${now.getHours()}:${now.getMinutes()}`);
+
+                    let newData = {
+                        videoTitle: videoTitle,
+                        views: oldData.views + 1,
+                        lastSeen: dateStr
+                    };
+
+                    await fetch(trackingUrl, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newData)
+                    });
+                } catch(e) { console.log("Tracking Error:", e); }
+            }
+        };
+
+        // تعديل دالة openCoursePlayer عشان تمرر البيانات دي لدالة التشغيل
+        window.openCoursePlayer = function(courseId) {
+            let course = window.allLectures.find(l => l.id === courseId);
+            if(!course) return;
+
+            document.body.classList.add("no-select");
+            document.getElementById("app-layout").style.display = "none";
+            document.getElementById("protected-course-screen").style.display = "flex";
+            document.getElementById("player-course-title").innerText = `كورس: ${course.title}`;
+            
+            document.getElementById("video-watermark").innerText = `${currentStudent.name} \n ${currentStudent.phone}`;
+
+            let vids = course.videos || [];
+            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
+
+            let playlistHtml = `<h4 style="color:var(--primary); margin:0 0 15px 0; border-bottom:1px solid #333; padding-bottom:10px;">محتويات الكورس 📜</h4>`;
+            vids.forEach((v, idx) => {
+                // 🔥 تمرير اسم الفيديو والـ ID والاندكس عشان التراكر يشتغل
+                playlistHtml += `<div style="background:#222; color:#fff; padding:12px; border-radius:8px; margin-bottom:10px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#222'" onclick="playCourseVideo('${v.url}', '${v.title}', '${course.id}', ${idx})">▶️ ${v.title}</div>`;
+            });
+            document.getElementById("player-playlist").innerHTML = playlistHtml;
+
+            if(vids.length > 0) playCourseVideo(vids[0].url, vids[0].title, course.id, 0);
+            
+            document.addEventListener('contextmenu', blockContext);
+            document.addEventListener('keydown', blockKeys);
         };
 
         window.closeCoursePlayer = function() {

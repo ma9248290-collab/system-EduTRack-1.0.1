@@ -1380,6 +1380,97 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- ✏️ نافذة تعديل كورس موجود -->
+    <!-- ========================================== -->
+    <div id="editCourseModal" class="modal" style="z-index: 1000000;">
+        <div class="modal-content" style="width: 800px; max-width: 95%; max-height: 90vh; overflow-y: auto; border-top: 5px solid #f59e0b;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #f59e0b;">✏️ تعديل بيانات الكورس</h2>
+                <span class="close" onclick="closeModal('editCourseModal')" style="font-size: 28px; cursor: pointer; color: var(--danger-color);">&times;</span>
+            </div>
+
+            <form id="editCourseForm">
+                <input type="hidden" id="editLecId">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="input-group full-width" style="grid-column: span 2;">
+                        <label>اسم الكورس</label>
+                        <input type="text" id="editLecTitle" class="custom-input" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>الصف الدراسي المستهدف</label>
+                        <select id="editLecLevel" class="custom-input"></select>
+                    </div>
+
+                    <div class="input-group">
+                        <label style="color: var(--success-color); font-weight: bold;">ربط الكورس بحصة</label>
+                        <select id="editLecLinkedSession" class="custom-input"></select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>نوع الكورس</label>
+                        <select id="editLecType" class="custom-input" onchange="document.getElementById('editPriceContainer').style.display = this.value === 'paid' ? 'block' : 'none'">
+                            <option value="free">مجاني</option>
+                            <option value="paid">مدفوع</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group" id="editPriceContainer" style="display: none;">
+                        <label>السعر (ج.م)</label>
+                        <input type="number" id="editLecPrice" class="custom-input" min="0">
+                    </div>
+
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>صورة الغلاف (رابط)</label>
+                        <input type="url" id="editLecImage" class="custom-input">
+                    </div>
+
+                    <div class="input-group" style="grid-column: span 2; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b;">
+                        <label style="color: var(--secondary-color); font-size: 16px; margin-bottom: 10px;">فيديوهات الكورس 🎥</label>
+                        <div id="editCourseVideosContainer"></div>
+                        <button type="button" class="theme-btn" style="width: auto; padding: 8px 15px; margin-top: 5px; border-color: #f59e0b; color: #f59e0b;" onclick="addEditCourseVideoRow()">➕ إضافة فيديو آخر</button>
+                    </div>
+
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>وصف الكورس</label>
+                        <textarea id="editLecDesc" class="custom-input" rows="3"></textarea>
+                    </div>
+                </div>
+                <button type="button" class="save-btn" style="width: 100%; background: #f59e0b;" onclick="saveEditedCourse()">💾 حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 📊 نافذة التراكر (إحصائيات مشاهدات الكورس) -->
+    <!-- ========================================== -->
+    <div id="courseAnalyticsModal" class="modal" style="z-index: 1000000;">
+        <div class="modal-content" style="width: 900px; max-width: 95%; max-height: 90vh; overflow-y: auto; border-top: 5px solid #8b5cf6;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #8b5cf6;">📊 إحصائيات مشاهدات الكورس (Tracker)</h2>
+                <span class="close" onclick="closeModal('courseAnalyticsModal')" style="font-size: 28px; cursor: pointer; color: var(--danger-color);">&times;</span>
+            </div>
+            
+            <div class="table-container card">
+                <table class="students-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>كود الطالب</th>
+                            <th>الاسم</th>
+                            <th>عنوان الفيديو</th>
+                            <th>عدد المشاهدات</th>
+                            <th>آخر مشاهدة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="course-analytics-list">
+                        <!-- الداتا هتنزل هنا -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 
 <script src="assistant-enc.js?v=100"></script>
 <script src="script-enc.js"></script>
