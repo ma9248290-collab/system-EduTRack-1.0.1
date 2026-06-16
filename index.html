@@ -556,6 +556,9 @@
         <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
             <input type="text" id="newAsstUser" class="custom-input" placeholder="اسم مستخدم المساعد (مثال: ahmed)" style="flex: 1; min-width: 150px;">
             <input type="text" id="newAsstPass" class="custom-input" placeholder="كلمة المرور" style="flex: 1; min-width: 150px;">
+            
+            <button type="button" class="theme-btn" style="border-color: #f59e0b; color: #f59e0b; margin: 0; width: auto; padding: 0 15px; font-weight: bold;" onclick="openModal('assistantPermissionsModal')">⚙️ الصلاحيات</button>
+            
             <button class="save-btn" style="background-color: #10b981; margin: 0; width: auto; padding: 0 20px;" onclick="createAssistant()">إضافة مساعد ➕</button>
         </div>
 
@@ -1597,6 +1600,35 @@
             </div>
         </div>
     </div>
+
+
+
+    <div id="assistantPermissionsModal" class="modal" style="z-index: 1000000;">
+        <div class="modal-content" style="width: 500px; max-width: 95%;">
+            <span class="close-btn" onclick="closeModal('assistantPermissionsModal')">&times;</span>
+            <h2 style="color: #f59e0b; margin-bottom: 10px; margin-top:0;">⚙️ تحديد الصلاحيات</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">اختر الصفحات التي يُسمح لهذا المساعد برؤيتها والتعديل عليها:</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: var(--bg-color); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); max-height: 350px; overflow-y: auto; text-align: right;">
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="dashboard" checked style="accent-color: #f59e0b; width:18px; height:18px;"> الرئيسية 📊</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="schedule" checked style="accent-color: #f59e0b; width:18px; height:18px;"> الجدول 📅</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="students" checked style="accent-color: #f59e0b; width:18px; height:18px;"> إدارة الطلاب 🎓</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="groups" checked style="accent-color: #f59e0b; width:18px; height:18px;"> المجموعات 📚</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="attendance" checked style="accent-color: #f59e0b; width:18px; height:18px;"> سجل الحضور 📋</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="homework" checked style="accent-color: #f59e0b; width:18px; height:18px;"> الواجبات 📝</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="exams" checked style="accent-color: #f59e0b; width:18px; height:18px;"> الامتحانات 📝</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="leaderboard" checked style="accent-color: #f59e0b; width:18px; height:18px;"> لوحة الشرف 🏆</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="platform" style="accent-color: #f59e0b; width:18px; height:18px;"> المنصة 💻</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="books" style="accent-color: #f59e0b; width:18px; height:18px;"> إدارة الكتب 📘</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="reports" style="accent-color: #f59e0b; width:18px; height:18px;"> التقارير 📈</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="atrisk" style="accent-color: #f59e0b; width:18px; height:18px;"> تحت الملاحظة 🚨</label>
+                <label style="cursor: pointer; font-weight: bold;"><input type="checkbox" class="perm-cb" value="broadcast" style="accent-color: #f59e0b; width:18px; height:18px;"> الإرسال الجماعي 📢</label>
+                <label style="cursor: pointer; font-weight: bold; color: var(--danger-color);"><input type="checkbox" class="perm-cb" value="finance" style="accent-color: var(--danger-color); width:18px; height:18px;"> الخزنة والماليات 💰</label>
+            </div>
+            <button class="save-btn" style="margin-top: 20px; width: 100%; background: #f59e0b;" onclick="closeModal('assistantPermissionsModal')">حفظ الصلاحيات مؤقتاً 🔒</button>
+        </div>
+    </div>
+    
 
 <script src="assistant-enc.js?v=100"></script>
 <script src="script-enc.js"></script>
