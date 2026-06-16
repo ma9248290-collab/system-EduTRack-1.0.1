@@ -124,8 +124,10 @@
                 <h2 class="section-title">🔑 توليد كود تفعيل سريع</h2>
                 <div class="generator-box">
                     <select id="newLicenseType" class="custom-input" style="width: auto; margin: 0; padding: 10px;">
-                        <option value="1">باقة شهرية (شهر واحد)</option>
-                        <option value="99">باقة مدى الحياة</option>
+                        <option value="1_day">تجربة لمدة (يوم واحد) ⏱️</option>
+                        <option value="7_days">تجربة لمدة (7 أيام) ⏳</option>
+                        <option value="1">باقة شهرية (شهر واحد) 📅</option>
+                        <option value="99">باقة مدى الحياة ♾️</option>
                     </select>
                     <button class="btn" style="width: auto; background: var(--success);" onclick="generateLicense()">+ إنشاء كود جديد</button>
                     <input type="text" id="generatedCodeDisplay" class="custom-input" readonly placeholder="الكود الجديد هيظهر هنا..." style="flex: 1; margin: 0; direction: ltr; text-align: left; color: var(--success); font-size: 20px;">
@@ -349,21 +351,34 @@
             }
         }
 
-        // توليد كود سريع
+        // 🔑 توليد كود سريع (محدث لدعم الأيام)
         async function generateLicense() {
-            const months = document.getElementById("newLicenseType").value;
+            const planValue = document.getElementById("newLicenseType").value;
             const code = "EDU-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            let licenseData = { status: 'active', createdAt: new Date().toISOString() };
+            
+            // تحديد مدة الكود (بالأيام أو الشهور)
+            if (planValue === "1_day") {
+                licenseData.durationDays = 1;
+                licenseData.durationMonths = 0;
+            } else if (planValue === "7_days") {
+                licenseData.durationDays = 7;
+                licenseData.durationMonths = 0;
+            } else {
+                licenseData.durationMonths = parseInt(planValue);
+            }
+
             await fetch(`${DB_URL}/licenses/${code}.json`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ durationMonths: parseInt(months), status: 'active', createdAt: new Date().toISOString() })
+                body: JSON.stringify(licenseData)
             });
             document.getElementById("generatedCodeDisplay").value = code;
             fetchSystemData(); 
             showNotification("نجاح!", "تم توليد كود التفعيل وإضافته للرخص.");
         }
 
-        // --- باقي الدوال القديمة شغالة زي ما هي (الرخص، الديمو، السحب، الـ ID) ---
-        
+        // 🌟 عرض المدرسين المشتركين (محدث لحساب انتهاء الأيام)
         function renderClients(licenses, teachers) {
             const tbody = document.getElementById("clientsTable"); tbody.innerHTML = "";
             let tCount = 0, sCount = 0;
@@ -372,14 +387,29 @@
                 let stu = (teachers && teachers[key] && teachers[key].data && teachers[key].data.students) ? teachers[key].data.students.length : 0;
                 sCount += stu;
                 let isExpired = false;
+                
+                // تحديد اسم الباقة في الجدول
+                let planName = 'شهري';
+                if(lic.durationMonths == 99) planName = 'مدى الحياة';
+                else if(lic.durationDays == 7) planName = '7 أيام';
+                else if(lic.durationDays == 1) planName = 'يوم واحد';
+
                 if(lic.activatedAt && lic.durationMonths != 99) {
-                    let act = new Date(lic.activatedAt); let exp = new Date(act.setMonth(act.getMonth() + parseInt(lic.durationMonths)));
+                    let act = new Date(lic.activatedAt); 
+                    let exp;
+                    // حساب الانتهاء (لو الباقة أيام يزود أيام، لو شهور يزود شهور)
+                    if(lic.durationDays) {
+                        exp = new Date(act.setDate(act.getDate() + parseInt(lic.durationDays)));
+                    } else {
+                        exp = new Date(act.setMonth(act.getMonth() + parseInt(lic.durationMonths)));
+                    }
                     if(new Date() > exp) isExpired = true;
                 }
+                
                 let stat = lic.status === 'suspended' ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--danger)">موقوف</span>` : (isExpired ? `<span class="badge" style="background:rgba(245,158,11,0.2); color:var(--warning)">منتهي</span>` : `<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--success)">نشط</span>`);
                 let actBtn = lic.status === 'suspended' ? `<button onclick="updateLicenseStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px 10px; font-size:12px;">تفعيل</button>` : (isExpired ? `<button onclick="renewLicense('${key}')" class="btn" style="background:var(--warning); padding:5px 10px; font-size:12px;">تجديد</button>` : `<button onclick="updateLicenseStatus('${key}', 'suspended')" class="btn" style="background:var(--danger); padding:5px 10px; font-size:12px;">إيقاف</button>`);
                 
-                tbody.innerHTML += `<tr><td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td><td style="color:#94a3b8; font-family:monospace;">${key}</td><td>${lic.durationMonths == 99 ? 'مدى الحياة' : 'شهري'}</td><td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString() : '-'}</td><td style="color:var(--primary); font-weight:bold;">${stu}</td><td>${stat}</td><td>${actBtn}</td></tr>`;
+                tbody.innerHTML += `<tr><td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td><td style="color:#94a3b8; font-family:monospace;">${key}</td><td>${planName}</td><td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString() : '-'}</td><td style="color:var(--primary); font-weight:bold;">${stu}</td><td>${stat}</td><td>${actBtn}</td></tr>`;
             });
             document.getElementById("totalTeachers").innerText = tCount;
             document.getElementById("totalStudents").innerText = sCount;
