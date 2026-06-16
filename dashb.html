@@ -99,7 +99,7 @@
             <button class="tab-btn" onclick="switchTab('orders')">🛒 طلبات الشراء <span class="badge-alert" id="newOrdersBadge">0</span></button>
             <button class="tab-btn" onclick="switchTab('withdraws')">💸 طلبات السحب والمستحقات</button>
             <button class="tab-btn" onclick="switchTab('licenses')">🔑 الرخص والمشتركين</button>
-            <button class="tab-btn" onclick="switchTab('demos')">⏳ رادار الديمو</button>
+           
             <button class="tab-btn" onclick="switchTab('idcards')">💳 طلبات كروت ID</button>
             
             <div style="margin-top: auto;">
@@ -118,7 +118,6 @@
                     <div class="stat-card" style="border-top-color: var(--primary);"><h3>إجمالي المشتركين</h3><div class="num" id="totalTeachers">0</div></div>
                     <div class="stat-card" style="border-top-color: var(--warning);"><h3>طلبات شراء جديدة</h3><div class="num" id="totalOrders">0</div></div>
                     <div class="stat-card" style="border-top-color: var(--success);"><h3>إجمالي الطلاب</h3><div class="num" id="totalStudents">0</div></div>
-                    <div class="stat-card" style="border-top-color: var(--purple);"><h3>حسابات الديمو النشطة</h3><div class="num" id="totalDemos">0</div></div>
                 </div>
 
                 <h2 class="section-title">🔑 توليد كود تفعيل سريع</h2>
@@ -378,7 +377,7 @@
             showNotification("نجاح!", "تم توليد كود التفعيل وإضافته للرخص.");
         }
 
-        // 🌟 عرض المدرسين المشتركين (محدث لحساب انتهاء الأيام)
+// 🌟 عرض المدرسين المشتركين (مع زرار التعديل)
         function renderClients(licenses, teachers) {
             const tbody = document.getElementById("clientsTable"); tbody.innerHTML = "";
             let tCount = 0, sCount = 0;
@@ -397,7 +396,6 @@
                 if(lic.activatedAt && lic.durationMonths != 99) {
                     let act = new Date(lic.activatedAt); 
                     let exp;
-                    // حساب الانتهاء (لو الباقة أيام يزود أيام، لو شهور يزود شهور)
                     if(lic.durationDays) {
                         exp = new Date(act.setDate(act.getDate() + parseInt(lic.durationDays)));
                     } else {
@@ -409,12 +407,24 @@
                 let stat = lic.status === 'suspended' ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--danger)">موقوف</span>` : (isExpired ? `<span class="badge" style="background:rgba(245,158,11,0.2); color:var(--warning)">منتهي</span>` : `<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--success)">نشط</span>`);
                 let actBtn = lic.status === 'suspended' ? `<button onclick="updateLicenseStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px 10px; font-size:12px;">تفعيل</button>` : (isExpired ? `<button onclick="renewLicense('${key}')" class="btn" style="background:var(--warning); padding:5px 10px; font-size:12px;">تجديد</button>` : `<button onclick="updateLicenseStatus('${key}', 'suspended')" class="btn" style="background:var(--danger); padding:5px 10px; font-size:12px;">إيقاف</button>`);
                 
-                tbody.innerHTML += `<tr><td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td><td style="color:#94a3b8; font-family:monospace;">${key}</td><td>${planName}</td><td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString() : '-'}</td><td style="color:var(--primary); font-weight:bold;">${stu}</td><td>${stat}</td><td>${actBtn}</td></tr>`;
+                tbody.innerHTML += `<tr>
+                    <td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td>
+                    <td style="color:#94a3b8; font-family:monospace;">${key}</td>
+                    <td><span style="color:#f59e0b; font-weight:bold;">${planName}</span></td>
+                    <td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString() : '-'}</td>
+                    <td style="color:var(--primary); font-weight:bold;">${stu}</td>
+                    <td>${stat}</td>
+                    <td>
+                        <div style="display: flex; gap: 5px; justify-content: center;">
+                            ${actBtn}
+                            <button onclick="openEditPlanModal('${key}')" class="btn" style="background:#f59e0b; padding:5px 10px; font-size:12px; color:black; border:none;">تعديل ⚙️</button>
+                        </div>
+                    </td>
+                </tr>`;
             });
             document.getElementById("totalTeachers").innerText = tCount;
             document.getElementById("totalStudents").innerText = sCount;
         }
-
         function renderWithdraws(requests) {
             const tbody = document.getElementById("withdrawsTable"); tbody.innerHTML = "";
             if (Object.keys(requests).length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد طلبات سحب</td></tr>`;
@@ -479,6 +489,61 @@
         alert("حدث خطأ أثناء إرسال الإشعار.");
     }
 }
+
+
+// ⚙️ فتح نافذة تعديل الباقة
+        function openEditPlanModal(key) {
+            document.getElementById('editPlanLicenseKey').value = key;
+            document.getElementById('editPlanModal').style.display = 'flex';
+        }
+
+        // 💾 حفظ الباقة الجديدة وتحديث الداتا بيز
+        async function saveNewPlan() {
+            const key = document.getElementById('editPlanLicenseKey').value;
+            const planValue = document.getElementById('newPlanSelect').value;
+            
+            let updates = {};
+            // إرسال null بيمسح القيمة القديمة عشان السيستم ميتلخبطش
+            if (planValue === "1_day") {
+                updates = { durationDays: 1, durationMonths: null };
+            } else if (planValue === "7_days") {
+                updates = { durationDays: 7, durationMonths: null };
+            } else if (planValue === "1") {
+                updates = { durationDays: null, durationMonths: 1 };
+            } else if (planValue === "99") {
+                updates = { durationDays: null, durationMonths: 99 };
+            }
+
+            try {
+                await fetch(`${DB_URL}/licenses/${key}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates)
+                });
+                document.getElementById('editPlanModal').style.display = 'none';
+                fetchSystemData(); // تحديث الجدول فوراً
+                alert("تم تعديل باقة المدرس بنجاح! ✅");
+            } catch (e) {
+                alert("حدث خطأ أثناء التعديل!");
+            }
+        }
     </script>
+
+    <div id="editPlanModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div style="background: var(--card); padding: 25px; border-radius: 12px; width: 350px; text-align: center; border-top: 5px solid #f59e0b; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+            <h3 style="color: #f59e0b; margin-bottom: 20px;">تعديل باقة المعلم ⚙️</h3>
+            <input type="hidden" id="editPlanLicenseKey">
+            <select id="newPlanSelect" style="width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 25px; background: var(--bg); color: var(--text); border: 1px solid #334155; font-size: 15px;">
+                <option value="1_day">تجربة لمدة (يوم واحد) ⏱️</option>
+                <option value="7_days">تجربة لمدة (7 أيام) ⏳</option>
+                <option value="1">باقة شهرية (شهر واحد) 📅</option>
+                <option value="99">باقة مدى الحياة ♾️</option>
+            </select>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="saveNewPlan()" style="flex: 1; background: var(--success); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold;">حفظ التعديل ✅</button>
+                <button onclick="document.getElementById('editPlanModal').style.display='none'" style="flex: 1; background: var(--danger); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold;">إلغاء ❌</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
