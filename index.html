@@ -83,8 +83,12 @@
             <h3 style="margin-bottom: 20px; color: var(--text-main);">تسجيل الدخول</h3>
             <form id="loginForm">
                 <div class="input-group" style="text-align: right;">
+                    <label style="color: #10b981; font-weight: bold;">كود السنتر (License Key)</label>
+                    <input type="text" id="loginCenterCode" required class="custom-input" placeholder="اطلب الكود من الإدارة">
+                </div>
+                <div class="input-group" style="text-align: right;">
                     <label>اسم المستخدم</label>
-                    <input type="text" id="loginUsername" required class="custom-input" placeholder="مثال: shefo">
+                    <input type="text" id="loginUsername" required class="custom-input" placeholder="اليوزر نيم">
                 </div>
                 <div class="input-group" style="text-align: right;">
                     <label>كلمة المرور</label>
@@ -116,34 +120,122 @@
         
         <aside class="sidebar no-print">
             <div style="display: flex; align-items: center; justify-content: center; gap: -10px; margin-bottom: 30px;">
-    <!-- الأخطبوط اللي بيشاور (مصغر عشان يليق جنب اللوجو) -->
-    <div class="octo-mascot octo-welcome" style="width: 65px; height: 65px; min-width: 65px; margin: 0;"></div>
-    
-    <!-- كلمة اللوجو -->
-    <h2 class="logo" style="margin: 0;">EduTrack</h2>
-</div>
+                <div class="octo-mascot octo-welcome" style="width: 65px; height: 65px; min-width: 65px; margin: 0;"></div>
+                <h2 class="logo" style="margin: 0;">EduTrack</h2>
+            </div>
+
+            <style>
+                /* 🎨 استايل القوائم المنسدلة (تم حل مشكلة السهم والتناسق) */
+                .sidebar .nav-links { display: flex; flex-direction: column; gap: 5px; padding: 0; margin: 0; list-style: none; }
+                .sidebar .nav-links > li { width: 100%; margin: 0; padding: 0; border: none; }
+                .sidebar .nav-links > li > a { display: block; padding: 12px 15px; border-radius: 8px; color: var(--text-main); font-weight: bold; text-decoration: none; transition: 0.3s; border: none; }
+                .sidebar .nav-links > li.active > a { background: rgba(59, 130, 246, 0.1); color: var(--primary-color); border-right: 4px solid var(--primary-color); }
+                .sidebar .nav-links > li > a:hover { background: var(--hover-bg); color: var(--primary-color); }
+
+                .nav-dropdown { display: flex !important; flex-direction: column !important; padding: 0 !important; background: transparent !important; border: none !important; margin: 0 !important; }
+                .dropdown-toggle { 
+                    display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; justify-content: space-between !important; align-items: center !important; 
+                    padding: 12px 15px; color: var(--text-main); text-decoration: none; 
+                    border-radius: 8px; font-weight: bold; transition: 0.3s; cursor: pointer;
+                    border: none; width: 100%; box-sizing: border-box;
+                }
+                .dropdown-toggle:hover { background: rgba(59, 130, 246, 0.1); color: var(--primary-color); }
+                .dropdown-arrow { font-size: 11px; transition: transform 0.3s ease; display: inline-block; margin-right: auto; }
+                .nav-dropdown.open .dropdown-arrow { transform: rotate(180deg); }
+                .nav-dropdown.open .dropdown-toggle { background: rgba(59, 130, 246, 0.05); color: var(--primary-color); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+                
+                .dropdown-menu { 
+                    display: none; flex-direction: column; list-style: none; padding: 5px 15px 10px 0; 
+                    margin: 0; border-right: 2px solid var(--border-color); margin-right: 15px;
+                    background: rgba(59, 130, 246, 0.02); border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+                }
+                .nav-dropdown.open .dropdown-menu { display: flex; animation: slideDown 0.3s ease; }
+                .dropdown-menu li { padding: 0; margin: 2px 0; border: none; }
+                .dropdown-menu li a { 
+                    display: block; padding: 10px 15px; color: var(--text-muted); text-decoration: none; 
+                    border-radius: 6px; font-size: 14px; transition: 0.2s; font-weight: bold; border: none;
+                }
+                .dropdown-menu li a:hover { background: var(--hover-bg); color: var(--primary-color); padding-right: 20px; }
+                .dropdown-menu li.active a { color: var(--primary-color); font-weight: 900; background: rgba(59, 130, 246, 0.1); border-right: 3px solid var(--primary-color); }
+                @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+            </style>
+
+            <script>
+                // ⚙️ جافاسكريبت لفتح وقفل القوائم
+                function toggleSidebarDropdown(element) {
+                    let parentLi = element.parentElement;
+                    document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+                        if (dropdown !== parentLi) dropdown.classList.remove('open');
+                    });
+                    parentLi.classList.toggle('open');
+                }
+            </script>
+
             <ul class="nav-links">
                 <li id="nav-dashboard" class="active"><a href="#" onclick="switchPage('dashboard')">الرئيسية 📊</a></li>
                 <li id="nav-schedule"><a href="#" onclick="switchPage('schedule')">الجدول الأسبوعي 📅</a></li>
-                <li id="nav-students"><a href="#" onclick="switchPage('students')">إدارة الطلاب 🎓</a></li>
-                <li id="nav-groups"><a href="#" onclick="switchPage('groups')">إدارة المجموعات 📚</a></li>
-                <li id="nav-attendance"><a href="#" onclick="switchPage('attendance')">سجل الحضور 📋</a></li>
-                <li id="nav-homework"><a href="#" onclick="switchPage('homework')">سجل الواجبات 📝</a></li>
-                <li id="nav-exams"><a href="#" onclick="switchPage('exams')">الامتحانات 📝</a></li>
+
+                <li class="nav-dropdown">
+                    <div class="dropdown-toggle" onclick="toggleSidebarDropdown(this)">
+                        <span>👥 الطلاب</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <ul class="dropdown-menu">
+                        <li id="nav-students"><a href="#" onclick="switchPage('students')">إدارة الطلاب 🎓</a></li>
+                        <li id="nav-groups"><a href="#" onclick="switchPage('groups')">إدارة المجموعات 📚</a></li>
+                        <li id="nav-attendance"><a href="#" onclick="switchPage('attendance')">سجل الحضور 📋</a></li>
+                        <li id="nav-reports"><a href="#" onclick="switchPage('reports')">التقارير الشاملة 📈</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-dropdown">
+                    <div class="dropdown-toggle" onclick="toggleSidebarDropdown(this)">
+                        <span>📝 التقييم والمتابعة</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <ul class="dropdown-menu">
+                        <li id="nav-exams"><a href="#" onclick="switchPage('exams')">الامتحانات 📝</a></li>
+                        <li id="nav-homework"><a href="#" onclick="switchPage('homework')">الواجبات 📝</a></li>
+                        <li id="nav-leaderboard"><a href="#" onclick="switchPage('leaderboard')">لوحة الشرف 🏆</a></li>
+                        <li id="nav-atrisk"><a href="#" onclick="switchPage('atrisk')" style="color: var(--danger-color);">تحت الملاحظة 🚨</a></li>
+                    </ul>
+                </li>
+                
                 <li id="nav-platform"><a href="#" onclick="switchPage('platform')">إدارة المنصة💻</a></li>
-                <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
-                <li id="nav-reports"><a href="#" onclick="switchPage('reports')">التقارير الشاملة 📈</a></li>
-                <li id="nav-leaderboard"><a href="#" onclick="switchPage('leaderboard')">لوحة الشرف 🏆</a></li>
-                <li id="nav-atrisk"><a href="#" onclick="switchPage('atrisk')" style="color: var(--danger-color);">تحت الملاحظة 🚨</a></li>
-                <li id="nav-broadcast"><a href="#" onclick="switchPage('broadcast')">الإرسال الجماعي 📢</a></li>
-                <li id="nav-finance" class="admin-only"><a href="#" onclick="switchPage('finance')">الخزنة والماليات 💰</a></li>
-                <li id="nav-affiliate" style="margin-top: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px dashed #10b981;">
-    <a href="#" onclick="switchPage('affiliate')" style="color: #10b981; font-weight: 900;">نظام الإحالات 💸</a>
-</li>
-                <li id="nav-logs" class="admin-only"><a href="#" onclick="switchPage('logs')">سجل حركات النظام 🕵️‍♂️</a></li>
-                <li id="nav-backup" class="admin-only"><a href="#" onclick="switchPage('backup')">لوحة الإدارة ⚙️</a></li>
-                <li style="margin-top: 20px;"><a href="#" onclick="openModal('settingsModal')" style="color: #8b5cf6; border: 1px solid #8b5cf6; text-align: center;">إعدادات السيرفر ⚙️</a></li>
-                <li style="margin-top: 10px;"><a href="#" onclick="logout()" style="color: var(--danger-color); border: 1px solid var(--danger-color); text-align: center;">تسجيل الخروج 🚪</a></li>
+
+                <li class="nav-dropdown admin-only">
+                    <div class="dropdown-toggle" onclick="toggleSidebarDropdown(this)">
+                        <span>📈 الإدارة والماليات</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <ul class="dropdown-menu">
+                        <li id="nav-books"><a href="#" onclick="switchPage('books')">إدارة الكتب 📘</a></li>
+                        <li id="nav-finance" class="admin-only"><a href="#" onclick="switchPage('finance')">الخزنة والماليات 💰</a></li>
+                        <li id="nav-affiliate" style="margin-top: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px dashed #10b981;">
+                            <a href="#" onclick="switchPage('affiliate')" style="color: #10b981; font-weight: 900;">نظام الإحالات 💸</a>
+                        </li>
+                        <li id="nav-broadcast"><a href="#" onclick="switchPage('broadcast')">الإرسال الجماعي 📢</a></li>
+                    </ul>
+                </li>
+
+                <li id="nav-logs" class="admin-only"><a href="#" onclick="switchPage('logs')">سجل الحركات 🕵️‍♂️</a></li>
+
+                <li class="nav-dropdown admin-only">
+                    <div class="dropdown-toggle" onclick="toggleSidebarDropdown(this)">
+                        <span>⚙️ إعدادات النظام</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <ul class="dropdown-menu">
+                        <li id="nav-backup" class="admin-only"><a href="#" onclick="switchPage('backup')">لوحة الإدارة ⚙️</a></li>
+                        <li><a href="#" onclick="openModal('settingsModal')" style="color: #8b5cf6;">إعدادات السيرفر ⚙️</a></li>
+                    </ul>
+                </li>
+
+                <li style="margin-top: 15px;">
+                    <a href="#" onclick="logout()" style="color: var(--danger-color); border: 1px solid var(--danger-color); text-align: center; display: block; border-radius: 8px; padding: 10px; font-weight: bold;">
+                        تسجيل الخروج 🚪
+                    </a>
+                </li>
             </ul>
         </aside>
 
@@ -452,6 +544,31 @@
             <input type="text" id="settingAdminPin" class="custom-input" placeholder="رقم سري من 4 أرقام" maxlength="4" style="letter-spacing: 5px; text-align: center; font-weight: bold; font-size: 20px;">
         </div>
         <button class="save-btn" style="width: 100%; font-size: 16px; background-color: #8b5cf6;" onclick="saveAccountSettings()">💾 حفظ بيانات الحساب</button>
+    </div>
+
+
+    <div class="admin-panel-card" style="border-top: 5px solid #10b981;">
+        <h2 style="color: #10b981; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">👥</span> إدارة حسابات المساعدين (السكرتارية)
+        </h2>
+        <p style="color: var(--text-muted); margin-bottom: 15px; font-size: 14px;">المساعد يدخل النظام بكود السنتر الخاص بك (<strong style="color:var(--primary-color);" id="displayMyCenterCode"></strong>) بالإضافة لليوزر والباسورد، وتكون صلاحياته مقفولة تلقائياً.</p>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <input type="text" id="newAsstUser" class="custom-input" placeholder="اسم مستخدم المساعد (مثال: ahmed)" style="flex: 1; min-width: 150px;">
+            <input type="text" id="newAsstPass" class="custom-input" placeholder="كلمة المرور" style="flex: 1; min-width: 150px;">
+            <button class="save-btn" style="background-color: #10b981; margin: 0; width: auto; padding: 0 20px;" onclick="createAssistant()">إضافة مساعد ➕</button>
+        </div>
+
+        <div class="table-container">
+            <table class="students-table">
+                <thead>
+                    <tr><th>اسم مستخدم المساعد</th><th>كلمة المرور</th><th>إجراء</th></tr>
+                </thead>
+                <tbody id="assistants-list-body">
+                    <tr><td colspan="3" style="text-align: center;">جاري التحميل...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="admin-panel-card" style="border-top: 5px solid var(--primary-color);">
