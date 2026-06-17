@@ -320,23 +320,30 @@
         window.allLectures = []; 
         window.allClassSessions = []; // تأكيد تعريف الحصص
 
-        // 🛡️ دالة فحص صلاحية الطالب للكورس (تم دمج فحص حضور الحصة!)
+// 🛡️ دالة فحص صلاحية الطالب للكورس (تم دمج فحص حضور الحصة المتعدد!)
         window.studentHasAccess = function(lec) {
             if (!currentStudent) return false;
             
             // 1. فحص هل الطالب اشترى الكورس بفلوس؟
             if (currentStudent.purchasedCourses && currentStudent.purchasedCourses.includes(lec.id)) return true;
             
-            // 2. فحص هل الكورس مربوط بحصة والطالب كان حاضر؟ 🔥
-            if (lec.linkedSession && window.allClassSessions) {
-                let session = window.allClassSessions.find(s => s && s.id === lec.linkedSession);
-                if (session && session.attendance && session.attendance[currentStudent.phone] === 'present') {
-                    return true; // مبروك الكورس مجاني ليك!
+            // 2. تجميع الحصص المربوطة (سواء بالطريقة الجديدة كمصفوفة، أو بالطريقة القديمة لو الكورس قديم)
+            let linkedArr = lec.linkedSessions || [];
+            if (lec.linkedSession && !linkedArr.includes(lec.linkedSession)) {
+                linkedArr.push(lec.linkedSession); // دعم للكورسات القديمة
+            }
+
+            // 3. فحص هل الكورس مربوط بحصص؟ وهل الطالب حضر *أي* حصة فيهم؟ 🔥
+            if (linkedArr.length > 0 && window.allClassSessions) {
+                for (let sessId of linkedArr) {
+                    let session = window.allClassSessions.find(s => s && s.id === sessId);
+                    if (session && session.attendance && session.attendance[currentStudent.phone] === 'present') {
+                        return true; // مبروك الكورس مجاني ليك لأنك حضرت الحصة دي!
+                    }
                 }
             }
-            return false;
+            return false; // لو مخضعش لأي شرط من اللي فوق، الكورس مقفول.
         };
-
         window.onload = function() {
             const savedCode = localStorage.getItem("edu_student_code");
             const savedPhone = localStorage.getItem("edu_parent_phone");

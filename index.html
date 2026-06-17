@@ -705,14 +705,16 @@
                 
                 <div class="input-group">
                     <label>الصف الدراسي المستهدف</label>
-                    <select id="lecLevel" class="custom-input"><option value="all">كل الصفوف (عام)</option></select>
+                    <select id="lecLevel" class="custom-input" onchange="filterCourseSessions('lecLevel', 'lecSessionsContainer')">
+                        <option value="all">كل الصفوف (عام)</option>
+                    </select>
                 </div>
 
                 <div class="input-group">
-                    <label style="color: var(--success-color); font-weight: bold;">ربط الكورس بحصة (مجانًا لمن حضرها)</label>
-                    <select id="lecLinkedSession" class="custom-input">
-                        <option value="">بدون ربط (يعتمد على السعر فقط)</option>
-                    </select>
+                    <label style="color: var(--success-color); font-weight: bold;">ربط الكورس بحصص (مجانًا لمن حضرها)</label>
+                    <div id="lecSessionsContainer" style="display: flex; gap: 10px; flex-wrap: wrap; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px dashed var(--success-color); max-height: 120px; overflow-y: auto;">
+                        <span style="color: var(--text-muted); font-size: 13px; font-weight: bold;">اختر الصف الدراسي أولاً لعرض الحصص الخاصة به...</span>
+                    </div>
                 </div>
 
                 <div class="input-group">
@@ -1531,12 +1533,13 @@
                     
                     <div class="input-group">
                         <label>الصف الدراسي المستهدف</label>
-                        <select id="editLecLevel" class="custom-input"></select>
+                        <select id="editLecLevel" class="custom-input" onchange="filterCourseSessions('editLecLevel', 'editLecSessionsContainer')"></select>
                     </div>
 
                     <div class="input-group">
-                        <label style="color: var(--success-color); font-weight: bold;">ربط الكورس بحصة</label>
-                        <select id="editLecLinkedSession" class="custom-input"></select>
+                        <label style="color: var(--success-color); font-weight: bold;">ربط الكورس بحصص</label>
+                        <div id="editLecSessionsContainer" style="display: flex; gap: 10px; flex-wrap: wrap; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px dashed var(--success-color); max-height: 120px; overflow-y: auto;">
+                        </div>
                     </div>
 
                     <div class="input-group">
