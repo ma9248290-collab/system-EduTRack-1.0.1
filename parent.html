@@ -318,7 +318,7 @@
         let currentExam = null;
         let examTimerInterval = null;
         window.allLectures = []; 
-        window.allClassSessions = []; // تأكيد تعريف الحصص
+        window.allClassSessions = []; 
 
         // 🛡️ دالة فحص صلاحية الطالب للكورس (محمية ضد أخطاء Firebase)
         window.studentHasAccess = function(lec) {
@@ -330,37 +330,33 @@
                     if (currentStudent.purchasedCourses.includes(lec.id)) return true;
                 }
 
-                // 2. تجميع الحصص بطريقة آمنة جداً (عشان الفايربيز ميكراشش السيستم)
+                // 2. تجميع الحصص المربوطة بطريقة آمنة
                 let linkedArr = [];
                 if (lec.linkedSessions) {
                     if (Array.isArray(lec.linkedSessions)) {
                         linkedArr = [...lec.linkedSessions];
                     } else if (typeof lec.linkedSessions === 'object') {
-                        linkedArr = Object.values(lec.linkedSessions); // تحويل الـ Object لـ Array
+                        linkedArr = Object.values(lec.linkedSessions);
                     } else {
                         linkedArr = [String(lec.linkedSessions)];
                     }
                 }
                 
-                // دعم الكورسات القديمة اللي كانت بحصة واحدة
                 if (lec.linkedSession && !linkedArr.includes(lec.linkedSession)) {
                     linkedArr.push(lec.linkedSession);
                 }
 
-                // 3. فحص الحضور بذكاء (بالتليفون أو الكود)
+                // 3. فحص الحضور
                 if (linkedArr.length > 0 && window.allClassSessions) {
-                    // التأكد إن الحصص مصفوفة مش Object
                     let sessionsArray = Array.isArray(window.allClassSessions) ? window.allClassSessions : Object.values(window.allClassSessions);
                     
                     for (let sessId of linkedArr) {
                         if (!sessId) continue;
-                        
                         let session = sessionsArray.find(s => s && String(s.id) === String(sessId));
                         if (session && session.attendance) {
                             let phoneStr = String(currentStudent.phone);
                             let codeStr = String(currentStudent.code);
                             
-                            // لو حاضر مسجل بتليفونه أو بالكود بتاعه، نفتحله الكورس فوراً
                             if (session.attendance[phoneStr] === 'present' || session.attendance[codeStr] === 'present') {
                                 return true; 
                             }
@@ -368,11 +364,11 @@
                     }
                 }
                 
-                return false; // لو مفيش أي شرط اتحقق
+                return false; 
                 
             } catch(err) {
                 console.error("خطأ في فحص صلاحية الكورس:", err);
-                return false; // عشان لو حصل أي إيرور مفاجئ السيستم ميكراشش
+                return false; 
             }
         };
 
@@ -428,7 +424,7 @@
             try {
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await res.json();
-                window.allClassSessions = data.classSessions || []; // جلب الحصص للمقارنة
+                window.allClassSessions = data.classSessions || []; 
                 
                 let lecRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/lectures.json`);
                 let lecturesData = await lecRes.json() || {};
@@ -447,6 +443,13 @@
                     errorMsg.style.display = "block"; errorMsg.innerText = "البيانات غير مسجلة!";
                     btn.innerHTML = "دخول للمنصة 🚀";
                     return;
+                }
+
+                // 🚀🚀🚀 [التأمين الجذري لمشكلة الكراش] 🚀🚀🚀
+                if (currentStudent.purchasedCourses) {
+                    currentStudent.purchasedCourses = Array.isArray(currentStudent.purchasedCourses) ? currentStudent.purchasedCourses : Object.values(currentStudent.purchasedCourses);
+                } else {
+                    currentStudent.purchasedCourses = [];
                 }
 
                 let studentGroupObj = (data.groups || []).find(g => typeof g === 'object' && g.name === currentStudent.group);
@@ -501,13 +504,14 @@
                 document.getElementById("app-layout").style.display = "block";
 
             } catch (e) {
-                errorMsg.style.display = "block"; errorMsg.innerText = "خطأ في الاتصال بالسيرفر!";
+                console.error(e);
+                errorMsg.style.display = "block"; errorMsg.innerText = "خطأ في الاتصال بالسيرفر أو تحميل البيانات!";
                 btn.innerHTML = "دخول للمنصة 🚀";
             }
         }
 
         // ==========================================
-        // 📚 عرض كروت الكورسات (ستايل Udemy)
+        // 📚 عرض كروت الكورسات
         // ==========================================
         function renderStudentLectures() {
             let list = document.getElementById("studentLecturesList");
@@ -523,7 +527,6 @@
                 let isFree = lec.type === 'free';
                 let hasAccess = window.studentHasAccess(lec);
                 
-                // 🔥 تحديد هل الكورس ده مجاني ليه عشان حضر الحصة؟
                 let attendedSession = false;
                 if (!isFree && hasAccess && (!currentStudent.purchasedCourses || !currentStudent.purchasedCourses.includes(lec.id))) {
                     attendedSession = true;
@@ -531,7 +534,6 @@
 
                 let canWatch = isFree || hasAccess;
                 
-                // 🔥 إعطاء الطالب شارة توضح ليه الكورس ده مفتوحله (مجاني، حضر، أو شراه)
                 let badgeHtml = "";
                 if (isFree) {
                     badgeHtml = `<span style="background: rgba(16, 185, 129, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">🎁 مجاني</span>`;
@@ -609,7 +611,7 @@
         };
 
         // ==========================================
-        // 🎬 مشغل الكورس والـ DRM (بتصميم القائمة الجديد)
+        // 🎬 مشغل الكورس والـ DRM
         // ==========================================
         window.openCoursePlayer = function(courseId, startVideoIndex = 0) {
             let course = window.allLectures.find(l => l.id === courseId);
@@ -718,7 +720,7 @@
         }
 
         // ==========================================
-        // 🛒 نظام المحفظة المحدث (حل مشكلة عدم الحفظ نهائياً) 🔥
+        // 🛒 نظام المحفظة المحدث 
         // ==========================================
         window.purchaseCourse = async function(courseId, price) {
             if(!confirm(`هل تريد تأكيد اشتراكك في هذا الكورس بمبلغ ${price} ج.م؟\n(سيتم خصم المبلغ من رصيد محفظتك)`)) return;
@@ -737,12 +739,14 @@
 
                 if(studentIndex !== -1) {
                     currentStudent.walletBalance = parseFloat(currentStudent.walletBalance || 0) - price;
-                    if(!currentStudent.purchasedCourses) currentStudent.purchasedCourses = [];
+                    
+                    if (!currentStudent.purchasedCourses) currentStudent.purchasedCourses = [];
+                    currentStudent.purchasedCourses = Array.isArray(currentStudent.purchasedCourses) ? currentStudent.purchasedCourses : Object.values(currentStudent.purchasedCourses);
+
                     if(!currentStudent.purchasedCourses.includes(courseId)) {
                         currentStudent.purchasedCourses.push(courseId);
                     }
 
-                    // 🔥 هنا التعديل: بنحدث بيانات الطالب ده بس عن طريق PATCH عشان متتمسحش ابداً
                     await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${studentIndex}.json`, {
                         method: 'PATCH', 
                         headers: { 'Content-Type': 'application/json' }, 
@@ -788,7 +792,6 @@
                     let amount = parseFloat(codeData.amount);
                     currentStudent.walletBalance = parseFloat(currentStudent.walletBalance || 0) + amount;
 
-                    // 🔥 استخدام PATCH عشان الرصيد يثبت في الداتا بيز ومتأثرش عليه أي تعديلات تانية
                     await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${studentIndex}.json`, {
                         method: 'PATCH', 
                         headers: { 'Content-Type': 'application/json' }, 
