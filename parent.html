@@ -320,30 +320,62 @@
         window.allLectures = []; 
         window.allClassSessions = []; // تأكيد تعريف الحصص
 
-// 🛡️ دالة فحص صلاحية الطالب للكورس (تم دمج فحص حضور الحصة المتعدد!)
+        // 🛡️ دالة فحص صلاحية الطالب للكورس (محمية ضد أخطاء Firebase)
         window.studentHasAccess = function(lec) {
-            if (!currentStudent) return false;
-            
-            // 1. فحص هل الطالب اشترى الكورس بفلوس؟
-            if (currentStudent.purchasedCourses && currentStudent.purchasedCourses.includes(lec.id)) return true;
-            
-            // 2. تجميع الحصص المربوطة (سواء بالطريقة الجديدة كمصفوفة، أو بالطريقة القديمة لو الكورس قديم)
-            let linkedArr = lec.linkedSessions || [];
-            if (lec.linkedSession && !linkedArr.includes(lec.linkedSession)) {
-                linkedArr.push(lec.linkedSession); // دعم للكورسات القديمة
-            }
+            try {
+                if (!currentStudent) return false;
+                
+                // 1. فحص هل الطالب اشترى الكورس بفلوس؟
+                if (currentStudent.purchasedCourses && Array.isArray(currentStudent.purchasedCourses)) {
+                    if (currentStudent.purchasedCourses.includes(lec.id)) return true;
+                }
 
-            // 3. فحص هل الكورس مربوط بحصص؟ وهل الطالب حضر *أي* حصة فيهم؟ 🔥
-            if (linkedArr.length > 0 && window.allClassSessions) {
-                for (let sessId of linkedArr) {
-                    let session = window.allClassSessions.find(s => s && s.id === sessId);
-                    if (session && session.attendance && session.attendance[currentStudent.phone] === 'present') {
-                        return true; // مبروك الكورس مجاني ليك لأنك حضرت الحصة دي!
+                // 2. تجميع الحصص بطريقة آمنة جداً (عشان الفايربيز ميكراشش السيستم)
+                let linkedArr = [];
+                if (lec.linkedSessions) {
+                    if (Array.isArray(lec.linkedSessions)) {
+                        linkedArr = [...lec.linkedSessions];
+                    } else if (typeof lec.linkedSessions === 'object') {
+                        linkedArr = Object.values(lec.linkedSessions); // تحويل الـ Object لـ Array
+                    } else {
+                        linkedArr = [String(lec.linkedSessions)];
                     }
                 }
+                
+                // دعم الكورسات القديمة اللي كانت بحصة واحدة
+                if (lec.linkedSession && !linkedArr.includes(lec.linkedSession)) {
+                    linkedArr.push(lec.linkedSession);
+                }
+
+                // 3. فحص الحضور بذكاء (بالتليفون أو الكود)
+                if (linkedArr.length > 0 && window.allClassSessions) {
+                    // التأكد إن الحصص مصفوفة مش Object
+                    let sessionsArray = Array.isArray(window.allClassSessions) ? window.allClassSessions : Object.values(window.allClassSessions);
+                    
+                    for (let sessId of linkedArr) {
+                        if (!sessId) continue;
+                        
+                        let session = sessionsArray.find(s => s && String(s.id) === String(sessId));
+                        if (session && session.attendance) {
+                            let phoneStr = String(currentStudent.phone);
+                            let codeStr = String(currentStudent.code);
+                            
+                            // لو حاضر مسجل بتليفونه أو بالكود بتاعه، نفتحله الكورس فوراً
+                            if (session.attendance[phoneStr] === 'present' || session.attendance[codeStr] === 'present') {
+                                return true; 
+                            }
+                        }
+                    }
+                }
+                
+                return false; // لو مفيش أي شرط اتحقق
+                
+            } catch(err) {
+                console.error("خطأ في فحص صلاحية الكورس:", err);
+                return false; // عشان لو حصل أي إيرور مفاجئ السيستم ميكراشش
             }
-            return false; // لو مخضعش لأي شرط من اللي فوق، الكورس مقفول.
         };
+
         window.onload = function() {
             const savedCode = localStorage.getItem("edu_student_code");
             const savedPhone = localStorage.getItem("edu_parent_phone");
