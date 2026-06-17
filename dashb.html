@@ -100,7 +100,7 @@
             <button class="tab-btn" onclick="switchTab('withdraws')">💸 طلبات السحب والمستحقات</button>
             <button class="tab-btn" onclick="switchTab('licenses')">🔑 الرخص والمشتركين</button>
            
-            <button class="tab-btn" onclick="switchTab('idcards')">💳 طلبات كروت ID</button>
+            <button class="tab-btn" onclick="switchTab('idcards')">💳 طلبات كروت ID <span class="badge-alert" id="newIdOrdersBadge">0</span></button>
             
             <div style="margin-top: auto;">
                 <button class="btn" style="background: var(--danger); box-shadow: none;" onclick="logout()">تسجيل خروج 🔒</button>
@@ -178,12 +178,12 @@
                 </div>
             </div>
 
-            <div id="idcards-tab" class="tab-content">
+           <div id="idcards-tab" class="tab-content">
                 <h2 class="section-title" style="color: #0ea5e9;">💳 طلبات طباعة كروت الـ ID</h2>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>المدرس / السنتر</th><th>الواتساب</th><th>عنوان التوصيل</th><th>من كود</th><th>إلى كود</th><th>تاريخ الطلب</th></tr></thead>
-                        <tbody id="idOrdersTable"><tr><td colspan="6" style="text-align: center;">جاري التحميل...</td></tr></tbody>
+                        <thead><tr><th>المدرس / السنتر</th><th>الواتساب</th><th>عنوان التوصيل</th><th>من كود</th><th>إلى كود</th><th>تاريخ الطلب</th><th>إجراء</th></tr></thead>
+                        <tbody id="idOrdersTable"><tr><td colspan="7" style="text-align: center;">جاري التحميل...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -194,6 +194,7 @@
     <script>
         const DB_URL = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com";
         let lastKnownOrderCount = -1; // متغير عشان نعرف لو في طلب جديد زاد
+        let lastKnownIdOrderCount = -1; // 🔥 متغير عشان نعرف لو في طلب كروت ID جديد زاد
 
         // ==========================================
         // 1. نظام تسجيل الدخول وحفظ الجلسة (Session)
@@ -291,6 +292,18 @@
                     badge.innerText = currentOrderCount - lastKnownOrderCount;
                 }
                 lastKnownOrderCount = currentOrderCount;
+                
+                // 🔥 فحص إشعارات طلبات كروت ID
+                let currentIdOrderCount = Object.keys(idOrders).length;
+                if (lastKnownIdOrderCount !== -1 && currentIdOrderCount > lastKnownIdOrderCount) {
+                    showNotification("طلب كروت ID جديد! 💳", "تم استلام طلب جديد لطباعة الكروت، راجع القسم.");
+                    let idBadge = document.getElementById("newIdOrdersBadge");
+                    if (idBadge) {
+                        idBadge.style.display = "inline-block";
+                        idBadge.innerText = currentIdOrderCount - lastKnownIdOrderCount;
+                    }
+                }
+                lastKnownIdOrderCount = currentIdOrderCount;
 
                 // رسم كل حاجة في مكانها
                 renderOrders(orders);
@@ -448,14 +461,72 @@
             document.getElementById("totalDemos").innerText = demoCount;
         }
 
+   // 💳 رسم طلبات كروت الـ ID (محمية ضد الأعطال + زر الإتمام)
         function renderIdOrders(orders) {
-            const tbody = document.getElementById("idOrdersTable"); tbody.innerHTML = "";
-            Object.keys(orders).reverse().forEach(key => {
-                let o = orders[key];
-                tbody.innerHTML += `<tr><td><strong>${o.teacherName}</strong></td><td><a href="https://wa.me/20${o.phone.replace(/^0+/,'')}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${o.phone}</a></td><td>${o.address}</td><td style="color:var(--success); font-weight:bold;">${o.fromCode}</td><td style="color:var(--danger); font-weight:bold;">${o.toCode}</td><td>${new Date(o.timestamp).toLocaleDateString('ar-EG')}</td></tr>`;
-            });
-        }
+            const tbody = document.getElementById("idOrdersTable"); 
+            tbody.innerHTML = "";
+            let unhandledCount = 0;
+            
+            if (!orders || Object.keys(orders).length === 0) {
+                let badge = document.getElementById("newIdOrdersBadge");
+                if(badge) badge.style.display = "none";
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); font-weight: bold;">لا توجد طلبات كروت ID حتى الآن</td></tr>`;
+                return;
+            }
 
+            Object.keys(orders).reverse().forEach(key => {
+                let o = orders[key] || {};
+                let phone = o.phone || "";
+                let teacherName = o.teacherName || "غير محدد";
+                let address = o.address || "غير محدد";
+                let fromCode = o.fromCode || "-";
+                let toCode = o.toCode || "-";
+                let timestamp = o.timestamp ? new Date(o.timestamp).toLocaleDateString('ar-EG') : "-";
+                
+                // التأكد هل الطلب تم طباعته ولا لسه
+                let isDone = o.status === 'done';
+                if (!isDone) unhandledCount++;
+                
+                let waLink = phone ? `https://wa.me/20${phone.replace(/^0+/, '')}` : "#";
+                let btn = isDone 
+                    ? `<span style="color:var(--success); font-weight:bold;">تم التنفيذ ✅</span>` 
+                    : `<button onclick="approveIdOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px; width: auto; background: var(--primary);">تحديد كمكتمل ✅</button>`;
+
+                tbody.innerHTML += `
+                    <tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}">
+                        <td><strong>${teacherName}</strong></td>
+                        <td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${phone}</a></td>
+                        <td>${address}</td>
+                        <td style="color:var(--success); font-weight:bold;">${fromCode}</td>
+                        <td style="color:var(--danger); font-weight:bold;">${toCode}</td>
+                        <td>${timestamp}</td>
+                        <td>${btn}</td>
+                    </tr>
+                `;
+            });
+            
+            // تظبيط النقطة الحمرا بناءً على الطلبات اللي لسه متعملتش
+            let badge = document.getElementById("newIdOrdersBadge");
+            if (badge) {
+                if (unhandledCount === 0) {
+                    badge.style.display = "none";
+                } else {
+                    badge.style.display = "inline-block";
+                    badge.innerText = unhandledCount;
+                }
+            }
+        }
+        
+        // 💳 تأكيد طباعة الكروت
+        async function approveIdOrder(key) {
+            if(confirm("هل قمت بطباعة وتوصيل الكروت بالفعل؟")) {
+                await fetch(`${DB_URL}/id_orders/${key}.json`, { 
+                    method: 'PATCH', 
+                    body: JSON.stringify({ status: 'done' }) 
+                });
+                fetchSystemData();
+            }
+        }
         // توابع التحكم المباشرة بقاعدة البيانات
         async function updateLicenseStatus(key, status) { await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: status }) }); fetchSystemData(); }
         async function renewLicense(key) { await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', body: JSON.stringify({ activatedAt: new Date().toISOString(), durationMonths: 1, status: 'active' }) }); fetchSystemData(); showNotification("تم!", "تم تجديد الاشتراك بنجاح."); }
