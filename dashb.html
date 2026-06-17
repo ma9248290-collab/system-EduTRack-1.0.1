@@ -461,9 +461,10 @@
             document.getElementById("totalDemos").innerText = demoCount;
         }
 
-   // 💳 رسم طلبات كروت الـ ID (محمية ضد الأعطال + زر الإتمام)
+   // 💳 رسم طلبات كروت الـ ID (محمية بالكامل ضد أعطال الأرقام)
         function renderIdOrders(orders) {
             const tbody = document.getElementById("idOrdersTable"); 
+            if (!tbody) return;
             tbody.innerHTML = "";
             let unhandledCount = 0;
             
@@ -475,37 +476,41 @@
             }
 
             Object.keys(orders).reverse().forEach(key => {
-                let o = orders[key] || {};
-                let phone = o.phone || "";
-                let teacherName = o.teacherName || "غير محدد";
-                let address = o.address || "غير محدد";
-                let fromCode = o.fromCode || "-";
-                let toCode = o.toCode || "-";
-                let timestamp = o.timestamp ? new Date(o.timestamp).toLocaleDateString('ar-EG') : "-";
-                
-                // التأكد هل الطلب تم طباعته ولا لسه
-                let isDone = o.status === 'done';
-                if (!isDone) unhandledCount++;
-                
-                let waLink = phone ? `https://wa.me/20${phone.replace(/^0+/, '')}` : "#";
-                let btn = isDone 
-                    ? `<span style="color:var(--success); font-weight:bold;">تم التنفيذ ✅</span>` 
-                    : `<button onclick="approveIdOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px; width: auto; background: var(--primary);">تحديد كمكتمل ✅</button>`;
+                try {
+                    let o = orders[key] || {};
+                    // 🔥 التعديل السحري هنا: إجبار التليفون إنه يكون (نص) عشان ميكراشش في الـ replace
+                    let phone = String(o.phone || ""); 
+                    let teacherName = o.teacherName || "غير محدد";
+                    let address = o.address || "غير محدد";
+                    let fromCode = o.fromCode || "-";
+                    let toCode = o.toCode || "-";
+                    let timestamp = o.timestamp ? new Date(o.timestamp).toLocaleDateString('ar-EG') : "-";
+                    
+                    let isDone = o.status === 'done';
+                    if (!isDone) unhandledCount++;
+                    
+                    let waLink = phone ? `https://wa.me/20${phone.replace(/^0+/, '')}` : "#";
+                    let btn = isDone 
+                        ? `<span style="color:var(--success); font-weight:bold;">تم التنفيذ ✅</span>` 
+                        : `<button onclick="approveIdOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px; width: auto; background: var(--primary);">تحديد كمكتمل ✅</button>`;
 
-                tbody.innerHTML += `
-                    <tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}">
-                        <td><strong>${teacherName}</strong></td>
-                        <td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${phone}</a></td>
-                        <td>${address}</td>
-                        <td style="color:var(--success); font-weight:bold;">${fromCode}</td>
-                        <td style="color:var(--danger); font-weight:bold;">${toCode}</td>
-                        <td>${timestamp}</td>
-                        <td>${btn}</td>
-                    </tr>
-                `;
+                    tbody.innerHTML += `
+                        <tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}">
+                            <td><strong>${teacherName}</strong></td>
+                            <td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${phone}</a></td>
+                            <td>${address}</td>
+                            <td style="color:var(--success); font-weight:bold;">${fromCode}</td>
+                            <td style="color:var(--danger); font-weight:bold;">${toCode}</td>
+                            <td>${timestamp}</td>
+                            <td>${btn}</td>
+                        </tr>
+                    `;
+                } catch(err) {
+                    console.error("تخطي خطأ في رسم طلب الكروت:", err);
+                }
             });
             
-            // تظبيط النقطة الحمرا بناءً على الطلبات اللي لسه متعملتش
+            // تظبيط النقطة الحمرا
             let badge = document.getElementById("newIdOrdersBadge");
             if (badge) {
                 if (unhandledCount === 0) {
