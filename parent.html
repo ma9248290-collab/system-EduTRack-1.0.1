@@ -189,14 +189,23 @@
                         <h2>نظرة عامة</h2>
                         <p>ملخص نشاطك في السنتر</p>
                     </div>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div><p style="margin:0; color:var(--text-muted);">نقاط التميز 🌟</p><div class="stat-val" id="home-behavior">0</div></div>
-                        </div>
-                        <div class="stat-card" style="cursor: pointer;" onclick="switchTab('tab-wallet')">
-                            <div><p style="margin:0; color:var(--text-muted);">رصيد المحفظة 💰</p><div class="stat-val" style="color:var(--wallet-color);" id="home-balance">0 ج.م</div></div>
-                        </div>
-                    </div>
+                    <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); margin-bottom: 40px; position: relative; overflow: hidden; border: 1px solid #334155;">
+            <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+            <div style="position: absolute; bottom: -50px; left: 10%; width: 150px; height: 150px; background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+            
+            <div style="z-index: 1;">
+                <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 16px; font-weight: bold;">رصيد المحفظة المتاح</p>
+                <h2 style="margin: 0; font-size: 40px; font-weight: 900; display: flex; align-items: center; gap: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                    <span id="walletBalanceDisplay" style="color: #fff;">0</span> 
+                    <span style="font-size: 20px; color: #10b981; background: rgba(16,185,129,0.1); padding: 4px 10px; border-radius: 8px;">ج.م</span>
+                </h2>
+            </div>
+            <div style="z-index: 1;">
+                <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 12px; box-shadow: 0 8px 15px rgba(16,185,129,0.3); transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="openWalletModal()">
+                    ➕ شحن المحفظة
+                </button>
+            </div>
+        </div>
                     <div class="empty-state" style="padding: 30px;">
                         <h3 style="color: var(--secondary);">أهلاً بك في منصتك الجديدة! 🚀</h3>
                         <p>استخدم القائمة للتنقل بين الحضور، الامتحانات، المحاضرات، وشحن المحفظة.</p>
@@ -458,10 +467,34 @@
             }
         }
 
+
+// ==========================================
+        // 📜 عرض تفاصيل الكورس في نافذة منبثقة
         // ==========================================
-        // 🎬 دالة رسم المحاضرات والكورسات (كروت الـ Udemy الاحترافية)
-        // ==========================================
-        // ==========================================
+        window.openStudentCourseDetails = function(courseId) {
+            let course = window.allLectures.find(l => l.id === courseId);
+            if(!course) return;
+
+            document.getElementById("detailsCourseTitle").innerText = course.title;
+            document.getElementById("detailsCourseImage").src = course.image || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop';
+            document.getElementById("detailsCourseDesc").innerText = course.desc || "لا يوجد وصف إضافي متوفر لهذا الكورس.";
+
+            let vids = course.videos || [];
+            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
+
+            let playlistHtml = "";
+            vids.forEach((v, idx) => {
+                playlistHtml += `
+                <div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
+                    <span style="font-weight: bold; color: var(--secondary); font-size: 15px;">▶️ ${v.title}</span>
+                    <button class="btn" style="background: var(--success); padding: 8px 20px; width: auto; font-size: 13px; font-weight: bold;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل المحاضرة 🔒</button>
+                </div>`;
+            });
+            document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
+            document.getElementById("studentCourseDetailsModal").style.display = "flex";
+        };
+
+// ==========================================
         // 🔲 دالة تكبير وتصغير الشاشة المخصصة
         // ==========================================
         window.toggleCustomFullscreen = function() {
@@ -575,36 +608,6 @@
                 window.focus(); 
             }
         }
-// ==========================================
-        // 📜 عرض تفاصيل الكورس في نافذة منبثقة
-        // ==========================================
-        window.openStudentCourseDetails = function(courseId) {
-            let course = window.allLectures.find(l => l.id === courseId);
-            if(!course) return;
-
-            document.getElementById("detailsCourseTitle").innerText = course.title;
-            document.getElementById("detailsCourseImage").src = course.image || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop';
-            document.getElementById("detailsCourseDesc").innerText = course.desc || "لا يوجد وصف إضافي متوفر لهذا الكورس.";
-
-            let vids = course.videos || [];
-            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
-
-            let playlistHtml = "";
-            vids.forEach((v, idx) => {
-                playlistHtml += `
-                <div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
-                    <span style="font-weight: bold; color: var(--secondary); font-size: 15px;">▶️ ${v.title}</span>
-                    <button class="btn" style="background: var(--success); padding: 8px 20px; width: auto; font-size: 13px; font-weight: bold;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل المحاضرة 🔒</button>
-                </div>`;
-            });
-            document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
-            document.getElementById("studentCourseDetailsModal").style.display = "flex";
-        };
-
-        // ==========================================
-        // 🔒 دوال الحماية ومشغل الكورس (DRM المطور)
-        // ==========================================
-
         window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex, element = null) {
             // تظبيط اللينك عشان يخفي زراير يوتيوب على قد ما يقدر
             let embedUrl = url;
