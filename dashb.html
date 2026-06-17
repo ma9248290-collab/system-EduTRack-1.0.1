@@ -192,12 +192,12 @@
     </div>
 
     <script>
-        const DB_URL = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com";
-        let lastKnownOrderCount = -1; // متغير عشان نعرف لو في طلب جديد زاد
-        let lastKnownIdOrderCount = -1; // 🔥 متغير عشان نعرف لو في طلب كروت ID جديد زاد
+      const DB_URL = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com";
+        let lastKnownOrderCount = -1; 
+        let lastKnownIdOrderCount = -1; 
 
         // ==========================================
-        // 1. نظام تسجيل الدخول وحفظ الجلسة (Session)
+        // 1. نظام الدخول والتهيئة
         // ==========================================
         document.addEventListener("DOMContentLoaded", () => {
             if (localStorage.getItem("superAdminAuth") === "true") {
@@ -205,7 +205,6 @@
                 document.getElementById('adminDashboard').style.display = 'flex';
                 initDashboard();
             }
-            // تشغيل الساعة
             setInterval(() => { document.getElementById("liveClock").innerText = new Date().toLocaleString('ar-EG'); }, 1000);
         });
 
@@ -226,31 +225,24 @@
             location.reload();
         }
 
-        // ==========================================
-        // 2. نظام التابات (Tabs)
-        // ==========================================
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
             document.getElementById(tabId + '-tab').classList.add('active');
             event.currentTarget.classList.add('active');
         }
 
         // ==========================================
-        // 3. قلب النظام والإشعارات اللحظية 🔔
+        // 2. جلب الداتا والإشعارات اللحظية 🔔
         // ==========================================
         function initDashboard() {
-            fetchSystemData(); // السحبة الأولى
-            
-            // الرادار بيشتغل كل 10 ثواني يشوف لو في جديد
+            fetchSystemData(); 
             setInterval(fetchSystemData, 10000); 
         }
 
         function playNotifySound() {
             const audio = document.getElementById("notifySound");
-            audio.currentTime = 0;
-            audio.play().catch(e => console.log("المتصفح يمنع تشغيل الصوت تلقائياً"));
+            audio.currentTime = 0; audio.play().catch(e => {});
         }
 
         function showNotification(title, msg) {
@@ -266,46 +258,30 @@
         async function fetchSystemData() {
             try {
                 let [licRes, techRes, demoRes, idRes, ordRes, wdRes] = await Promise.all([
-                    fetch(`${DB_URL}/licenses.json`),
-                    fetch(`${DB_URL}/teachers.json`),
-                    fetch(`${DB_URL}/demo_users.json`),
-                    fetch(`${DB_URL}/id_orders.json`),
-                    fetch(`${DB_URL}/orders.json`),
-                    fetch(`${DB_URL}/withdraw_requests.json`)
+                    fetch(`${DB_URL}/licenses.json`), fetch(`${DB_URL}/teachers.json`),
+                    fetch(`${DB_URL}/demo_users.json`), fetch(`${DB_URL}/id_orders.json`),
+                    fetch(`${DB_URL}/orders.json`), fetch(`${DB_URL}/withdraw_requests.json`)
                 ]);
                 
-                let licenses = await licRes.json() || {};
-                let teachers = await techRes.json() || {};
-                let demos = await demoRes.json() || {};
-                let idOrders = await idRes.json() || {};
-                let orders = await ordRes.json() || {};
-                let withdraws = await wdRes.json() || {};
+                let licenses = await licRes.json() || {}; let teachers = await techRes.json() || {};
+                let demos = await demoRes.json() || {}; let idOrders = await idRes.json() || {};
+                let orders = await ordRes.json() || {}; let withdraws = await wdRes.json() || {};
 
-                // 🔔 فحص الإشعارات (لو عدد الطلبات زاد)
+                // إشعارات طلبات الشراء
                 let currentOrderCount = Object.keys(orders).length;
                 if (lastKnownOrderCount !== -1 && currentOrderCount > lastKnownOrderCount) {
                     showNotification("طلب شراء جديد! 🛒", "قم بمراجعة قسم طلبات الشراء الآن لتفعيل حساب العميل.");
-                    
-                    // إظهار نقطة حمرا على زرار التاب
-                    let badge = document.getElementById("newOrdersBadge");
-                    badge.style.display = "inline-block";
-                    badge.innerText = currentOrderCount - lastKnownOrderCount;
                 }
                 lastKnownOrderCount = currentOrderCount;
                 
-                // 🔥 فحص إشعارات طلبات كروت ID
+                // إشعارات كروت الـ ID
                 let currentIdOrderCount = Object.keys(idOrders).length;
                 if (lastKnownIdOrderCount !== -1 && currentIdOrderCount > lastKnownIdOrderCount) {
                     showNotification("طلب كروت ID جديد! 💳", "تم استلام طلب جديد لطباعة الكروت، راجع القسم.");
-                    let idBadge = document.getElementById("newIdOrdersBadge");
-                    if (idBadge) {
-                        idBadge.style.display = "inline-block";
-                        idBadge.innerText = currentIdOrderCount - lastKnownIdOrderCount;
-                    }
                 }
                 lastKnownIdOrderCount = currentIdOrderCount;
 
-                // رسم كل حاجة في مكانها
+                // رسم الجداول بأمان تام
                 renderOrders(orders);
                 renderClients(licenses, teachers);
                 renderDemos(demos);
@@ -316,292 +292,154 @@
         }
 
         // ==========================================
-        // 4. دوال الرسم (Render) والتأكيد
+        // 3. دوال الرسم المحمية 100% 🛡️
         // ==========================================
         
-        // رسم طلبات الشراء
         function renderOrders(orders) {
-            const tbody = document.getElementById("ordersTable"); tbody.innerHTML = "";
-            let count = 0; let unhandledCount = 0;
-            if (Object.keys(orders).length === 0) return tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">لا توجد طلبات جديدة</td></tr>`;
+            const tbody = document.getElementById("ordersTable"); if(!tbody) return;
+            tbody.innerHTML = ""; let unhandledCount = 0;
+            if (!orders || Object.keys(orders).length === 0) return tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">لا توجد طلبات جديدة</td></tr>`;
             
             Object.keys(orders).reverse().forEach(key => {
-                let o = orders[key]; count++;
-                let waLink = `https://wa.me/20${o.whatsapp.replace(/^0+/, '')}`;
-                
-                let isDone = o.status && o.status.includes('تم');
-                if(!isDone) unhandledCount++;
+                try {
+                    let o = orders[key]; let phoneStr = String(o.whatsapp || "");
+                    let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/, '')}` : "#";
+                    let isDone = o.status && o.status.includes('تم');
+                    if(!isDone) unhandledCount++;
 
-                let statusBadge = isDone ? `<span class="badge" style="background:rgba(16, 185, 129, 0.2); color:var(--success)">${o.status}</span>` : `<span class="badge" style="background:rgba(245, 158, 11, 0.2); color:var(--warning)">${o.status}</span>`;
-                let btn = isDone ? `<span style="color:#64748b; font-weight:bold;">مؤكد ومفعل ✅</span>` : `<button onclick="approveOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px;">تأكيد وتفعيل ✅</button>`;
+                    let statusBadge = isDone ? `<span class="badge" style="background:rgba(16, 185, 129, 0.2); color:var(--success)">${o.status}</span>` : `<span class="badge" style="background:rgba(245, 158, 11, 0.2); color:var(--warning)">${o.status}</span>`;
+                    let btn = isDone ? `<span style="color:#64748b; font-weight:bold;">مؤكد ومفعل ✅</span>` : `<button onclick="approveOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px;">تأكيد وتفعيل ✅</button>`;
 
-                tbody.innerHTML += `
-                    <tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}">
-                        <td><strong>${o.teacherName}</strong></td>
-                        <td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${o.whatsapp}</a></td>
-                        <td style="color:var(--primary); font-weight:bold;">${o.plan}</td>
-                        <td>${o.paymentMethod}</td>
-                        <td style="color:var(--success); font-weight:900;">${o.finalPrice} ج</td>
-                        <td style="color:var(--warning); font-weight:bold; letter-spacing:1px; direction:ltr;">${o.promoCodeUsed}</td>
-                        <td style="color:var(--purple); font-weight:bold;">${o.commissionForAffiliate} ج</td>
-                        <td>${statusBadge}</td>
-                        <td>${btn}</td>
-                    </tr>
-                `;
+                    tbody.innerHTML += `<tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}"><td><strong>${o.teacherName || '-'}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${phoneStr}</a></td><td style="color:var(--primary); font-weight:bold;">${o.plan || '-'}</td><td>${o.paymentMethod || '-'}</td><td style="color:var(--success); font-weight:900;">${o.finalPrice || 0} ج</td><td style="color:var(--warning); font-weight:bold; letter-spacing:1px; direction:ltr;">${o.promoCodeUsed || 'بدون كود'}</td><td style="color:var(--purple); font-weight:bold;">${o.commissionForAffiliate || 0} ج</td><td>${statusBadge}</td><td>${btn}</td></tr>`;
+                } catch(e) {}
             });
             document.getElementById("totalOrders").innerText = unhandledCount;
-            
-            // إخفاء النقطة الحمرا لو فتح التاب
             let badge = document.getElementById("newOrdersBadge");
-            if (unhandledCount === 0) badge.style.display = "none";
+            if(badge) { badge.style.display = unhandledCount === 0 ? "none" : "inline-block"; badge.innerText = unhandledCount; }
         }
 
-        async function approveOrder(key) {
-            if(confirm("تأكيد استلام المبلغ؟ (يجب عليك توليد كود تفعيل وإرساله للعميل على الواتساب)")) {
-                await fetch(`${DB_URL}/orders/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'تم الدفع والتفعيل ✅' }) });
-                fetchSystemData();
-            }
-        }
-
-        // 🔑 توليد كود سريع (محدث لدعم الأيام)
-        async function generateLicense() {
-            const planValue = document.getElementById("newLicenseType").value;
-            const code = "EDU-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-            
-            let licenseData = { status: 'active', createdAt: new Date().toISOString() };
-            
-            // تحديد مدة الكود (بالأيام أو الشهور)
-            if (planValue === "1_day") {
-                licenseData.durationDays = 1;
-                licenseData.durationMonths = 0;
-            } else if (planValue === "7_days") {
-                licenseData.durationDays = 7;
-                licenseData.durationMonths = 0;
-            } else {
-                licenseData.durationMonths = parseInt(planValue);
-            }
-
-            await fetch(`${DB_URL}/licenses/${code}.json`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(licenseData)
-            });
-            document.getElementById("generatedCodeDisplay").value = code;
-            fetchSystemData(); 
-            showNotification("نجاح!", "تم توليد كود التفعيل وإضافته للرخص.");
-        }
-
-// 🌟 عرض المدرسين المشتركين (مع زرار التعديل)
-        function renderClients(licenses, teachers) {
-            const tbody = document.getElementById("clientsTable"); tbody.innerHTML = "";
-            let tCount = 0, sCount = 0;
-            Object.keys(licenses).forEach(key => {
-                let lic = licenses[key]; if(lic.claimedBy) tCount++;
-                let stu = (teachers && teachers[key] && teachers[key].data && teachers[key].data.students) ? teachers[key].data.students.length : 0;
-                sCount += stu;
-                let isExpired = false;
-                
-                // تحديد اسم الباقة في الجدول
-                let planName = 'شهري';
-                if(lic.durationMonths == 99) planName = 'مدى الحياة';
-                else if(lic.durationDays == 7) planName = '7 أيام';
-                else if(lic.durationDays == 1) planName = 'يوم واحد';
-
-                if(lic.activatedAt && lic.durationMonths != 99) {
-                    let act = new Date(lic.activatedAt); 
-                    let exp;
-                    if(lic.durationDays) {
-                        exp = new Date(act.setDate(act.getDate() + parseInt(lic.durationDays)));
-                    } else {
-                        exp = new Date(act.setMonth(act.getMonth() + parseInt(lic.durationMonths)));
-                    }
-                    if(new Date() > exp) isExpired = true;
-                }
-                
-                let stat = lic.status === 'suspended' ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--danger)">موقوف</span>` : (isExpired ? `<span class="badge" style="background:rgba(245,158,11,0.2); color:var(--warning)">منتهي</span>` : `<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--success)">نشط</span>`);
-                let actBtn = lic.status === 'suspended' ? `<button onclick="updateLicenseStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px 10px; font-size:12px;">تفعيل</button>` : (isExpired ? `<button onclick="renewLicense('${key}')" class="btn" style="background:var(--warning); padding:5px 10px; font-size:12px;">تجديد</button>` : `<button onclick="updateLicenseStatus('${key}', 'suspended')" class="btn" style="background:var(--danger); padding:5px 10px; font-size:12px;">إيقاف</button>`);
-                
-                tbody.innerHTML += `<tr>
-                    <td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td>
-                    <td style="color:#94a3b8; font-family:monospace;">${key}</td>
-                    <td><span style="color:#f59e0b; font-weight:bold;">${planName}</span></td>
-                    <td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString() : '-'}</td>
-                    <td style="color:var(--primary); font-weight:bold;">${stu}</td>
-                    <td>${stat}</td>
-                    <td>
-                        <div style="display: flex; gap: 5px; justify-content: center;">
-                            ${actBtn}
-                            <button onclick="openEditPlanModal('${key}')" class="btn" style="background:#f59e0b; padding:5px 10px; font-size:12px; color:black; border:none;">تعديل ⚙️</button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            document.getElementById("totalTeachers").innerText = tCount;
-            document.getElementById("totalStudents").innerText = sCount;
-        }
-        function renderWithdraws(requests) {
-            const tbody = document.getElementById("withdrawsTable"); tbody.innerHTML = "";
-            if (Object.keys(requests).length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد طلبات سحب</td></tr>`;
-            Object.keys(requests).reverse().forEach(key => {
-                let r = requests[key];
-                let btn = r.status === 'paid' ? `<span style="color:var(--success); font-weight:bold;">تم التحويل ✅</span>` : `<button onclick="approveWithdraw('${key}')" class="btn" style="background:var(--primary); padding:5px 10px; font-size:12px;">تأكيد التحويل 💳</button>`;
-                tbody.innerHTML += `<tr><td style="letter-spacing:1px;"><strong>${r.promoCode}</strong></td><td>${r.method}</td><td style="color:var(--warning); font-weight:bold;">${r.number}</td><td style="color:var(--success); font-weight:900;">${r.amount} ج</td><td>${new Date(r.timestamp).toLocaleDateString('ar-EG')}</td><td>${btn}</td></tr>`;
-            });
-        }
-
-        function renderDemos(demos) {
-            const tbody = document.getElementById("demoTable"); tbody.innerHTML = ""; let demoCount = 0;
-            Object.keys(demos).reverse().forEach(key => {
-                demoCount++; let d = demos[key];
-                let daysLeft = Math.ceil(7 - ((new Date().getTime() - parseInt(d.startDate)) / (1000 * 60 * 60 * 24)));
-                let stat = d.status === 'suspended' ? `<span class="badge" style="color:var(--danger)">موقوف</span>` : (daysLeft > 0 ? `<span class="badge" style="color:var(--success)">ساري</span>` : `<span class="badge" style="color:var(--warning)">انتهى</span>`);
-                let act = d.status === 'suspended' ? `<button onclick="updateDemoStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px; width:auto;">✅</button>` : `<button onclick="updateDemoStatus('${key}', 'suspended')" class="btn" style="background:var(--warning); padding:5px; width:auto;">🚫</button>`;
-                act += ` <button onclick="deleteDemo('${key}')" class="btn" style="background:var(--danger); padding:5px; width:auto;">🗑️</button>`;
-                tbody.innerHTML += `<tr><td><strong>${d.teacherName}</strong></td><td><a href="https://wa.me/20${d.whatsapp.replace(/^0+/,'')}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${d.whatsapp}</a></td><td>${new Date(d.startDate).toLocaleDateString('ar-EG')}</td><td style="color:${daysLeft > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${daysLeft} أيام</td><td>${stat}</td><td>${act}</td></tr>`;
-            });
-            document.getElementById("totalDemos").innerText = demoCount;
-        }
-
-   // 💳 رسم طلبات كروت الـ ID (محمية بالكامل ضد أعطال الأرقام)
         function renderIdOrders(orders) {
-            const tbody = document.getElementById("idOrdersTable"); 
-            if (!tbody) return;
-            tbody.innerHTML = "";
-            let unhandledCount = 0;
+            const tbody = document.getElementById("idOrdersTable"); if (!tbody) return;
+            tbody.innerHTML = ""; let unhandledCount = 0;
             
             if (!orders || Object.keys(orders).length === 0) {
-                let badge = document.getElementById("newIdOrdersBadge");
-                if(badge) badge.style.display = "none";
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); font-weight: bold;">لا توجد طلبات كروت ID حتى الآن</td></tr>`;
-                return;
+                let badge = document.getElementById("newIdOrdersBadge"); if(badge) badge.style.display = "none";
+                return tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); font-weight: bold;">لا توجد طلبات كروت ID حتى الآن</td></tr>`;
             }
 
             Object.keys(orders).reverse().forEach(key => {
                 try {
-                    let o = orders[key] || {};
-                    // 🔥 التعديل السحري هنا: إجبار التليفون إنه يكون (نص) عشان ميكراشش في الـ replace
-                    let phone = String(o.phone || ""); 
-                    let teacherName = o.teacherName || "غير محدد";
-                    let address = o.address || "غير محدد";
-                    let fromCode = o.fromCode || "-";
-                    let toCode = o.toCode || "-";
-                    let timestamp = o.timestamp ? new Date(o.timestamp).toLocaleDateString('ar-EG') : "-";
-                    
-                    let isDone = o.status === 'done';
-                    if (!isDone) unhandledCount++;
-                    
-                    let waLink = phone ? `https://wa.me/20${phone.replace(/^0+/, '')}` : "#";
-                    let btn = isDone 
-                        ? `<span style="color:var(--success); font-weight:bold;">تم التنفيذ ✅</span>` 
-                        : `<button onclick="approveIdOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px; width: auto; background: var(--primary);">تحديد كمكتمل ✅</button>`;
+                    let o = orders[key] || {}; let phoneStr = String(o.phone || "");
+                    let isDone = o.status === 'done'; if (!isDone) unhandledCount++;
+                    let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/, '')}` : "#";
+                    let btn = isDone ? `<span style="color:var(--success); font-weight:bold;">تم التنفيذ ✅</span>` : `<button onclick="approveIdOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px; width: auto; background: var(--primary);">تحديد كمكتمل ✅</button>`;
 
-                    tbody.innerHTML += `
-                        <tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}">
-                            <td><strong>${teacherName}</strong></td>
-                            <td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${phone}</a></td>
-                            <td>${address}</td>
-                            <td style="color:var(--success); font-weight:bold;">${fromCode}</td>
-                            <td style="color:var(--danger); font-weight:bold;">${toCode}</td>
-                            <td>${timestamp}</td>
-                            <td>${btn}</td>
-                        </tr>
-                    `;
-                } catch(err) {
-                    console.error("تخطي خطأ في رسم طلب الكروت:", err);
-                }
+                    tbody.innerHTML += `<tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}"><td><strong>${o.teacherName || "غير محدد"}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${phoneStr}</a></td><td>${o.address || "غير محدد"}</td><td style="color:var(--success); font-weight:bold;">${o.fromCode || "-"}</td><td style="color:var(--danger); font-weight:bold;">${o.toCode || "-"}</td><td>${o.timestamp ? new Date(o.timestamp).toLocaleDateString('ar-EG') : "-"}</td><td>${btn}</td></tr>`;
+                } catch(e) {}
             });
             
-            // تظبيط النقطة الحمرا
             let badge = document.getElementById("newIdOrdersBadge");
-            if (badge) {
-                if (unhandledCount === 0) {
-                    badge.style.display = "none";
-                } else {
-                    badge.style.display = "inline-block";
-                    badge.innerText = unhandledCount;
-                }
-            }
+            if (badge) { badge.style.display = unhandledCount === 0 ? "none" : "inline-block"; badge.innerText = unhandledCount; }
         }
-        
-        // 💳 تأكيد طباعة الكروت
-        async function approveIdOrder(key) {
-            if(confirm("هل قمت بطباعة وتوصيل الكروت بالفعل؟")) {
-                await fetch(`${DB_URL}/id_orders/${key}.json`, { 
-                    method: 'PATCH', 
-                    body: JSON.stringify({ status: 'done' }) 
-                });
-                fetchSystemData();
-            }
+
+        function renderDemos(demos) {
+            const tbody = document.getElementById("demoTable"); if(!tbody) return;
+            tbody.innerHTML = ""; let demoCount = 0;
+            if(!demos || Object.keys(demos).length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">جاري التحميل...</td></tr>`;
+
+            Object.keys(demos).reverse().forEach(key => {
+                try {
+                    let d = demos[key] || {}; let phoneStr = String(d.whatsapp || ""); demoCount++;
+                    let daysLeft = d.startDate ? Math.ceil(7 - ((new Date().getTime() - parseInt(d.startDate)) / (1000 * 60 * 60 * 24))) : 0;
+                    let stat = d.status === 'suspended' ? `<span class="badge" style="color:var(--danger)">موقوف</span>` : (daysLeft > 0 ? `<span class="badge" style="color:var(--success)">ساري</span>` : `<span class="badge" style="color:var(--warning)">انتهى</span>`);
+                    let act = d.status === 'suspended' ? `<button onclick="updateDemoStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px; width:auto;">✅</button>` : `<button onclick="updateDemoStatus('${key}', 'suspended')" class="btn" style="background:var(--warning); padding:5px; width:auto;">🚫</button>`;
+                    act += ` <button onclick="deleteDemo('${key}')" class="btn" style="background:var(--danger); padding:5px; width:auto;">🗑️</button>`;
+                    let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/,'')}` : "#";
+                    
+                    tbody.innerHTML += `<tr><td><strong>${d.teacherName || '-'}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${phoneStr}</a></td><td>${d.startDate ? new Date(parseInt(d.startDate)).toLocaleDateString('ar-EG') : '-'}</td><td style="color:${daysLeft > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${daysLeft} أيام</td><td>${stat}</td><td>${act}</td></tr>`;
+                } catch(e) {}
+            });
+            document.getElementById("totalDemos").innerText = demoCount;
         }
-        // توابع التحكم المباشرة بقاعدة البيانات
+
+        function renderClients(licenses, teachers) {
+            const tbody = document.getElementById("clientsTable"); if(!tbody) return;
+            tbody.innerHTML = ""; let tCount = 0, sCount = 0;
+            if(!licenses || Object.keys(licenses).length === 0) return tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">جاري التحميل...</td></tr>`;
+
+            Object.keys(licenses).forEach(key => {
+                try {
+                    let lic = licenses[key] || {}; if(lic.claimedBy) tCount++;
+                    let stu = (teachers && teachers[key] && teachers[key].data && teachers[key].data.students) ? teachers[key].data.students.length : 0; sCount += stu;
+                    let isExpired = false; let planName = 'شهري';
+                    if(lic.durationMonths == 99) planName = 'مدى الحياة'; else if(lic.durationDays == 7) planName = '7 أيام'; else if(lic.durationDays == 1) planName = 'يوم واحد';
+
+                    if(lic.activatedAt && lic.durationMonths != 99) {
+                        let act = new Date(lic.activatedAt); let exp;
+                        if(lic.durationDays) exp = new Date(act.getTime() + parseInt(lic.durationDays) * 24*60*60*1000);
+                        else exp = new Date(act.setMonth(act.getMonth() + parseInt(lic.durationMonths)));
+                        if(new Date() > exp) isExpired = true;
+                    }
+                    
+                    let stat = lic.status === 'suspended' ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--danger)">موقوف</span>` : (isExpired ? `<span class="badge" style="background:rgba(245,158,11,0.2); color:var(--warning)">منتهي</span>` : `<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--success)">نشط</span>`);
+                    let actBtn = lic.status === 'suspended' ? `<button onclick="updateLicenseStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px 10px; font-size:12px;">تفعيل</button>` : (isExpired ? `<button onclick="renewLicense('${key}')" class="btn" style="background:var(--warning); padding:5px 10px; font-size:12px;">تجديد</button>` : `<button onclick="updateLicenseStatus('${key}', 'suspended')" class="btn" style="background:var(--danger); padding:5px 10px; font-size:12px;">إيقاف</button>`);
+                    
+                    tbody.innerHTML += `<tr><td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td><td style="color:#94a3b8; font-family:monospace;">${key}</td><td><span style="color:#f59e0b; font-weight:bold;">${planName}</span></td><td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString('ar-EG') : '-'}</td><td style="color:var(--primary); font-weight:bold;">${stu}</td><td>${stat}</td><td><div style="display: flex; gap: 5px; justify-content: center;">${actBtn}<button onclick="openEditPlanModal('${key}')" class="btn" style="background:#f59e0b; padding:5px 10px; font-size:12px; color:black; border:none;">تعديل ⚙️</button></div></td></tr>`;
+                } catch(e) {}
+            });
+            document.getElementById("totalTeachers").innerText = tCount; document.getElementById("totalStudents").innerText = sCount;
+        }
+
+        function renderWithdraws(requests) {
+            const tbody = document.getElementById("withdrawsTable"); if(!tbody) return;
+            tbody.innerHTML = "";
+            if (!requests || Object.keys(requests).length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد طلبات سحب</td></tr>`;
+            
+            Object.keys(requests).reverse().forEach(key => {
+                try {
+                    let r = requests[key] || {};
+                    let btn = r.status === 'paid' ? `<span style="color:var(--success); font-weight:bold;">تم التحويل ✅</span>` : `<button onclick="approveWithdraw('${key}')" class="btn" style="background:var(--primary); padding:5px 10px; font-size:12px;">تأكيد التحويل 💳</button>`;
+                    tbody.innerHTML += `<tr><td style="letter-spacing:1px;"><strong>${r.promoCode || '-'}</strong></td><td>${r.method || '-'}</td><td style="color:var(--warning); font-weight:bold;">${r.number || '-'}</td><td style="color:var(--success); font-weight:900;">${r.amount || 0} ج</td><td>${r.timestamp ? new Date(r.timestamp).toLocaleDateString('ar-EG') : "-"}</td><td>${btn}</td></tr>`;
+                } catch(e) {}
+            });
+        }
+
+        // ==========================================
+        // 4. العمليات والتأكيدات المباشرة
+        // ==========================================
+        async function approveOrder(key) { if(confirm("تأكيد استلام المبلغ؟ (قم بتوليد كود وإرساله للعميل)")) { await fetch(`${DB_URL}/orders/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'تم الدفع والتفعيل ✅' }) }); fetchSystemData(); } }
+        async function approveIdOrder(key) { if(confirm("هل قمت بطباعة وتوصيل الكروت بالفعل؟")) { await fetch(`${DB_URL}/id_orders/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'done' }) }); fetchSystemData(); } }
         async function updateLicenseStatus(key, status) { await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: status }) }); fetchSystemData(); }
         async function renewLicense(key) { await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', body: JSON.stringify({ activatedAt: new Date().toISOString(), durationMonths: 1, status: 'active' }) }); fetchSystemData(); showNotification("تم!", "تم تجديد الاشتراك بنجاح."); }
         async function updateDemoStatus(key, status) { await fetch(`${DB_URL}/demo_users/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: status }) }); fetchSystemData(); }
         async function deleteDemo(key) { await fetch(`${DB_URL}/demo_users/${key}.json`, { method: 'DELETE' }); fetchSystemData(); }
         async function approveWithdraw(key) { if(confirm("هل قمت بتحويل المبلغ؟")) { await fetch(`${DB_URL}/withdraw_requests/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'paid' }) }); fetchSystemData(); } }
-    
-        async function publishGlobalAnnouncement() {
-    const title = prompt("اكتب عنوان الإشعار (مثال: تحديث هام V2.0):");
-    if (!title) return;
-    
-    const message = prompt("اكتب نص الإشعار (هنا يمكنك كتابة تفاصيل التحديث):");
-    if (!message) return;
 
-    // بنكريت ID جديد برقم اللحظة عشان يظهر للكل كإشعار جديد
-    const newAnn = {
-        id: "ann_" + Date.now(),
-        title: title,
-        message: message,
-        timestamp: new Date().toISOString()
-    };
-
-    try {
-        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/global_announcement.json`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newAnn)
-        });
-        alert("تم إرسال الإشعار! سيظهر لجميع المدرسين فور فتح النظام.");
-    } catch (e) {
-        alert("حدث خطأ أثناء إرسال الإشعار.");
-    }
-}
-
-
-// ⚙️ فتح نافذة تعديل الباقة
-        function openEditPlanModal(key) {
-            document.getElementById('editPlanLicenseKey').value = key;
-            document.getElementById('editPlanModal').style.display = 'flex';
+        async function generateLicense() {
+            const planValue = document.getElementById("newLicenseType").value;
+            const code = "EDU-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+            let licenseData = { status: 'active', createdAt: new Date().toISOString() };
+            if (planValue === "1_day") { licenseData.durationDays = 1; licenseData.durationMonths = 0; } 
+            else if (planValue === "7_days") { licenseData.durationDays = 7; licenseData.durationMonths = 0; } 
+            else { licenseData.durationMonths = parseInt(planValue); }
+            await fetch(`${DB_URL}/licenses/${code}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(licenseData) });
+            document.getElementById("generatedCodeDisplay").value = code; fetchSystemData(); showNotification("نجاح!", "تم توليد كود التفعيل وإضافته للرخص.");
         }
 
-        // 💾 حفظ الباقة الجديدة وتحديث الداتا بيز
-        async function saveNewPlan() {
-            const key = document.getElementById('editPlanLicenseKey').value;
-            const planValue = document.getElementById('newPlanSelect').value;
-            
-            let updates = {};
-            // إرسال null بيمسح القيمة القديمة عشان السيستم ميتلخبطش
-            if (planValue === "1_day") {
-                updates = { durationDays: 1, durationMonths: null };
-            } else if (planValue === "7_days") {
-                updates = { durationDays: 7, durationMonths: null };
-            } else if (planValue === "1") {
-                updates = { durationDays: null, durationMonths: 1 };
-            } else if (planValue === "99") {
-                updates = { durationDays: null, durationMonths: 99 };
-            }
+        async function publishGlobalAnnouncement() {
+            const title = prompt("اكتب عنوان الإشعار (مثال: تحديث هام V2.0):"); if (!title) return;
+            const message = prompt("اكتب نص الإشعار:"); if (!message) return;
+            try { await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/global_announcement.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: "ann_" + Date.now(), title: title, message: message, timestamp: new Date().toISOString() }) }); alert("تم إرسال الإشعار! سيظهر لجميع المدرسين."); } catch (e) { alert("حدث خطأ."); }
+        }
 
-            try {
-                await fetch(`${DB_URL}/licenses/${key}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updates)
-                });
-                document.getElementById('editPlanModal').style.display = 'none';
-                fetchSystemData(); // تحديث الجدول فوراً
-                alert("تم تعديل باقة المدرس بنجاح! ✅");
-            } catch (e) {
-                alert("حدث خطأ أثناء التعديل!");
-            }
+        function openEditPlanModal(key) { document.getElementById('editPlanLicenseKey').value = key; document.getElementById('editPlanModal').style.display = 'flex'; }
+        async function saveNewPlan() {
+            const key = document.getElementById('editPlanLicenseKey').value; const planValue = document.getElementById('newPlanSelect').value; let updates = {};
+            if (planValue === "1_day") { updates = { durationDays: 1, durationMonths: null }; } 
+            else if (planValue === "7_days") { updates = { durationDays: 7, durationMonths: null }; } 
+            else if (planValue === "1") { updates = { durationDays: null, durationMonths: 1 }; } 
+            else if (planValue === "99") { updates = { durationDays: null, durationMonths: 99 }; }
+            try { await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) }); document.getElementById('editPlanModal').style.display = 'none'; fetchSystemData(); alert("تم تعديل باقة المدرس بنجاح! ✅"); } catch (e) { alert("حدث خطأ أثناء التعديل!"); }
         }
     </script>
 
