@@ -132,11 +132,22 @@
             .topbar { padding: 0 15px; }
             .exam-card { flex-direction: column; text-align: center; gap: 15px; }
         }
+        
+        @keyframes floatWatermark {
+            0% { top: 10%; left: 10%; }
+            25% { top: 80%; left: 20%; }
+            50% { top: 50%; left: 80%; }
+            75% { top: 20%; left: 60%; }
+            100% { top: 10%; left: 10%; }
+        }
+        .no-select { user-select: none; -webkit-user-select: none; -ms-user-select: none; }
+        /* سكرول بار أنيق للنافذة */
+        #detailsCoursePlaylist::-webkit-scrollbar { width: 6px; }
+        #detailsCoursePlaylist::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <!-- 🔐 شاشة الدخول -->
     <div class="login-wrapper" id="login-screen">
         <div class="login-box">
             <div style="margin-top: -80px; margin-bottom: 15px;"><div class="octo-mascot octo-loading"></div></div>
@@ -156,7 +167,6 @@
         </div>
     </div>
 
-    <!-- 📱 تخطيط المنصة الرئيسي -->
     <div id="app-layout">
         <header class="topbar">
             <div class="student-info">
@@ -183,36 +193,36 @@
 
             <main class="content-area">
                 
-                <!-- 🏠 الرئيسية -->
                 <div id="tab-home" class="tab-content active">
                     <div class="page-header">
                         <h2>نظرة عامة</h2>
                         <p>ملخص نشاطك في السنتر</p>
                     </div>
+                    
                     <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); margin-bottom: 40px; position: relative; overflow: hidden; border: 1px solid #334155;">
-            <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
-            <div style="position: absolute; bottom: -50px; left: 10%; width: 150px; height: 150px; background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
-            
-            <div style="z-index: 1;">
-                <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 16px; font-weight: bold;">رصيد المحفظة المتاح</p>
-                <h2 style="margin: 0; font-size: 40px; font-weight: 900; display: flex; align-items: center; gap: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-                    <span id="walletBalanceDisplay" style="color: #fff;">0</span> 
-                    <span style="font-size: 20px; color: #10b981; background: rgba(16,185,129,0.1); padding: 4px 10px; border-radius: 8px;">ج.م</span>
-                </h2>
-            </div>
-            <div style="z-index: 1;">
-                <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 12px; box-shadow: 0 8px 15px rgba(16,185,129,0.3); transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="openWalletModal()">
-                    ➕ شحن المحفظة
-                </button>
-            </div>
-        </div>
+                        <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+                        <div style="position: absolute; bottom: -50px; left: 10%; width: 150px; height: 150px; background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+                        
+                        <div style="z-index: 1;">
+                            <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 16px; font-weight: bold;">رصيد المحفظة المتاح</p>
+                            <h2 style="margin: 0; font-size: 40px; font-weight: 900; display: flex; align-items: center; gap: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                                <span id="walletBalanceDisplay" style="color: #fff;">0</span> 
+                                <span style="font-size: 20px; color: #10b981; background: rgba(16,185,129,0.1); padding: 4px 10px; border-radius: 8px;">ج.م</span>
+                            </h2>
+                        </div>
+                        <div style="z-index: 1;">
+                            <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 12px; box-shadow: 0 8px 15px rgba(16,185,129,0.3); transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="switchTab('tab-wallet')">
+                                ➕ شحن المحفظة
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="empty-state" style="padding: 30px;">
                         <h3 style="color: var(--secondary);">أهلاً بك في منصتك الجديدة! 🚀</h3>
                         <p>استخدم القائمة للتنقل بين الحضور، الامتحانات، المحاضرات، وشحن المحفظة.</p>
                     </div>
                 </div>
 
-                <!-- 📅 سجل الحضور -->
                 <div id="tab-attendance" class="tab-content">
                     <div class="page-header">
                         <h2>سجل الحضور والغياب 📅</h2>
@@ -223,7 +233,6 @@
                     </div>
                 </div>
 
-                <!-- 📝 الامتحانات (تم تفعيل زر الدخول للامتحانات الإلكترونية) -->
                 <div id="tab-exams" class="tab-content">
                     <div class="page-header">
                         <h2>سجل الامتحانات 📝</h2>
@@ -237,20 +246,14 @@
                     </div>
                 </div>
 
-                <!-- 🎬 المحاضرات -->
                 <div id="tab-lectures" class="tab-content">
                     <div class="page-header">
                         <h2>المكتبة المرئية (المحاضرات) 🎬</h2>
                         <p>شاهد دروسك المسجلة من هنا</p>
                     </div>
-                    <div class="empty-state">
-                        <div class="octo-mascot octo-loading" style="margin-bottom: 15px;"></div>
-                        <h3>قريباً جداً! 🚀</h3>
-                        <p>جاري تجهيز استوديو المنصة ورفع المحاضرات لتتمكن من مشاهدتها ومراجعة دروسك في أي وقت.</p>
-                    </div>
+                    <div id="studentLecturesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;"></div>
                 </div>
 
-                <!-- 💰 المحفظة -->
                 <div id="tab-wallet" class="tab-content">
                     <div class="page-header">
                         <h2>محفظتي الإلكترونية 💰</h2>
@@ -287,9 +290,6 @@
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- 💻 شاشات الامتحانات الإلكترونية (مخفية بشكل افتراضي) -->
-    <!-- ========================================== -->
     <div id="online-exams-list-screen" style="display: none; padding: 40px 20px; max-width: 900px; margin: 0 auto;">
         <div class="page-header" style="text-align: center; margin-bottom: 30px;">
             <div class="octo-mascot octo-loading" style="width: 70px; height: 70px; animation: none; background-position: 0% 0%; margin-bottom: 10px;"></div>
@@ -302,7 +302,7 @@
 
     <div id="active-exam-screen" style="display: none; padding: 30px 20px; max-width: 800px; margin: 0 auto;">
         <div class="timer-box">
-            ⏱️ الوقت المتبقي: <span id="exam-timer" style="color: var(--primary);">00:00</span>
+            ⏱️ الوقت المتبقي: <span id="exam-timer" style="color: #fff;">00:00</span>
         </div>
         <h2 id="active-exam-title" style="text-align: center; color: var(--secondary); margin-bottom: 30px; font-size: 26px;">اسم الامتحان</h2>
         
@@ -311,20 +311,20 @@
         <button class="btn" id="submitExamBtn" style="margin-top: 30px; font-size: 18px; padding: 18px;" onclick="submitOnlineExam()">✅ تسليم ورقة الإجابة نهائياً</button>
     </div>
 
-    <!-- ========================================== -->
-    <!-- ⚙️ أكواد التشغيل -->
-    <!-- ========================================== -->
     <script>
-      let globalTeacherId = "";
+        let globalTeacherId = "";
         let currentStudent = null;
         let allOnlineExams = [];
         let currentExam = null;
         let examTimerInterval = null;
-        window.allLectures = []; // تخزين المحاضرات من السحابة
+        window.allLectures = []; 
 
-        // ==========================================
-        // 🚀 نظام الدخول التلقائي (حفظ الجلسة)
-        // ==========================================
+        // 🛡️ دالة فحص صلاحية الطالب للكورس (كانت مفقودة)
+        window.studentHasAccess = function(lec) {
+            if (!currentStudent || !currentStudent.purchasedCourses) return false;
+            return currentStudent.purchasedCourses.includes(lec.id);
+        };
+
         window.onload = function() {
             const savedCode = localStorage.getItem("edu_student_code");
             const savedPhone = localStorage.getItem("edu_parent_phone");
@@ -356,9 +356,6 @@
             if(event) event.currentTarget.classList.add('active');
         }
 
-        // ==========================================
-        // 📥 جلب بيانات الطالب والكورسات والامتحانات
-        // ==========================================
         async function fetchStudentData(isAutoLogin = false) {
             const code = document.getElementById("studentCode").value.trim();
             const phone = document.getElementById("parentPhone").value.trim();
@@ -375,15 +372,13 @@
             }
 
             errorMsg.style.display = "none";
-            btn.innerHTML = `<div class="octo-mascot octo-loading" style="width: 25px; height: 25px; margin-left: 10px;"></div> جاري الدخول...`;
+            btn.innerHTML = `<div class="octo-mascot octo-loading" style="width: 25px; height: 25px; margin-left: 10px; display:inline-block; vertical-align:middle;"></div> جاري الدخول...`;
 
             try {
-                // 1. جلب الداتا الأساسية للسنتر والطلاب
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await res.json();
-                window.allClassSessions = data.classSessions || []; // 👈 ضيف ده بعد let data = await res.json(); مباشرة
+                window.allClassSessions = data.classSessions || []; 
                 
-                // 2. 🔥 جلب المحاضرات والكورسات وتحويلها لمصفوفة بشكل آمن لمنع تعليق الفلترة
                 let lecRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/lectures.json`);
                 let lecturesData = await lecRes.json() || {};
                 
@@ -403,11 +398,9 @@
                     return;
                 }
 
-                /// 🔥 تحسين سحري: استنتاج الصف الدراسي للطالب بذكاء شديد
                 let studentGroupObj = (data.groups || []).find(g => typeof g === 'object' && g.name === currentStudent.group);
                 currentStudent.level = studentGroupObj ? studentGroupObj.level : "غير محدد";
 
-                // استنتاج الصف لو الداتا قديمة في السيرفر (مهم جداً للفلترة)
                 if (currentStudent.level === "غير محدد") {
                     let gName = currentStudent.group || "";
                     if (gName.includes("1ث") || gName.includes("الأول")) currentStudent.level = "الصف الأول الثانوي";
@@ -421,17 +414,14 @@
 
                 allOnlineExams = data.onlineExams || [];
 
-                // تعبئة البيانات في الواجهة
                 document.getElementById("top-name").innerText = currentStudent.name;
                 document.getElementById("top-group").innerText = currentStudent.group;
-                document.getElementById("home-behavior").innerText = currentStudent.behaviorPoints || 0;
                 
                 let balance = currentStudent.walletBalance || 0;
                 document.getElementById("top-balance").innerText = balance;
-                document.getElementById("home-balance").innerText = balance + " ج.م";
-                document.getElementById("wallet-page-balance").innerHTML = `${balance} <span style="font-size: 24px;">ج.م</span>`;
+                if(document.getElementById("walletBalanceDisplay")) document.getElementById("walletBalanceDisplay").innerText = balance;
+                if(document.getElementById("wallet-page-balance")) document.getElementById("wallet-page-balance").innerHTML = `${balance} <span style="font-size: 24px;">ج.م</span>`;
 
-                // بناء جدول الحضور
                 let attHtml = `<tr><th>التاريخ</th><th>الموضوع</th><th>حالة الحضور</th></tr>`;
                 let hasAtt = false;
                 (data.classSessions || []).filter(s => s && s.group === currentStudent.group).reverse().forEach(s => {
@@ -443,7 +433,6 @@
                 if(!hasAtt) attHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد حصص مسجلة لك حتى الآن.</td></tr>`;
                 document.getElementById("attendance-details").innerHTML = attHtml;
 
-                // بناء جدول الامتحانات الورقية
                 let exHtml = `<tr><th>التاريخ</th><th>اسم التقييم</th><th>الدرجة التي حصلت عليها</th></tr>`;
                 let hasEx = false;
                 (data.exams || []).concat(data.homeworks || []).filter(e => e && e.group === currentStudent.group).sort((a,b)=> new Date(b.date) - new Date(a.date)).forEach(e => {
@@ -455,7 +444,6 @@
                 if(!hasEx) exHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد تقييمات مسجلة لك حتى الآن.</td></tr>`;
                 document.getElementById("exams-details").innerHTML = exHtml;
 
-                // 🔥 رسم الكورسات بالتصميم الجديد بناءً على الصف
                 renderStudentLectures();
 
                 document.getElementById("login-screen").style.display = "none";
@@ -466,52 +454,6 @@
                 btn.innerHTML = "دخول للمنصة 🚀";
             }
         }
-
-
-// ==========================================
-        // 📜 عرض تفاصيل الكورس في نافذة منبثقة
-        // ==========================================
-        window.openStudentCourseDetails = function(courseId) {
-            let course = window.allLectures.find(l => l.id === courseId);
-            if(!course) return;
-
-            document.getElementById("detailsCourseTitle").innerText = course.title;
-            document.getElementById("detailsCourseImage").src = course.image || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop';
-            document.getElementById("detailsCourseDesc").innerText = course.desc || "لا يوجد وصف إضافي متوفر لهذا الكورس.";
-
-            let vids = course.videos || [];
-            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
-
-            let playlistHtml = "";
-            vids.forEach((v, idx) => {
-                playlistHtml += `
-                <div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
-                    <span style="font-weight: bold; color: var(--secondary); font-size: 15px;">▶️ ${v.title}</span>
-                    <button class="btn" style="background: var(--success); padding: 8px 20px; width: auto; font-size: 13px; font-weight: bold;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل المحاضرة 🔒</button>
-                </div>`;
-            });
-            document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
-            document.getElementById("studentCourseDetailsModal").style.display = "flex";
-        };
-
-// ==========================================
-        // 🔲 دالة تكبير وتصغير الشاشة المخصصة
-        // ==========================================
-        window.toggleCustomFullscreen = function() {
-            let player = document.getElementById("video-wrapper");
-            let btn = document.getElementById("custom-fs-btn");
-            if (!document.fullscreenElement) {
-                if (player.requestFullscreen) { player.requestFullscreen(); }
-                else if (player.webkitRequestFullscreen) { player.webkitRequestFullscreen(); }
-                else if (player.msRequestFullscreen) { player.msRequestFullscreen(); }
-                btn.innerText = "🗗 تصغير الشاشة";
-            } else {
-                if (document.exitFullscreen) { document.exitFullscreen(); }
-                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
-                else if (document.msExitFullscreen) { document.msExitFullscreen(); }
-                btn.innerText = "⛶ تكبير الشاشة";
-            }
-        };
 
         // ==========================================
         // 📚 عرض كروت الكورسات (ستايل Udemy)
@@ -555,7 +497,54 @@
         }
 
         // ==========================================
-        // 🎬 مشغل الكورس والـ DRM (بتصميم القائمة الجديد)
+        // 📜 عرض تفاصيل الكورس في نافذة منبثقة
+        // ==========================================
+        window.openStudentCourseDetails = function(courseId) {
+            let course = window.allLectures.find(l => l.id === courseId);
+            if(!course) return;
+
+            document.getElementById("detailsCourseTitle").innerText = course.title;
+            document.getElementById("detailsCourseImage").src = course.image || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop';
+            document.getElementById("detailsCourseDesc").innerText = course.desc || "لا يوجد وصف إضافي متوفر لهذا الكورس.";
+
+            let vids = course.videos || [];
+            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
+
+            let playlistHtml = "";
+            vids.forEach((v, idx) => {
+                // حماية النص من أخطاء الـ quotes
+                let safeTitle = v.title.replace(/'/g, "\\'");
+                playlistHtml += `
+                <div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); margin-bottom: 8px;">
+                    <span style="font-weight: bold; color: var(--secondary); font-size: 15px;">▶️ ${v.title}</span>
+                    <button class="btn" style="background: var(--success); padding: 8px 20px; width: auto; font-size: 13px; font-weight: bold;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل المحاضرة 🔒</button>
+                </div>`;
+            });
+            document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
+            document.getElementById("studentCourseDetailsModal").style.display = "flex";
+        };
+
+        // ==========================================
+        // 🔲 دالة تكبير وتصغير الشاشة المخصصة
+        // ==========================================
+        window.toggleCustomFullscreen = function() {
+            let player = document.getElementById("video-wrapper");
+            let btn = document.getElementById("custom-fs-btn");
+            if (!document.fullscreenElement) {
+                if (player.requestFullscreen) { player.requestFullscreen(); }
+                else if (player.webkitRequestFullscreen) { player.webkitRequestFullscreen(); }
+                else if (player.msRequestFullscreen) { player.msRequestFullscreen(); }
+                btn.innerText = "🗗 تصغير الشاشة";
+            } else {
+                if (document.exitFullscreen) { document.exitFullscreen(); }
+                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+                else if (document.msExitFullscreen) { document.msExitFullscreen(); }
+                btn.innerText = "⛶ تكبير الشاشة";
+            }
+        };
+
+        // ==========================================
+        // 🎬 مشغل الكورس والـ DRM
         // ==========================================
         window.openCoursePlayer = function(courseId, startVideoIndex = 0) {
             let course = window.allLectures.find(l => l.id === courseId);
@@ -573,12 +562,13 @@
 
             let playlistHtml = `<h4 style="color:#94a3b8; margin:0 0 20px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">محتويات الكورس</h4>`;
             vids.forEach((v, idx) => {
+                let safeTitle = v.title.replace(/'/g, "\\'");
                 let isActive = idx === startVideoIndex ? "background: rgba(59, 130, 246, 0.15); border-right: 4px solid #3b82f6; color: #3b82f6; font-weight: bold;" : "background: transparent; color: #94a3b8; border-right: 4px solid transparent;";
                 playlistHtml += `
                 <div style="${isActive} padding:15px; border-radius:8px; margin-bottom:8px; cursor:pointer; transition:0.3s; display: flex; align-items: center; gap: 10px;" 
                      onmouseover="this.style.background='rgba(255,255,255,0.05)'" 
                      onmouseout="this.style.background='${idx === startVideoIndex ? 'rgba(59, 130, 246, 0.15)' : 'transparent'}'" 
-                     onclick="playCourseVideo('${v.url}', '${v.title}', '${course.id}', ${idx}, this)">
+                     onclick="playCourseVideo('${v.url}', '${safeTitle}', '${course.id}', ${idx}, this)">
                     <span style="font-size: 18px;">${idx === startVideoIndex ? '▶️' : '🔒'}</span> 
                     <span style="flex: 1; font-size: 15px;">${v.title}</span>
                 </div>`;
@@ -593,42 +583,24 @@
             window.addEventListener('focus', removeBlackout);
         };
 
-        // 🚨 تعديل بسيط في دوال التعتيم عشان تتوافق مع التكبير
-        function applyBlackout() {
-            if (document.activeElement === document.getElementById("video-iframe")) return;
-            if(document.getElementById("protected-course-screen").style.display === "flex") {
-                document.getElementById("video-iframe").style.filter = "blur(30px)";
-                document.getElementById("blackout-screen").style.display = "flex";
-            }
-        }
-        function removeBlackout() {
-            if(document.getElementById("protected-course-screen").style.display === "flex") {
-                document.getElementById("video-iframe").style.filter = "none";
-                document.getElementById("blackout-screen").style.display = "none";
-                window.focus(); 
-            }
-        }
         window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex, element = null) {
-            // تظبيط اللينك عشان يخفي زراير يوتيوب على قد ما يقدر
             let embedUrl = url;
             if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
             else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
             
             if(embedUrl.includes("youtube.com/embed/")) {
                 let sep = embedUrl.includes("?") ? "&" : "?";
-                embedUrl += sep + "modestbranding=1&rel=0&showinfo=0&fs=0"; // إخفاء اللوجو والمعلومات
+                embedUrl += sep + "modestbranding=1&rel=0&showinfo=0&fs=0"; 
             }
             
             document.getElementById("video-iframe").src = embedUrl;
 
-            // تغيير لون الفيديو الفعال في القائمة
             if(element) {
                 let allItems = document.getElementById("player-playlist").querySelectorAll("div");
-                allItems.forEach(el => { el.style.background = "#222"; el.style.borderRight = "none"; });
-                element.style.background = "#3b82f6"; element.style.borderRight = "4px solid #fff";
+                allItems.forEach(el => { el.style.background = "transparent"; el.style.borderRight = "4px solid transparent"; el.style.color = "#94a3b8"; });
+                element.style.background = "rgba(59, 130, 246, 0.15)"; element.style.borderRight = "4px solid #3b82f6"; element.style.color = "#3b82f6";
             }
 
-            // إرسال التراكر
             if(courseId && currentStudent) {
                 try {
                     let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
@@ -656,36 +628,32 @@
             window.removeEventListener('blur', applyBlackout);
             window.removeEventListener('focus', removeBlackout);
         };
-// دوال الحماية (DRM)
+
         function blockContext(e) { e.preventDefault(); }
         function blockKeys(e) {
-            // منع F12، النسخ، وأزرار تصوير الشاشة
             if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85) || e.keyCode == 44) { 
                 e.preventDefault(); return false;
             }
         }
         
         function applyBlackout() {
-            // 🔥 منع التعتيم لو الطالب ضغط كليك جوه الفيديو نفسه عشان يشغله أو يوقفه
-            if (document.activeElement === document.getElementById("video-iframe")) {
-                return;
-            }
-            
+            if (document.activeElement === document.getElementById("video-iframe")) return;
             if(document.getElementById("protected-course-screen").style.display === "flex") {
-                document.getElementById("video-wrapper").style.filter = "blur(30px)";
+                document.getElementById("video-iframe").style.filter = "blur(30px)";
                 document.getElementById("blackout-screen").style.display = "flex";
             }
         }
         
         function removeBlackout() {
             if(document.getElementById("protected-course-screen").style.display === "flex") {
-                document.getElementById("video-wrapper").style.filter = "none";
+                document.getElementById("video-iframe").style.filter = "none";
                 document.getElementById("blackout-screen").style.display = "none";
-                window.focus(); // إرجاع التركيز للصفحة
+                window.focus(); 
             }
         }
+
         // ==========================================
-        // 🛒 نظام المحفظة الحقيقي: شراء الكورسات وخصم الرصيد أوتوماتيك
+        // 🛒 نظام المحفظة
         // ==========================================
         window.purchaseCourse = async function(courseId, price) {
             if(!confirm(`هل تريد تأكيد اشتراكك في هذا الكورس بمبلغ ${price} ج.م؟\n(سيتم خصم المبلغ من رصيد محفظتك)`)) return;
@@ -698,28 +666,25 @@
             }
 
             try {
-                // 1. جلب داتا السيرفر كاملة لتفادي الكتابة فوق الحقول الأخرى
                 let dataRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await dataRes.json();
                 let studentIndex = data.students.findIndex(s => s && s.code === currentStudent.code);
 
                 if(studentIndex !== -1) {
-                    // 2. الخصم وتحديث مصفوفة المشتريات
                     currentStudent.walletBalance -= price;
+                    if(!currentStudent.purchasedCourses) currentStudent.purchasedCourses = [];
                     currentStudent.purchasedCourses.push(courseId);
                     
                     data.students[studentIndex].walletBalance = currentStudent.walletBalance;
                     data.students[studentIndex].purchasedCourses = currentStudent.purchasedCourses;
 
-                    // 3. رفع التعديل مباشرة لقاعدة البيانات
                     await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students.json`, {
                         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data.students)
                     });
 
-                    // 4. تحديث الأرقام على الشاشة بدون ريفريش
                     document.getElementById("top-balance").innerText = currentStudent.walletBalance;
-                    document.getElementById("home-balance").innerText = currentStudent.walletBalance + " ج.م";
-                    document.getElementById("wallet-page-balance").innerHTML = `${currentStudent.walletBalance} <span style="font-size: 24px;">ج.م</span>`;
+                    if(document.getElementById("walletBalanceDisplay")) document.getElementById("walletBalanceDisplay").innerText = currentStudent.walletBalance;
+                    if(document.getElementById("wallet-page-balance")) document.getElementById("wallet-page-balance").innerHTML = `${currentStudent.walletBalance} <span style="font-size: 24px;">ج.م</span>`;
                     
                     alert("مبروك! تم الاشتراك في الكورس بنجاح 🎉 يمكنك مشاهدته الآن.");
                     renderStudentLectures(); 
@@ -729,9 +694,6 @@
             }
         };
 
-        // ==========================================
-        // 💳 شحن المحفظة بالأكواد (مزامنة فورية وتأمين الكود)
-        // ==========================================
         async function redeemCode() {
             const codeInput = document.getElementById("rechargeCodeInput").value.trim();
             if(!codeInput) { alert("يرجى إدخال كود الشحن أولاً!"); return; }
@@ -766,8 +728,9 @@
                     });
 
                     document.getElementById("top-balance").innerText = currentStudent.walletBalance;
-                    document.getElementById("home-balance").innerText = currentStudent.walletBalance + " ج.م";
-                    document.getElementById("wallet-page-balance").innerHTML = `${currentStudent.walletBalance} <span style="font-size: 24px;">ج.م</span>`;
+                    if(document.getElementById("walletBalanceDisplay")) document.getElementById("walletBalanceDisplay").innerText = currentStudent.walletBalance;
+                    if(document.getElementById("wallet-page-balance")) document.getElementById("wallet-page-balance").innerHTML = `${currentStudent.walletBalance} <span style="font-size: 24px;">ج.م</span>`;
+                    
                     document.getElementById("rechargeCodeInput").value = "";
                     alert(`مبروك! تم شحن محفظتك بنجاح بمبلغ ${amount} ج.م 🎉`);
                 }
@@ -776,7 +739,7 @@
         }
 
         // ==========================================
-        // 💻 منصة الامتحانات الإلكترونية للطلاب
+        // 💻 منصة الامتحانات الإلكترونية
         // ==========================================
         async function showOnlineExams() {
             document.getElementById("app-layout").style.display = "none";
@@ -901,6 +864,7 @@
             } catch (e) { alert("خطأ في الاتصال! أعد المحاولة."); btn.innerHTML = "✅ تسليم الإجابة"; btn.disabled = false; }
         }
     </script>
+
     <div id="studentCourseDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999990; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
         <div class="modal-content" style="background: var(--card-bg); width: 650px; max-width: 95%; border-radius: 16px; padding: 25px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
             <span class="close" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: var(--danger);">&times;</span>
@@ -918,15 +882,11 @@
             <h4 style="border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 15px; color: var(--secondary);">محتويات الكورس 🎥</h4>
             
             <div id="detailsCoursePlaylist" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-left: 5px;">
-                </div>
+            </div>
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- 🔒 شاشة مشغل الكورس المحمية (DRM المحدثة) -->
-    <!-- ========================================== -->
     <div id="protected-course-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 999999; flex-direction: column;">
-        
         <div style="padding: 15px 25px; background: rgba(15, 23, 42, 0.95); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
             <div style="display: flex; align-items: center; gap: 20px;">
                 <button onclick="closeCoursePlayer()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='#ef4444'; this.style.color='#fff';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#ef4444';">🔙 العودة للمنصة</button>
@@ -958,19 +918,5 @@
             </div>
         </div>
     </div>
-    
-    <style>
-        @keyframes floatWatermark {
-            0% { top: 10%; left: 10%; }
-            25% { top: 80%; left: 20%; }
-            50% { top: 50%; left: 80%; }
-            75% { top: 20%; left: 60%; }
-            100% { top: 10%; left: 10%; }
-        }
-        .no-select { user-select: none; -webkit-user-select: none; -ms-user-select: none; }
-        /* سكرول بار أنيق للنافذة */
-        #detailsCoursePlaylist::-webkit-scrollbar { width: 6px; }
-        #detailsCoursePlaylist::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
-    </style>
 </body>
 </html>
