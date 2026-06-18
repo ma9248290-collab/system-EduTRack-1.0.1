@@ -345,8 +345,21 @@
                     </div>
                     <div class="profile-header">
                         <div class="profile-avatar">🎓</div>
-                        <div class="profile-info-main"><h2 id="profile-name">اسم الطالب</h2><p id="profile-code-group" style="color: var(--primary-color); font-weight: bold;">الكود | المجموعة</p></div>
-                        <div class="no-print" style="margin-right: auto; display: flex; gap: 10px; align-items: center;"><button class="icon-btn" id="wa-student-btn" style="background-color: #25D366; color: white; border:none;">💬 واتس الطالب</button><button class="icon-btn" id="wa-parent-btn" style="background-color: #128C7E; color: white; border:none;">💬 واتس ولي الأمر</button><button class="icon-btn danger admin-only" onclick="deleteStudentFromProfile()">🗑️ حذف</button></div>
+                        <div class="profile-info-main">
+                            <h2 id="profile-name">اسم الطالب</h2>
+                            <p id="profile-code-group" style="color: var(--primary-color); font-weight: bold;">الكود | المجموعة</p>
+                        </div>
+                        
+                        <!-- 🔥 التعديل هنا: بوكس الباركود -->
+                        <div style="background: white; padding: 5px 15px; border-radius: 8px; border: 1px solid var(--border-color); margin: 0 15px;">
+                            <svg id="studentProfileBarcode" style="height: 45px; width: auto;"></svg>
+                        </div>
+
+                        <div class="no-print" style="margin-right: auto; display: flex; gap: 10px; align-items: center;">
+                            <button class="icon-btn" id="wa-student-btn" style="background-color: #25D366; color: white; border:none;">💬 واتس الطالب</button>
+                            <button class="icon-btn" id="wa-parent-btn" style="background-color: #128C7E; color: white; border:none;">💬 واتس ولي الأمر</button>
+                            <button class="icon-btn danger admin-only" onclick="deleteStudentFromProfile()">🗑️ حذف</button>
+                        </div>
                     </div>
                     <div class="stat-card no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border-color: #f59e0b;">
                         <div><h3 style="margin-bottom: 5px; color: #f59e0b;">🎭 التقييم السلوكي</h3><p style="font-size: 14px; color: var(--text-muted);">تساعد في تصدر الطالب للوحة الشرف</p></div>
@@ -1695,6 +1708,9 @@
             </div>
         </div>
     </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <script src="assistant-enc.js?v=100"></script>
 <script src="script-enc.js"></script>
