@@ -434,12 +434,39 @@
 
         function openEditPlanModal(key) { document.getElementById('editPlanLicenseKey').value = key; document.getElementById('editPlanModal').style.display = 'flex'; }
         async function saveNewPlan() {
-            const key = document.getElementById('editPlanLicenseKey').value; const planValue = document.getElementById('newPlanSelect').value; let updates = {};
-            if (planValue === "1_day") { updates = { durationDays: 1, durationMonths: null }; } 
-            else if (planValue === "7_days") { updates = { durationDays: 7, durationMonths: null }; } 
-            else if (planValue === "1") { updates = { durationDays: null, durationMonths: 1 }; } 
-            else if (planValue === "99") { updates = { durationDays: null, durationMonths: 99 }; }
-            try { await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) }); document.getElementById('editPlanModal').style.display = 'none'; fetchSystemData(); alert("تم تعديل باقة المدرس بنجاح! ✅"); } catch (e) { alert("حدث خطأ أثناء التعديل!"); }
+            const key = document.getElementById('editPlanLicenseKey').value; 
+            const planValue = document.getElementById('newPlanSelect').value; 
+            
+            // 🔥 التعديل هنا: ضفنا تحديث لتاريخ التفعيل عشان يبدأ من النهارده، وخلينا الحالة نشطة
+            let updates = {
+                activatedAt: new Date().toISOString(),
+                status: 'active'
+            };
+            
+            if (planValue === "1_day") { 
+                updates.durationDays = 1; updates.durationMonths = null; 
+            } else if (planValue === "7_days") { 
+                updates.durationDays = 7; updates.durationMonths = null; 
+            } else if (planValue === "1") { 
+                updates.durationDays = null; updates.durationMonths = 1; 
+            } else if (planValue === "99") { 
+                updates.durationDays = null; updates.durationMonths = 99; 
+            }
+            
+            try { 
+                await fetch(`${DB_URL}/licenses/${key}.json`, { 
+                    method: 'PATCH', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(updates) 
+                }); 
+                
+                document.getElementById('editPlanModal').style.display = 'none'; 
+                fetchSystemData(); // تحديث الجدول فوراً
+                alert("تم تعديل الباقة وتجديد تاريخ التفعيل ليبدأ من اليوم! ✅"); 
+                
+            } catch (e) { 
+                alert("حدث خطأ أثناء التعديل!"); 
+            }
         }
     </script>
 
