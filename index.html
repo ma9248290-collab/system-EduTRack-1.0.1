@@ -700,43 +700,7 @@
             </div>
 
 
-            <div id="platform-notifications-section" style="margin-top: 30px; margin-bottom: 40px;">
-            <h2 class="section-title" style="color: var(--primary-color);">📢 مركز إرسال الإشعارات</h2>
             
-            <div style="background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border-color); display: grid; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                
-                <input type="text" id="notif-title" placeholder="عنوان الإشعار (مثال: موعد امتحان، نتيجة تصحيح، تنبيه هام...)" class="input-field" style="font-weight: bold; font-size: 16px;">
-                <textarea id="notif-message" placeholder="اكتب تفاصيل الرسالة هنا..." class="input-field" rows="3" style="resize: vertical;"></textarea>
-
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <select id="notif-target-type" class="input-field" onchange="toggleNotifTargetOptions()" style="flex: 1; min-width: 200px; font-weight: bold; color: var(--primary-color);">
-                        <option value="all">إرسال لجميع الطلاب 🌍</option>
-                        <option value="group">إرسال لمجموعة محددة 👥</option>
-                        <option value="student">إرسال لطالب محدد 👤</option>
-                    </select>
-
-                    <select id="notif-target-group" class="input-field" style="flex: 1; min-width: 200px; display: none;"></select>
-                    
-                    <select id="notif-target-student" class="input-field" style="flex: 1; min-width: 200px; display: none;"></select>
-                </div>
-
-                <button class="save-btn" style="font-size: 16px; padding: 12px; border-radius: 10px;" onclick="submitCustomNotification()">إرسال الإشعار الآن 🚀</button>
-            </div>
-
-            <h3 style="margin-top: 30px; margin-bottom:15px; color: var(--secondary-color); font-size: 18px;">📜 سجل الإشعارات السابقة</h3>
-            <div id="sent-notifs-history" style="display: grid; gap: 10px;">
-                <div style="text-align:center; padding:20px; color:var(--text-muted);">جاري تحميل السجل... ⏳</div>
-            </div>
-        </div>
-            
-            <div class="table-container" style="max-height: 500px; overflow-y: auto;">
-                <table class="students-table" id="codes-table" style="width: 100%;">
-                
-                    <!-- الجافاسكريبت هيرسم الجدول هنا بشكل أنضف -->
-                </table>
-            </div>
-        </div>
-    </div>
 
     <div id="platform-lectures" class="platform-section" style="display: none;">
         <div class="card" style="margin-bottom: 20px;">
