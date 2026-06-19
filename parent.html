@@ -527,29 +527,58 @@
                 });
                 if(!hasEx) exHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد تقييمات مسجلة لك حتى الآن.</td></tr>`;
                 document.getElementById("exams-details").innerHTML = exHtml;
-                // 🔔 جلب الإشعارات من الفايربيز
+                // ==========================================
+                // 🔔 جلب الإشعارات من الفايربيز وتصحيح الفلترة الذكية
+                // ==========================================
                 try {
                     let notifRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/notifications.json`);
                     let notifsData = await notifRes.json() || {};
-                    let notifsList = Object.values(notifsData).filter(n => n.target === 'all' || n.target === currentStudent.group || n.target === currentStudent.phone).reverse();
+                    
+                    // الفلترة الذكية والمطورة لتشمل الصفوف والمجموعات المتعددة
+                    let notifsList = Object.values(notifsData).filter(n => {
+                        if (!n || !n.target) return false;
+                        
+                        // 1. إذا كان الإشعار موجه للجميع
+                        if (n.target === 'all') return true;
+                        
+                        // 2. إذا كان موجه لرقم تليفون الطالب المحدد
+                        if (n.target === currentStudent.phone) return true;
+                        
+                        // 3. إذا كان موجه للمجموعة الخاصة بالطالب
+                        if (n.target === currentStudent.group) return true;
+                        
+                        // 4. إذا كان موجه للمرحلة/الصف الدراسي الخاص بالطالب
+                        if (n.target === currentStudent.level) return true;
+                        
+                        return false;
+                    }).reverse(); // ترتيب من الأحدث للأقدم
                     
                     let notifHtml = "";
                     notifsList.forEach(n => {
-                        notifHtml += `<div style="background: var(--bg-color); padding: 10px 15px; border-radius: 8px; border-right: 4px solid var(--primary);">
-                            <h5 style="margin: 0 0 5px 0; color: var(--secondary);">${n.title}</h5>
-                            <p style="margin: 0; font-size: 13px; color: var(--text-muted);">${n.message}</p>
-                            <span style="font-size: 10px; color: #cbd5e1;">${n.date}</span>
+                        notifHtml += `
+                        <div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; border-right: 4px solid var(--primary); margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <h5 style="margin: 0 0 5px 0; color: var(--text-main); font-size: 14px; font-weight: bold;">${n.title}</h5>
+                            <p style="margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">${n.message}</p>
+                            <span style="font-size: 10px; color: #94a3b8; display: block; text-align: left;">🕒 ${n.date || ''}</span>
                         </div>`;
                     });
                     
+                    let notifListContainer = document.getElementById("notif-list");
+                    let notifBadge = document.getElementById("notif-badge");
+                    
                     if(notifsList.length > 0) {
-                        document.getElementById("notif-list").innerHTML = notifHtml;
-                        document.getElementById("notif-badge").style.display = "inline-block";
-                        document.getElementById("notif-badge").innerText = notifsList.length;
+                        if(notifListContainer) notifListContainer.innerHTML = notifHtml;
+                        if(notifBadge) {
+                            notifBadge.style.display = "inline-block";
+                            notifBadge.innerText = notifsList.length;
+                        }
                     } else {
-                        document.getElementById("notif-list").innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size: 13px;">لا توجد إشعارات جديدة</div>`;
+                        if(notifListContainer) notifListContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 15px; font-size: 13px;">لا توجد إشعارات جديدة حالياً 📭</div>`;
+                        if(notifBadge) notifBadge.style.display = "none";
                     }
-                } catch(e) { console.log("No notifications"); }
+                } catch(e) { 
+                    console.log("Error fetching notifications:", e); 
+                }
 
                 renderStudentLectures();
 
