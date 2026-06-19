@@ -874,24 +874,26 @@
                     <textarea id="notif-message" placeholder="اكتب تفاصيل رسالتك هنا ليقرأها الطالب على المنصة..." class="custom-input" rows="3" style="resize: vertical;"></textarea>
                 </div>
 
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <div class="input-group" style="flex: 1; min-width: 200px; margin: 0;">
-                        <label style="font-weight: bold;">الفئة المستهدفة</label>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="input-group" style="flex: 1; min-width: 250px; margin: 0;">
+                        <label style="font-weight: bold; color: var(--primary-color);">إرسال مخصص إلى:</label>
                         <select id="notif-target-type" class="custom-input" onchange="toggleNotifTargetOptions()" style="font-weight: bold; color: #f59e0b;">
-                            <option value="all">إرسال لجميع الطلاب 🌍</option>
-                            <option value="group">إرسال لمجموعة محددة 👥</option>
-                            <option value="student">إرسال لطالب محدد 👤</option>
+                            <option value="all">🌍 جميع طلاب المنصة</option>
+                            <option value="group">👥 تحديد بالمجموعات (اختيار متعدد)</option>
+                            <option value="level">🎓 تحديد بالصفوف الدراسية (اختيار متعدد)</option>
                         </select>
                     </div>
 
-                    <div class="input-group" style="flex: 1; min-width: 200px; margin: 0; display: none;" id="notif-group-container">
-                        <label style="font-weight: bold;">اختر المجموعة</label>
-                        <select id="notif-target-group" class="custom-input"></select>
+                    <div class="input-group" style="flex: 2; min-width: 300px; margin: 0; display: none;" id="notif-group-container">
+                        <label style="font-weight: bold; color: var(--success-color);">اختر المجموعات المستهدفة:</label>
+                        <div id="notif-groups-checkboxes" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 10px; max-height: 150px; overflow-y: auto; margin-top: 5px;">
+                            </div>
                     </div>
                     
-                    <div class="input-group" style="flex: 1; min-width: 200px; margin: 0; display: none;" id="notif-student-container">
-                        <label style="font-weight: bold;">اختر الطالب</label>
-                        <select id="notif-target-student" class="custom-input"></select>
+                    <div class="input-group" style="flex: 2; min-width: 300px; margin: 0; display: none;" id="notif-level-container">
+                        <label style="font-weight: bold; color: var(--primary-color);">اختر الصفوف المستهدفة:</label>
+                        <div id="notif-levels-checkboxes" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 10px; max-height: 150px; overflow-y: auto; margin-top: 5px;">
+                            </div>
                     </div>
                 </div>
 
