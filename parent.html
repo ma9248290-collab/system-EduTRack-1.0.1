@@ -176,9 +176,22 @@
                     <span style="font-size: 12px; color: var(--text-muted);" id="top-group">المجموعة</span>
                 </div>
             </div>
-            <button class="wallet-btn" onclick="switchTab('tab-wallet')">
-                💳 <span id="top-balance">0</span> ج.م
-            </button>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="position: relative;">
+                    <button class="wallet-btn" style="background: var(--card-bg); border-color: var(--border); color: var(--secondary); padding: 8px 15px;" onclick="toggleNotifications()">
+                        🔔 <span id="notif-badge" style="background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; position: absolute; top: -5px; right: -5px; display: none; font-weight: bold;">0</span>
+                    </button>
+                    <div id="notif-dropdown" style="display: none; position: absolute; top: 50px; left: 0; width: 320px; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-radius: 12px; border: 1px solid var(--border); z-index: 1000; padding: 15px; max-height: 400px; overflow-y: auto;">
+                        <h4 style="margin: 0 0 10px 0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">الإشعارات 🔔</h4>
+                        <div id="notif-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                    </div>
+                </div>
+
+                <button class="wallet-btn" onclick="switchTab('tab-wallet')">
+                    💳 <span id="top-balance">0</span> ج.م
+                </button>
+            </div>
         </header>
 
         <div class="main-container">
@@ -309,6 +322,19 @@
         <div id="exam-questions-render"></div>
 
         <button class="btn" id="submitExamBtn" style="margin-top: 30px; font-size: 18px; padding: 18px;" onclick="submitOnlineExam()">✅ تسليم ورقة الإجابة نهائياً</button>
+    </div>
+
+    <div id="review-exam-screen" style="display: none; padding: 30px 20px; max-width: 800px; margin: 0 auto;">
+        <button class="btn btn-secondary" style="width: auto; margin-bottom: 20px; padding: 8px 15px;" onclick="closeReviewScreen()">🔙 العودة للامتحانات</button>
+        
+        <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <h2 id="review-exam-title" style="color: var(--secondary); margin: 0 0 10px 0;">اسم الامتحان</h2>
+            <div style="font-size: 24px; font-weight: 900; color: var(--primary);">
+                النتيجة: <span id="review-exam-score" style="color: var(--success);">0</span> / <span id="review-exam-total">0</span>
+            </div>
+        </div>
+
+        <div id="review-questions-render"></div>
     </div>
 
     <script>
@@ -501,7 +527,29 @@
                 });
                 if(!hasEx) exHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد تقييمات مسجلة لك حتى الآن.</td></tr>`;
                 document.getElementById("exams-details").innerHTML = exHtml;
-                
+                // 🔔 جلب الإشعارات من الفايربيز
+                try {
+                    let notifRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/notifications.json`);
+                    let notifsData = await notifRes.json() || {};
+                    let notifsList = Object.values(notifsData).filter(n => n.target === 'all' || n.target === currentStudent.group || n.target === currentStudent.phone).reverse();
+                    
+                    let notifHtml = "";
+                    notifsList.forEach(n => {
+                        notifHtml += `<div style="background: var(--bg-color); padding: 10px 15px; border-radius: 8px; border-right: 4px solid var(--primary);">
+                            <h5 style="margin: 0 0 5px 0; color: var(--secondary);">${n.title}</h5>
+                            <p style="margin: 0; font-size: 13px; color: var(--text-muted);">${n.message}</p>
+                            <span style="font-size: 10px; color: #cbd5e1;">${n.date}</span>
+                        </div>`;
+                    });
+                    
+                    if(notifsList.length > 0) {
+                        document.getElementById("notif-list").innerHTML = notifHtml;
+                        document.getElementById("notif-badge").style.display = "inline-block";
+                        document.getElementById("notif-badge").innerText = notifsList.length;
+                    } else {
+                        document.getElementById("notif-list").innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size: 13px;">لا توجد إشعارات جديدة</div>`;
+                    }
+                } catch(e) { console.log("No notifications"); }
 
                 renderStudentLectures();
 
@@ -821,7 +869,7 @@
         // ==========================================
         // 💻 منصة الامتحانات الإلكترونية
         // ==========================================
-        async function showOnlineExams() {
+async function showOnlineExams() {
             document.getElementById("app-layout").style.display = "none";
             document.getElementById("online-exams-list-screen").style.display = "block";
             
@@ -831,10 +879,11 @@
             try {
                 let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
                 let allSubmissions = await subRes.json() || {};
+                window.studentSubmissions = allSubmissions; // حفظها للمراجعة
 
                 container.innerHTML = "";
                 let myExams = allOnlineExams.filter(e => {
-                    if(!e || e.status !== "open") return false;
+                    if(!e || (e.status !== "open" && e.status !== "closed")) return false;
                     if(Array.isArray(e.group)) return e.group.includes(currentStudent.group) || e.group.includes("all");
                     return e.group === currentStudent.group || e.group === "all";
                 });
@@ -847,17 +896,100 @@
                 myExams.forEach(exam => {
                     let isSubmitted = allSubmissions[exam.id] && allSubmissions[exam.id][currentStudent.phone];
                     let actionBtn = "";
+                    
                     if (isSubmitted) {
-                        let scoreText = exam.autoShowResult ? `${isSubmitted.score} / ${exam.totalScore}` : "قيد المراجعة ⏳";
-                        actionBtn = `<div style="text-align:center; background: var(--bg-color); padding: 10px 20px; border-radius: 12px; border: 1px solid var(--border);"><span style="color:var(--success); font-weight:bold; display:block; font-size:13px; margin-bottom: 5px;">تم التسليم بنجاح ✅</span><span style="font-weight:800; color:var(--secondary); font-size: 16px;">النتيجة: ${scoreText}</span></div>`;
+                        // هل المدرس سمح بعرض النتيجة؟ (يا إما الامتحان autoShowResult أو اتصحح يدوي)
+                        let canViewResult = exam.autoShowResult || isSubmitted.isGraded;
+                        let scoreText = canViewResult ? `${isSubmitted.score} / ${exam.totalScore}` : "قيد المراجعة ⏳";
+                        
+                        let viewBtn = canViewResult 
+                            ? `<button class="btn" style="background: var(--primary); padding: 8px 15px; font-size: 13px; width: auto;" onclick="reviewExam('${exam.id}')">👁️ عرض الإجابات والأخطاء</button>`
+                            : `<button class="btn" style="background: var(--text-muted); padding: 8px 15px; font-size: 13px; width: auto; cursor: not-allowed;" disabled>🔒 الإجابات مخفية للتقييم</button>`;
+
+                        actionBtn = `<div style="text-align:center; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+                            <span style="color:var(--success); font-weight:bold; display:block; font-size:14px; margin-bottom: 5px;">تم التسليم بنجاح ✅</span>
+                            <span style="font-weight:900; color:var(--secondary); font-size: 18px; display:block; margin-bottom: 10px;">النتيجة: ${scoreText}</span>
+                            ${viewBtn}
+                        </div>`;
                     } else {
-                        actionBtn = `<button class="btn" style="width: auto; padding: 12px 25px; font-size: 15px;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
+                        if (exam.status === "closed") {
+                            actionBtn = `<div style="text-align:center; background: #fee2e2; padding: 10px 20px; border-radius: 12px; border: 1px solid #fca5a5;"><span style="color:#ef4444; font-weight:bold;">انتهى وقت الامتحان ❌</span></div>`;
+                        } else {
+                            actionBtn = `<button class="btn" style="width: auto; padding: 12px 25px; font-size: 15px;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
+                        }
                     }
 
                     container.innerHTML += `<div class="exam-card"><div><h3 style="margin:0 0 8px 0; color:var(--secondary); font-size: 18px;">📝 ${exam.title}</h3><p style="margin:0; font-size:14px; color:var(--text-muted); font-weight: 600;">⏱️ المدة: ${exam.duration} دقيقة &nbsp;|&nbsp; 🎯 المجموع: ${exam.totalScore} درجة</p></div>${actionBtn}</div>`;
                 });
             } catch(e) { container.innerHTML = `<div style="text-align:center; color:var(--danger); padding:20px; font-weight:bold;">حدث خطأ أثناء تحميل قائمة الامتحانات!</div>`; }
         }
+
+        // دالة عرض تفاصيل الإجابات والأخطاء 👁️
+        window.reviewExam = function(examId) {
+            let exam = allOnlineExams.find(e => e.id === examId);
+            let sub = window.studentSubmissions[examId][currentStudent.phone];
+            if(!exam || !sub) return;
+
+            document.getElementById("online-exams-list-screen").style.display = "none";
+            document.getElementById("review-exam-screen").style.display = "block";
+            
+            document.getElementById("review-exam-title").innerText = exam.title;
+            document.getElementById("review-exam-score").innerText = sub.score;
+            document.getElementById("review-exam-total").innerText = exam.totalScore;
+
+            let container = document.getElementById("review-questions-render");
+            container.innerHTML = "";
+
+            exam.questions.forEach((q, index) => {
+                let studentAns = sub.answers[q.id];
+                let qScore = 0;
+                let isCorrect = false;
+
+                let ansHtml = "";
+                if (q.type === 'mcq') {
+                    isCorrect = (studentAns === q.correctAnswerIndex);
+                    qScore = isCorrect ? q.points : 0;
+                    ansHtml = `<div class="q-options">`;
+                    q.options.forEach((opt, optIndex) => {
+                        let bg = "var(--bg-color)"; let border = "var(--border)"; let icon = "";
+                        if (optIndex === q.correctAnswerIndex) { bg = "#d1fae5"; border = "#10b981"; icon = "✅ (الإجابة الصحيحة)"; }
+                        else if (optIndex === studentAns && !isCorrect) { bg = "#fee2e2"; border = "#ef4444"; icon = "❌ (إجابتك الخاطئة)"; }
+                        else if (optIndex === studentAns && isCorrect) { icon = "✅ (إجابتك)"; }
+                        
+                        ansHtml += `<div style="padding: 10px 15px; border: 2px solid ${border}; background: ${bg}; border-radius: 8px; margin-bottom: 5px; font-weight: bold;">${opt} ${icon}</div>`;
+                    });
+                    ansHtml += `</div>`;
+                } else if (q.type === 'tf') {
+                    isCorrect = (String(studentAns) === String(q.correctAnswerTF || q.correctAnswer));
+                    qScore = isCorrect ? q.points : 0;
+                    let correctStr = String(q.correctAnswerTF || q.correctAnswer) === "true" ? "صح" : "خطأ";
+                    let stStr = studentAns === "true" ? "صح" : (studentAns === "false" ? "خطأ" : "لم يُجب");
+                    
+                    ansHtml = `<div style="background: ${isCorrect ? '#d1fae5' : '#fee2e2'}; padding: 15px; border-radius: 8px; font-weight: bold; border: 2px solid ${isCorrect ? '#10b981' : '#ef4444'};">
+                        إجابتك: ${stStr} ${isCorrect ? '✅' : '❌'}<br>
+                        <span style="color: var(--text-muted); font-size: 13px;">الإجابة الصحيحة هي: ${correctStr}</span>
+                    </div>`;
+                } else {
+                    // المقالي والفراغات
+                    qScore = (sub.manualGrades && sub.manualGrades[q.id] !== undefined) ? sub.manualGrades[q.id] : (studentAns === q.correctAnswerText ? q.points : 0);
+                    ansHtml = `<div style="background: var(--bg-color); padding: 15px; border-radius: 8px; font-weight: bold; border: 1px solid var(--border);">
+                        إجابتك: ${studentAns || 'لم يُجب'}<br>
+                        ${q.correctAnswerText ? `<span style="color: var(--success); font-size: 13px;">الإجابة النموذجية: ${q.correctAnswerText}</span>` : ''}
+                    </div>`;
+                }
+
+                container.innerHTML += `<div class="q-box" style="border-right: 5px solid ${qScore > 0 ? '#10b981' : '#ef4444'};">
+                    <div class="q-title">${index + 1}. ${q.text} <br><span style="color: ${qScore > 0 ? '#10b981' : '#ef4444'}; font-size:14px; font-weight:900;">(أخذت: ${qScore} من ${q.points} درجة)</span></div>
+                    ${ansHtml}
+                </div>`;
+            });
+        };
+
+        window.closeReviewScreen = function() {
+            document.getElementById("review-exam-screen").style.display = "none";
+            document.getElementById("online-exams-list-screen").style.display = "block";
+        };
+
 
         function backToDashboard() {
             document.getElementById("online-exams-list-screen").style.display = "none";
@@ -943,6 +1075,14 @@
                 showOnlineExams(); 
             } catch (e) { alert("خطأ في الاتصال! أعد المحاولة."); btn.innerHTML = "✅ تسليم الإجابة"; btn.disabled = false; }
         }
+
+
+        window.toggleNotifications = function() {
+            let dropdown = document.getElementById("notif-dropdown");
+            dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+            document.getElementById("notif-badge").style.display = "none"; // إخفاء النقطة الحمرا لما يفتحها
+        };
+
     </script>
 
     <div id="studentCourseDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999990; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
