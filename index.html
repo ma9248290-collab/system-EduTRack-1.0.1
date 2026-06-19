@@ -669,6 +669,7 @@
         <button class="save-btn" id="tab-btn-codes" onclick="switchPlatformTab('codes')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--primary-color);">💳 أكواد الشحن</button>
         <button class="save-btn" id="tab-btn-lectures" onclick="switchPlatformTab('lectures')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color);">🎬 المحاضرات</button>
         <button class="save-btn" id="tab-btn-exams" onclick="switchPlatformTab('exams')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color);">📝 الامتحانات الإلكترونية</button>
+        <button class="save-btn" id="tab-btn-notifications" onclick="switchPlatformTab('notifications')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color); flex-shrink: 0;">📢 الإشعارات المباشرة</button>
     </div>
 
     <div id="platform-codes" class="platform-section">
@@ -697,9 +698,40 @@
                 </h3>
                 <button class="theme-btn" style="border-color: #10b981; color: #10b981; padding: 10px 20px; font-weight: bold; border-width: 2px;" onclick="exportAllCodesToExcel()">📥 تحميل جميع الأكواد إكسيل</button>
             </div>
+
+
+            <div id="platform-notifications-section" style="margin-top: 30px; margin-bottom: 40px;">
+            <h2 class="section-title" style="color: var(--primary-color);">📢 مركز إرسال الإشعارات</h2>
+            
+            <div style="background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border-color); display: grid; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                
+                <input type="text" id="notif-title" placeholder="عنوان الإشعار (مثال: موعد امتحان، نتيجة تصحيح، تنبيه هام...)" class="input-field" style="font-weight: bold; font-size: 16px;">
+                <textarea id="notif-message" placeholder="اكتب تفاصيل الرسالة هنا..." class="input-field" rows="3" style="resize: vertical;"></textarea>
+
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <select id="notif-target-type" class="input-field" onchange="toggleNotifTargetOptions()" style="flex: 1; min-width: 200px; font-weight: bold; color: var(--primary-color);">
+                        <option value="all">إرسال لجميع الطلاب 🌍</option>
+                        <option value="group">إرسال لمجموعة محددة 👥</option>
+                        <option value="student">إرسال لطالب محدد 👤</option>
+                    </select>
+
+                    <select id="notif-target-group" class="input-field" style="flex: 1; min-width: 200px; display: none;"></select>
+                    
+                    <select id="notif-target-student" class="input-field" style="flex: 1; min-width: 200px; display: none;"></select>
+                </div>
+
+                <button class="save-btn" style="font-size: 16px; padding: 12px; border-radius: 10px;" onclick="submitCustomNotification()">إرسال الإشعار الآن 🚀</button>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom:15px; color: var(--secondary-color); font-size: 18px;">📜 سجل الإشعارات السابقة</h3>
+            <div id="sent-notifs-history" style="display: grid; gap: 10px;">
+                <div style="text-align:center; padding:20px; color:var(--text-muted);">جاري تحميل السجل... ⏳</div>
+            </div>
+        </div>
             
             <div class="table-container" style="max-height: 500px; overflow-y: auto;">
                 <table class="students-table" id="codes-table" style="width: 100%;">
+                
                     <!-- الجافاسكريبت هيرسم الجدول هنا بشكل أنضف -->
                 </table>
             </div>
@@ -1707,6 +1739,69 @@
                 <button class="theme-btn" style="flex: 1; margin: 0; border-color: #10b981; color: #10b981; font-weight: bold; font-size: 16px; border-width: 2px;" onclick="downloadNewCodesExcel()">📥 تحميل إكسيل</button>
             </div>
         </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 📢 تاب مركز الإشعارات (الجديد) -->
+    <!-- ========================================== -->
+    <div id="platform-notifications" class="platform-section" style="display: none;">
+        
+        <!-- بوكس إرسال الإشعار -->
+        <div class="card" style="margin-bottom: 20px; padding: 25px; border-top: 4px solid #f59e0b; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <h3 style="color: #f59e0b; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">📢</span> إرسال إشعار جديد لطلاب المنصة
+            </h3>
+            
+            <div style="display: grid; gap: 15px; background: var(--hover-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+                <div class="input-group full-width" style="margin: 0;">
+                    <label style="font-weight: bold;">عنوان الإشعار</label>
+                    <input type="text" id="notif-title" placeholder="مثال: تنبيه هام بخصوص امتحان الباب الأول..." class="custom-input" style="font-weight: bold; font-size: 16px;">
+                </div>
+                
+                <div class="input-group full-width" style="margin: 0;">
+                    <label style="font-weight: bold;">نص الإشعار</label>
+                    <textarea id="notif-message" placeholder="اكتب تفاصيل رسالتك هنا ليقرأها الطالب على المنصة..." class="custom-input" rows="3" style="resize: vertical;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="input-group" style="flex: 1; min-width: 200px; margin: 0;">
+                        <label style="font-weight: bold;">الفئة المستهدفة</label>
+                        <select id="notif-target-type" class="custom-input" onchange="toggleNotifTargetOptions()" style="font-weight: bold; color: #f59e0b;">
+                            <option value="all">إرسال لجميع الطلاب 🌍</option>
+                            <option value="group">إرسال لمجموعة محددة 👥</option>
+                            <option value="student">إرسال لطالب محدد 👤</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group" style="flex: 1; min-width: 200px; margin: 0; display: none;" id="notif-group-container">
+                        <label style="font-weight: bold;">اختر المجموعة</label>
+                        <select id="notif-target-group" class="custom-input"></select>
+                    </div>
+                    
+                    <div class="input-group" style="flex: 1; min-width: 200px; margin: 0; display: none;" id="notif-student-container">
+                        <label style="font-weight: bold;">اختر الطالب</label>
+                        <select id="notif-target-student" class="custom-input"></select>
+                    </div>
+                </div>
+
+                <button class="save-btn" style="width: 100%; font-size: 18px; margin-top: 10px; background-color: #f59e0b; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);" onclick="submitCustomNotification()">إرسال الإشعار الآن 🚀</button>
+            </div>
+        </div>
+
+        <!-- بوكس سجل الإشعارات -->
+        <div class="card" style="padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--secondary-color); display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">📜</span> سجل الإشعارات المُرسلة
+                </h3>
+                <button class="theme-btn" style="padding: 8px 15px; border-color: #f59e0b; color: #f59e0b;" onclick="loadSentNotifications()">🔄 تحديث السجل</button>
+            </div>
+            
+            <div id="sent-notifs-history" style="display: grid; gap: 12px; max-height: 450px; overflow-y: auto; padding-right: 5px;">
+                <!-- الإشعارات هتترسم هنا بالجافاسكريبت -->
+            </div>
+        </div>
+
     </div>
 
 
