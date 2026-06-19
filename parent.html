@@ -528,7 +528,7 @@
                 if(!hasEx) exHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد تقييمات مسجلة لك حتى الآن.</td></tr>`;
                 document.getElementById("exams-details").innerHTML = exHtml;
                 // ==========================================
-                // 🔔 جلب الإشعارات من الفايربيز وتصحيح الفلترة الذكية
+                // 🔔 جلب الإشعارات من الفايربيز (إظهار غير المقروء فقط)
                 // ==========================================
                 try {
                     let notifRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/notifications.json`);
@@ -537,43 +537,52 @@
                     // الفلترة الذكية والمطورة لتشمل الصفوف والمجموعات المتعددة
                     let notifsList = Object.values(notifsData).filter(n => {
                         if (!n || !n.target) return false;
-                        
-                        // 1. إذا كان الإشعار موجه للجميع
                         if (n.target === 'all') return true;
-                        
-                        // 2. إذا كان موجه لرقم تليفون الطالب المحدد
                         if (n.target === currentStudent.phone) return true;
-                        
-                        // 3. إذا كان موجه للمجموعة الخاصة بالطالب
                         if (n.target === currentStudent.group) return true;
-                        
-                        // 4. إذا كان موجه للمرحلة/الصف الدراسي الخاص بالطالب
                         if (n.target === currentStudent.level) return true;
-                        
                         return false;
                     }).reverse(); // ترتيب من الأحدث للأقدم
                     
+                    // 🛡️ سحب سجل الإشعارات اللي الطالب شافها قبل كده من جهاز الطالب
+                    let readNotifs = JSON.parse(localStorage.getItem(`read_notifs_${currentStudent.code}`)) || [];
+                    let unreadCount = 0;
+
                     let notifHtml = "";
                     notifsList.forEach(n => {
+                        // التحقق هل الإشعار ده اتقرأ قبل كده؟
+                        let isRead = readNotifs.includes(n.id);
+                        if (!isRead) unreadCount++; // زيادة عداد غير المقروء
+
                         notifHtml += `
-                        <div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; border-right: 4px solid var(--primary); margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <h5 style="margin: 0 0 5px 0; color: var(--text-main); font-size: 14px; font-weight: bold;">${n.title}</h5>
+                        <div style="background: ${isRead ? 'var(--card-bg)' : '#eff6ff'}; padding: 12px 15px; border-radius: 8px; border-right: 4px solid ${isRead ? 'var(--text-muted)' : 'var(--primary)'}; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid var(--border); border-right-width: 4px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                                <h5 style="margin: 0; color: var(--text-main); font-size: 14px; font-weight: bold;">${n.title}</h5>
+                                ${!isRead ? '<span style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%;"></span>' : ''}
+                            </div>
                             <p style="margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">${n.message}</p>
                             <span style="font-size: 10px; color: #94a3b8; display: block; text-align: left;">🕒 ${n.date || ''}</span>
                         </div>`;
                     });
                     
+                    // حفظ القائمة الإجمالية لاستخدامها عند الضغط على الجرس
+                    window.currentLoadedNotifsIds = notifsList.map(n => n.id);
+
                     let notifListContainer = document.getElementById("notif-list");
                     let notifBadge = document.getElementById("notif-badge");
                     
                     if(notifsList.length > 0) {
                         if(notifListContainer) notifListContainer.innerHTML = notifHtml;
                         if(notifBadge) {
-                            notifBadge.style.display = "inline-block";
-                            notifBadge.innerText = notifsList.length;
+                            if (unreadCount > 0) {
+                                notifBadge.style.display = "inline-block";
+                                notifBadge.innerText = unreadCount;
+                            } else {
+                                notifBadge.style.display = "none";
+                            }
                         }
                     } else {
-                        if(notifListContainer) notifListContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 15px; font-size: 13px;">لا توجد إشعارات جديدة حالياً 📭</div>`;
+                        if(notifListContainer) notifListContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 15px; font-size: 13px;">لا توجد إشعارات حالياً 📭</div>`;
                         if(notifBadge) notifBadge.style.display = "none";
                     }
                 } catch(e) { 
@@ -1108,8 +1117,28 @@ async function showOnlineExams() {
 
         window.toggleNotifications = function() {
             let dropdown = document.getElementById("notif-dropdown");
-            dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
-            document.getElementById("notif-badge").style.display = "none"; // إخفاء النقطة الحمرا لما يفتحها
+            if (!dropdown) return;
+
+            let isOpening = dropdown.style.display === "none";
+            dropdown.style.display = isOpening ? "block" : "none";
+
+            // لو بيفتح القائمة.. هنعلم على كل اللي معروض حالياً إنه "تمت رؤيته"
+            if (isOpening && window.currentLoadedNotifsIds && window.currentLoadedNotifsIds.length > 0 && currentStudent) {
+                // جلب المصفوفة القديمة أو إنشاء واحدة جديدة
+                let readNotifs = JSON.parse(localStorage.getItem(`read_notifs_${currentStudent.code}`)) || [];
+                
+                // دمج الـ IDs الجديدة مع القديمة بدون تكرار
+                window.currentLoadedNotifsIds.forEach(id => {
+                    if (!readNotifs.includes(id)) readNotifs.push(id);
+                });
+
+                // حفظها في جهاز الطالب
+                localStorage.setItem(`read_notifs_${currentStudent.code}`, JSON.stringify(readNotifs));
+                
+                // إخفاء النقطة الحمراء والعداد فوراً من على الجرس بشياكة
+                let notifBadge = document.getElementById("notif-badge");
+                if (notifBadge) notifBadge.style.display = "none";
+            }
         };
 
     </script>
