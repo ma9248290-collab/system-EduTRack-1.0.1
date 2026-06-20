@@ -204,102 +204,90 @@
                 <div class="nav-item" style="color: #ef4444; margin-top: auto;" onclick="logoutStudent()">🚪 خروج</div>
             </aside>
 
-            <main class="content-area">
+            <main class="main-content">
+        <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:5px;">
+                <h4 style="margin:0; font-weight:800; color:var(--secondary);" id="tracker-text">📈 جاري حساب خطة المذاكرة...</h4>
+                <span id="tracker-percentage" style="background:var(--primary); color:white; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:bold;">0%</span>
+            </div>
+            <div style="width:100%; height:10px; background:var(--bg-color); border-radius:10px; overflow:hidden;">
+                <div id="tracker-bar" style="width: 0%; height:100%; background: linear-gradient(90deg, var(--primary), #f97316); transition: 0.5s ease-out;"></div>
+            </div>
+            <p id="tracker-reminder" style="margin: 10px 0 0 0; font-size:13px; color:var(--text-muted); font-weight:bold;"></p>
+        </div>
+
+        <div style="background: linear-gradient(135deg, var(--secondary), #0f172a); color: white; padding: 25px; border-radius: 20px; margin-bottom: 25px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(15,23,42,0.25);">
+            <div style="position:absolute; top:-20px; left:-20px; font-size:120px; opacity:0.05;">🎓</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <span style="font-weight:900; letter-spacing:1px; font-size:18px; color:var(--primary);">EduTrack DIGITAL ID</span>
+                <span style="background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:30px; font-size:11px; font-weight:bold; color:#10b981;">● لايف نشط</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+                <div style="flex:1;">
+                    <h2 id="card-student-name" style="margin:0 0 5px 0; font-size:22px;">اسم الطالب</h2>
+                    <p id="card-student-group" style="margin:0 0 10px 0; color:#cbd5e1; font-size:14px; font-weight:bold;">المجموعة</p>
+                    <div style="font-size:13px; color:var(--primary); font-weight:bold;">🏆 رصيد نقاط السلوك: <span id="card-behavior-points" style="font-size:18px; font-weight:900; color:white;">0</span> نقطة</div>
+                </div>
+                <div style="background:white; padding:8px; border-radius:12px; display:flex; align-items:center; justify-content:center; min-width:140px;">
+                    <svg id="digitalIdBarcode" style="height:50px; width:auto;"></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs-grid">
+            <div class="tab-card active" onclick="switchTab('tab-exams')">📝 الامتحانات</div>
+            <div class="tab-card" onclick="switchTab('tab-lectures')">🎬 المحاضرات</div>
+            <div class="tab-card" onclick="switchTab('tab-rewards')" style="border-bottom: 3px solid #e11d48;">🎁 متجر المكافآت</div>
+            <div class="tab-card" onclick="switchTab('tab-forum')" style="border-bottom: 3px solid #8b5cf6;">💬 اسأل المستر</div>
+            <div class="tab-card" onclick="switchTab('tab-wallet')">💳 محفظتي</div>
+        </div>
+
+        <div id="tab-rewards" class="tab-section" style="display:none;">
+            <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border);">
+                <h3 style="margin-top:0; color:#e11d48;">🎁 متجر مكافآت نقاط التميز</h3>
+                <p style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">استبدل نقاط السلوك والتميز التي حصلت عليها في السنتر بجوائز مالية مباشرة في محفظتك!</p>
                 
-                <div id="tab-home" class="tab-content active">
-                    <div class="page-header">
-                        <h2>نظرة عامة</h2>
-                        <p>ملخص نشاطك في السنتر</p>
-                    </div>
-                    
-                    <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); margin-bottom: 40px; position: relative; overflow: hidden; border: 1px solid #334155;">
-                        <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
-                        <div style="position: absolute; bottom: -50px; left: 10%; width: 150px; height: 150px; background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
-                        
-                        <div style="z-index: 1;">
-                            <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 16px; font-weight: bold;">رصيد المحفظة المتاح</p>
-                            <h2 style="margin: 0; font-size: 40px; font-weight: 900; display: flex; align-items: center; gap: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-                                <span id="walletBalanceDisplay" style="color: #fff;">0</span> 
-                                <span style="font-size: 20px; color: #10b981; background: rgba(16,185,129,0.1); padding: 4px 10px; border-radius: 8px;">ج.م</span>
-                            </h2>
-                        </div>
-                        <div style="z-index: 1;">
-                            <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 12px; box-shadow: 0 8px 15px rgba(16,185,129,0.3); transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="switchTab('tab-wallet')">
-                                ➕ شحن المحفظة
-                            </button>
-                        </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:15px;">
+                    <div style="background:var(--bg-color); padding:20px; border-radius:12px; text-align:center; border:1px solid var(--border);">
+                        <div style="font-size:40px; margin-bottom:10px;">💵</div>
+                        <h4 style="margin:0 0 5px 0;">+ 20 ج.م للمحفظة</h4>
+                        <p style="color:#e11d48; font-weight:bold; font-size:14px; margin-bottom:15px;">تكلفة الطلب: 50 نقطة</p>
+                        <button class="btn" style="background:#e11d48; font-size:13px; padding:8px;" onclick="claimReward(50, 20)">استبدال الجائزة 🎁</button>
                     </div>
 
-                    <div class="empty-state" style="padding: 30px;">
-                        <h3 style="color: var(--secondary);">أهلاً بك في منصتك الجديدة! 🚀</h3>
-                        <p>استخدم القائمة للتنقل بين الحضور، الامتحانات، المحاضرات، وشحن المحفظة.</p>
+                    <div style="background:var(--bg-color); padding:20px; border-radius:12px; text-align:center; border:1px solid var(--border);">
+                        <div style="font-size:40px; margin-bottom:10px;">💰</div>
+                        <h4 style="margin:0 0 5px 0;">+ 50 ج.م للمحفظة</h4>
+                        <p style="color:#e11d48; font-weight:bold; font-size:14px; margin-bottom:15px;">تكلفة الطلب: 100 نقطة</p>
+                        <button class="btn" style="background:#e11d48; font-size:13px; padding:8px;" onclick="claimReward(100, 50)">استبدال الجائزة 🎁</button>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div id="tab-attendance" class="tab-content">
-                    <div class="page-header">
-                        <h2>سجل الحضور والغياب 📅</h2>
-                        <p>متابعة تفصيلية لحضورك في الحصص</p>
-                    </div>
-                    <div class="table-card">
-                        <table class="full-table" id="attendance-details"></table>
-                    </div>
+        <div id="tab-forum" class="tab-section" style="display:none;">
+            <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border); margin-bottom:20px;">
+                <h3 style="margin-top:0; color:#8b5cf6;">💬 منتدى اسأل المستر والنقاشات</h3>
+                <p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">هل وقف أمامك سؤال أثناء المذاكرة؟ اكتبه هنا وسيقوم المستر أو الأسيستنت بالرد عليك، وتظهر الإجابة لجميع زملائك في المجموعة!</p>
+                
+                <textarea id="forumQuestionInput" class="custom-input" placeholder="اكتب سؤالك بالتفصيل هنا..." rows="3" style="text-align:right; padding:12px;"></textarea>
+                <button class="btn" style="background:#8b5cf6; margin-top:10px;" onclick="submitForumQuestion()">نشر السؤال في المنتدى 🚀</button>
+            </div>
+
+            <h4 style="margin-bottom:10px; color:var(--secondary);">📌 مناقشات وأسئلة زملائك في المجموعة</h4>
+            <div id="forum-questions-list" style="display:flex; flex-direction:column; gap:12px;">
                 </div>
+        </div>
 
-                <div id="tab-exams" class="tab-content">
-                    <div class="page-header">
-                        <h2>سجل الامتحانات 📝</h2>
-                        <p>درجاتك في الامتحانات والواجبات</p>
-                    </div>
-                    
-                    <button class="btn" style="margin-bottom: 20px; font-size: 18px; padding: 15px;" onclick="showOnlineExams()">💻 الدخول لمنصة الامتحانات الإلكترونية (المباشرة)</button>
-                    
-                    <div class="table-card">
-                        <table class="full-table" id="exams-details"></table>
-                    </div>
-                </div>
-
-                <div id="tab-lectures" class="tab-content">
-                    <div class="page-header">
-                        <h2>المكتبة المرئية (المحاضرات) 🎬</h2>
-                        <p>شاهد دروسك المسجلة من هنا</p>
-                    </div>
-                    <div id="studentLecturesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;"></div>
-                </div>
-
-                <div id="tab-wallet" class="tab-content">
-                    <div class="page-header">
-                        <h2>محفظتي الإلكترونية 💰</h2>
-                        <p>إدارة رصيدك لشراء المحاضرات والامتحانات</p>
-                    </div>
-
-                    <div class="wallet-hero">
-                        <h3>الرصيد المتاح حالياً</h3>
-                        <div class="wallet-balance" id="wallet-page-balance">0 <span style="font-size: 24px;">ج.م</span></div>
-                    </div>
-
-                    <div class="charge-section">
-                        <h3 style="color: var(--secondary); margin-top: 0;">💳 شحن الرصيد بكود التفعيل</h3>
-                        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">أدخل الكود المطبوع الذي حصلت عليه من السنتر أو المدرس لشحن رصيدك فوراً.</p>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="rechargeCodeInput" class="custom-input" placeholder="مثال: CHRG-XXXX-XXXX" style="flex: 1;">
-                            <button class="btn" style="width: auto; padding: 0 30px;" onclick="redeemCode()">شحن 🚀</button>
-                        </div>
-                    </div>
-
-                    <div class="charge-section">
-                        <h3 style="color: var(--secondary); margin-top: 0;">📱 طرق شحن أخرى (قريباً)</h3>
-                        <div class="charge-grid">
-                            <div class="payment-method coming-soon">
-                                <h3 style="margin:0; color:#e60000; font-weight:900; font-size: 22px;">Vodafone Cash</h3>
-                            </div>
-                            <div class="payment-method coming-soon">
-                                <h3 style="margin:0; color:#f59e0b; font-weight:900; font-size: 22px;">fawry</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
+        <div id="tab-exams" class="tab-section">
+            <div id="available-exams-container"></div>
+        </div>
+        <div id="tab-lectures" class="tab-section" style="display:none;">
+            <div id="lectures-container" class="lectures-grid"></div>
+        </div>
+        <div id="tab-wallet" class="tab-section" style="display:none;">
+            </div>
+    </main>
         </div>
     </div>
 
@@ -337,7 +325,11 @@
         <div id="review-questions-render"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
     <script>
+
+        
         let globalTeacherId = "";
         let currentStudent = null;
         let allOnlineExams = [];
@@ -429,178 +421,172 @@
             if(event) event.currentTarget.classList.add('active');
         }
 
-        async function fetchStudentData(isAutoLogin = false) {
-            const code = document.getElementById("studentCode").value.trim();
-            const phone = document.getElementById("parentPhone").value.trim();
-            const errorMsg = document.getElementById("error-msg");
-            const btn = document.querySelector('#login-screen .btn');
+// ==========================================
+        // 🔄 تحديث وتزامن لوحة تحكم الطالب الشاملة
+        // ==========================================
+        async function fetchStudentData() {
+            if(!currentStudent) return;
             
-            if (!globalTeacherId) {
-                globalTeacherId = new URLSearchParams(window.location.search).get('id');
+            // 1. مزامنة كارت الـ ID الرقمي ونقاط السلوك لايف
+            document.getElementById("card-student-name").innerText = currentStudent.name;
+            document.getElementById("card-student-group").innerText = `المجموعة: ${currentStudent.group} | الكود: ${studentCode}`;
+            document.getElementById("card-behavior-points").innerText = currentStudent.behaviorPoints || 0;
+
+            // رسم باركود الـ ID الرقمي فوراً للـ Scanner على الباب
+            if (typeof JsBarcode !== 'undefined') {
+                JsBarcode("#digitalIdBarcode", currentStudent.code, {
+                    format: "CODE128", lineColor: "#0f172a", width: 2, height: 40, displayValue: false
+                });
             }
 
-            if (!code || !phone || !globalTeacherId) {
-                if(!isAutoLogin) { errorMsg.style.display = "block"; errorMsg.innerText = "تأكد من إدخال البيانات وأن الرابط صحيح!"; }
+            // ... (أكواد رصيد المحفظة والجداول العادية بتاعتك زي ما هي تحت هنا) ...
+
+            // 📊 4️⃣ حساب شريط تتبع خطة المذاكرة لايف للمحتوى الحالي
+            let totalItems = 0;
+            let completedItems = 0;
+            let missingLectures = 0;
+            let missingExams = 0;
+
+            // جلب الإجابات والامتحانات الإلكترونية المتاحة له
+            try {
+                let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
+                let allSubs = await subRes.json() || {};
+                
+                let myExams = allOnlineExams.filter(e => e && (e.status === "open" || e.status === "closed") && (Array.isArray(e.group) ? e.group.includes(currentStudent.group) || e.group.includes("all") : e.group === currentStudent.group || e.group === "all"));
+                
+                totalItems += myExams.length;
+                myExams.forEach(e => {
+                    if (allSubs[e.id] && allSubs[e.id][currentStudent.phone]) completedItems++;
+                    else if (e.status === "open") missingExams++;
+                });
+
+                let myLectures = allLectures.filter(l => l && (l.level === "all" || l.level === currentStudent.level));
+                totalItems += myLectures.length;
+                
+                // جلب تراكر المشاهدات الخاص بالطالب
+                let trackRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking.json`);
+                let allTracks = await trackRes.json() || {};
+                
+                myLectures.forEach(l => {
+                    let hasWatched = allTracks[l.id] && allTracks[l.id][currentStudent.phone];
+                    if (hasWatched) completedItems++;
+                    else missingLectures++;
+                });
+
+                // تفعيل الأنيميشن والنسبة
+                let percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 100;
+                document.getElementById("tracker-bar").style.width = percent + "%";
+                document.getElementById("tracker-percentage").innerText = percent + "%";
+                document.getElementById("tracker-text").innerText = percent === 100 ? "🎉 ممتاز! لقد أتممت خطتك الدراسية بالكامل!" : "📈 تتبع خطة المذاكرة والمحتوى الرقمي:";
+                
+                // التذكير الذكي
+                let reminder = "";
+                if (missingLectures > 0) reminder += `🎬 متبقي لك عدد (${missingLectures}) محاضرة لم تشاهدها. `;
+                if (missingExams > 0) reminder += `📝 ولديك عدد (${missingExams}) امتحان إلكتروني بانتظار حلك. `;
+                document.getElementById("tracker-reminder").innerText = reminder || "🎯 أنت تسير على خطى العباقرة، واصل تقدمك!";
+
+            } catch(err) { console.log(err); }
+
+            // جلب أسئلة المنتدى "اسأل المستر"
+            loadForumQuestions();
+        }
+
+        // ==========================================
+        // 🎁 1️⃣ نظام استبدال نقاط السلوك بمكافآت في المحفظة
+        // ==========================================
+        window.claimReward = async function(pointsCost, cashAmount) {
+            let currentPoints = currentStudent.behaviorPoints || 0;
+            if (currentPoints < pointsCost) {
+                alert(`عفواً يا بطل! نقاطك الحالية (${currentPoints}) أقل من تكلفة الجائزة (${pointsCost} نقطة). شد حيلك في السنتر والواجبات! 💪`);
                 return;
             }
 
-            errorMsg.style.display = "none";
-            btn.innerHTML = `<div class="octo-mascot octo-loading" style="width: 25px; height: 25px; margin-left: 10px; display:inline-block; vertical-align:middle;"></div> جاري الدخول...`;
+            if (!confirm(`هل تريد استبدال ${pointsCost} نقطة بمبلغ ${cashAmount} جنيه في محفظتك الإلكترونية؟`)) return;
+
+            // 1. خصم النقاط وزيادة رصيد المحفظة محلياً وفي السيرفر
+            currentStudent.behaviorPoints = currentPoints - pointsCost;
+            let currentWallet = parseFloat(localStorage.getItem(`wallet_${currentStudent.code}`)) || 0;
+            let newWalletValue = currentWallet + cashAmount;
 
             try {
-                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
-                let data = await res.json();
-                window.allClassSessions = data.classSessions || []; 
+                // حفظ الرصيد الجديد في السيرفر
+                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/wallets/${currentStudent.code}.json`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newWalletValue)
+                });
                 
-                let lecRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/lectures.json`);
-                let lecturesData = await lecRes.json() || {};
-                
-                if (Array.isArray(lecturesData)) {
-                    window.allLectures = lecturesData.filter(l => l !== null).reverse();
-                } else {
-                    window.allLectures = Object.values(lecturesData).reverse();
+                // تحديث سجل الطلاب الكلي على الفايربيز لحفظ نقاط السلوك الجديدة للمدرس
+                let allStRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students.json`);
+                let serverStudents = await allStRes.json() || [];
+                let sIdx = serverStudents.findIndex(s => s && s.code === currentStudent.code);
+                if(sIdx > -1) {
+                    serverStudents[sIdx].behaviorPoints = currentStudent.behaviorPoints;
+                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students.json`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverStudents)
+                    });
                 }
 
-                if (!data || !data.students) throw new Error();
+                alert(`🎯 مبروك يا بطل! تم خصم النقاط وشحن محفظتك بمبلغ ${cashAmount} ج.م بنجاح! 🎉`);
+                location.reload(); // ريفريش لتحديث كل الأرقام بشياكة
+            } catch(e) { alert("عطل في الاتصال بالسيرفر، حاول مرة أخرى."); }
+        };
 
-                currentStudent = data.students.find(s => s && s.code === code && s.parentPhone === phone);
+        // ==========================================
+        // 💬 2️⃣ منتدى اسأل المستر للطلاب
+        // ==========================================
+        window.submitForumQuestion = async function() {
+            let text = document.getElementById("forumQuestionInput").value.trim();
+            if(!text) return alert("اكتب السؤال أولاً يا بطل!");
+
+            let questionObj = {
+                id: "q_" + Date.now(),
+                studentName: currentStudent.name,
+                studentGroup: currentStudent.group,
+                studentPhone: currentStudent.phone,
+                questionText: text,
+                replyText: "",
+                date: new Date().toLocaleDateString('ar-EG')
+            };
+
+            try {
+                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/forum/${questionObj.id}.json`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(questionObj)
+                });
+                document.getElementById("forumQuestionInput").value = "";
+                alert("تم نشر سؤالك بنجاح! وبانتظار رد المستر أو الأسيستنت 🚀");
+                loadForumQuestions();
+            } catch(e) { alert("خطأ بالاتصال"); }
+        };
+
+        window.loadForumQuestions = async function() {
+            let container = document.getElementById("forum-questions-list");
+            if(!container) return;
+            try {
+                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/forum.json`);
+                let data = await res.json() || {};
+                container.innerHTML = "";
                 
-                if (!currentStudent) {
-                    errorMsg.style.display = "block"; errorMsg.innerText = "البيانات غير مسجلة!";
-                    btn.innerHTML = "دخول للمنصة 🚀";
+                // تصفية الأسئلة الخاصة بمجموعة هذا الطالب فقط عشان الخصوصية وسرعة التصفح
+                let myGroupQuestions = Object.values(data).filter(q => q && q.studentGroup === currentStudent.group).reverse();
+                
+                if(myGroupQuestions.length === 0) {
+                    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">لا توجد نقاشات سابقة في مجموعتك حالياً. كن أول من يسأل! 💬</div>`;
                     return;
                 }
 
-                // 🚀🚀🚀 [التأمين الجذري لمشكلة الكراش] 🚀🚀🚀
-                if (currentStudent.purchasedCourses) {
-                    currentStudent.purchasedCourses = Array.isArray(currentStudent.purchasedCourses) ? currentStudent.purchasedCourses : Object.values(currentStudent.purchasedCourses);
-                } else {
-                    currentStudent.purchasedCourses = [];
-                }
-
-                let studentGroupObj = (data.groups || []).find(g => typeof g === 'object' && g.name === currentStudent.group);
-                currentStudent.level = studentGroupObj ? studentGroupObj.level : "غير محدد";
-
-                if (currentStudent.level === "غير محدد") {
-                    let gName = currentStudent.group || "";
-                    if (gName.includes("1ث") || gName.includes("الأول")) currentStudent.level = "الصف الأول الثانوي";
-                    else if (gName.includes("2ث") || gName.includes("الثاني")) currentStudent.level = "الصف الثاني الثانوي";
-                    else if (gName.includes("3ث") || gName.includes("الثالث")) currentStudent.level = "الصف الثالث الثانوي";
-                }
-
-                localStorage.setItem("edu_student_code", code);
-                localStorage.setItem("edu_parent_phone", phone);
-                localStorage.setItem("edu_teacher_id", globalTeacherId);
-
-                allOnlineExams = data.onlineExams || [];
-
-                document.getElementById("top-name").innerText = currentStudent.name;
-                document.getElementById("top-group").innerText = currentStudent.group;
-                
-                let balance = currentStudent.walletBalance || 0;
-                document.getElementById("top-balance").innerText = balance;
-                if(document.getElementById("walletBalanceDisplay")) document.getElementById("walletBalanceDisplay").innerText = balance;
-                if(document.getElementById("wallet-page-balance")) document.getElementById("wallet-page-balance").innerHTML = `${balance} <span style="font-size: 24px;">ج.م</span>`;
-
-                // بناء جدول الحضور
-                let attHtml = `<tr><th>التاريخ</th><th>الموضوع</th><th>حالة الحضور</th></tr>`;
-                let hasAtt = false;
-                (data.classSessions || []).filter(s => s && s.group === currentStudent.group).reverse().forEach(s => {
-                    hasAtt = true;
-                    // 🔥 التعديل هنا: حماية ضد الحصص اللي لسه متسجلش فيها غياب
-                    let stat = (s.attendance || {})[currentStudent.phone]; 
-                    let badge = stat === 'present' ? `<span class="badge badge-present">حاضر ✓</span>` : (stat === 'absent' ? `<span class="badge badge-absent">غائب ✗</span>` : `<span style="color:var(--text-muted)">لم يسجل</span>`);
-                    attHtml += `<tr><td>${s.date}</td><td>${s.topic || 'حصة عادية'}</td><td>${badge}</td></tr>`;
-                });
-                if(!hasAtt) attHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد حصص مسجلة لك حتى الآن.</td></tr>`;
-                document.getElementById("attendance-details").innerHTML = attHtml;
-
-                // بناء جدول الامتحانات الورقية والواجبات
-                let exHtml = `<tr><th>التاريخ</th><th>اسم التقييم</th><th>الدرجة التي حصلت عليها</th></tr>`;
-                let hasEx = false;
-                (data.exams || []).concat(data.homeworks || []).filter(e => e && e.group === currentStudent.group).sort((a,b)=> new Date(b.date) - new Date(a.date)).forEach(e => {
-                    hasEx = true;
-                    // 🔥 التعديل هنا: حماية ضد الامتحانات والواجبات اللي لسه متصححتش
-                    let grade = (e.grades || {})[currentStudent.phone]; 
-                    let text = grade !== undefined ? `<span style="font-weight:900; color:var(--primary); font-size:16px;">${grade} <span style="color:var(--text-muted); font-size:13px;">من ${e.maxScore}</span></span>` : `<span style="color:var(--text-muted)">لم يتم الرصد</span>`;
-                    exHtml += `<tr><td>${e.date}</td><td>${e.name}</td><td>${text}</td></tr>`;
-                });
-                if(!hasEx) exHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد تقييمات مسجلة لك حتى الآن.</td></tr>`;
-                document.getElementById("exams-details").innerHTML = exHtml;
-                // ==========================================
-                // 🔔 جلب الإشعارات من الفايربيز (إظهار غير المقروء فقط)
-                // ==========================================
-                try {
-                    let notifRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/notifications.json`);
-                    let notifsData = await notifRes.json() || {};
-                    
-                    // الفلترة الذكية والمطورة لتشمل الصفوف والمجموعات المتعددة
-                    let notifsList = Object.values(notifsData).filter(n => {
-                        if (!n || !n.target) return false;
-                        if (n.target === 'all') return true;
-                        if (n.target === currentStudent.phone) return true;
-                        if (n.target === currentStudent.group) return true;
-                        if (n.target === currentStudent.level) return true;
-                        return false;
-                    }).reverse(); // ترتيب من الأحدث للأقدم
-                    
-                    // 🛡️ سحب سجل الإشعارات اللي الطالب شافها قبل كده من جهاز الطالب
-                    let readNotifs = JSON.parse(localStorage.getItem(`read_notifs_${currentStudent.code}`)) || [];
-                    let unreadCount = 0;
-
-                    let notifHtml = "";
-                    notifsList.forEach(n => {
-                        // التحقق هل الإشعار ده اتقرأ قبل كده؟
-                        let isRead = readNotifs.includes(n.id);
-                        if (!isRead) unreadCount++; // زيادة عداد غير المقروء
-
-                        notifHtml += `
-                        <div style="background: ${isRead ? 'var(--card-bg)' : '#eff6ff'}; padding: 12px 15px; border-radius: 8px; border-right: 4px solid ${isRead ? 'var(--text-muted)' : 'var(--primary)'}; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid var(--border); border-right-width: 4px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                                <h5 style="margin: 0; color: var(--text-main); font-size: 14px; font-weight: bold;">${n.title}</h5>
-                                ${!isRead ? '<span style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%;"></span>' : ''}
-                            </div>
-                            <p style="margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">${n.message}</p>
-                            <span style="font-size: 10px; color: #94a3b8; display: block; text-align: left;">🕒 ${n.date || ''}</span>
-                        </div>`;
-                    });
-                    
-                    // حفظ القائمة الإجمالية لاستخدامها عند الضغط على الجرس
-                    window.currentLoadedNotifsIds = notifsList.map(n => n.id);
-
-                    let notifListContainer = document.getElementById("notif-list");
-                    let notifBadge = document.getElementById("notif-badge");
-                    
-                    if(notifsList.length > 0) {
-                        if(notifListContainer) notifListContainer.innerHTML = notifHtml;
-                        if(notifBadge) {
-                            if (unreadCount > 0) {
-                                notifBadge.style.display = "inline-block";
-                                notifBadge.innerText = unreadCount;
-                            } else {
-                                notifBadge.style.display = "none";
-                            }
-                        }
-                    } else {
-                        if(notifListContainer) notifListContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 15px; font-size: 13px;">لا توجد إشعارات حالياً 📭</div>`;
-                        if(notifBadge) notifBadge.style.display = "none";
-                    }
-                } catch(e) { 
-                    console.log("Error fetching notifications:", e); 
-                }
-
-                renderStudentLectures();
-
-                document.getElementById("login-screen").style.display = "none";
-                document.getElementById("app-layout").style.display = "block";
-
-            } catch (e) {
-                console.error(e);
-                errorMsg.style.display = "block"; errorMsg.innerText = "خطأ في الاتصال بالسيرفر أو تحميل البيانات!";
-                btn.innerHTML = "دخول للمنصة 🚀";
-            }
-        }
-
+                container.innerHTML = myGroupQuestions.map(q => `
+                    <div style="background:#f8fafc; border:1px solid var(--border); padding:15px; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,0.01);">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; color:var(--text-muted); font-weight:bold;">
+                            <span>👤 الطالب: ${q.studentName}</span>
+                            <span>🕒 ${q.date}</span>
+                        </div>
+                        <p style="margin:0 0 10px 0; font-weight:bold; color:var(--secondary); font-size:14px; line-height:1.5;">❓ السؤال: ${q.questionText}</p>
+                        <div style="background:white; padding:10px 12px; border-radius:8px; border-right:3px solid ${q.replyText ? 'var(--success)' : 'var(--danger)'}; font-size:13px;">
+                            ${q.replyText ? `💡 <strong>رد الإدارة:</strong> <span style="color:#059669; font-weight:bold;">${q.replyText}</span>` : '⏳ <em>بانتظار مراجعة الإدارة والرد النموذجي...</em>'}
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {}
+        };
         // ==========================================
         // 📚 عرض كروت الكورسات
         // ==========================================
