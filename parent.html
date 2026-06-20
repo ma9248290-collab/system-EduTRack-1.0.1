@@ -280,10 +280,15 @@
         </div>
 
         <div id="tab-exams" class="tab-section">
-            <div id="available-exams-container"></div>
+            <div style="background: white; padding: 30px; text-align: center; border-radius: 16px; border: 1px dashed var(--border);">
+                <h3 style="color: var(--secondary);">📝 قسم الامتحانات الإلكترونية</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">ادخل إلى منصة الامتحانات الخاصة بك لحل الاختبارات أو مراجعة أخطائك.</p>
+                <button class="btn" style="width: auto; padding: 12px 30px;" onclick="showOnlineExams()">الدخول للامتحانات 🚀</button>
+            </div>
         </div>
+        
         <div id="tab-lectures" class="tab-section" style="display:none;">
-            <div id="lectures-container" class="lectures-grid"></div>
+            <div id="studentLecturesList" class="lectures-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;"></div>
         </div>
         <div id="tab-wallet" class="tab-section" style="display:none;">
             </div>
@@ -424,73 +429,206 @@
 // ==========================================
         // 🔄 تحديث وتزامن لوحة تحكم الطالب الشاملة
         // ==========================================
-        async function fetchStudentData() {
-            if(!currentStudent) return;
+// ==========================================
+        // 🚀 تسجيل الدخول + تحديث وتزامن لوحة تحكم الطالب 
+        // ==========================================
+        window.fetchStudentData = async function(autoLogin = false) {
+            const btn = document.querySelector(".login-box .btn");
+            const errorMsg = document.getElementById("error-msg");
             
-            // 1. مزامنة كارت الـ ID الرقمي ونقاط السلوك لايف
-            document.getElementById("card-student-name").innerText = currentStudent.name;
-            document.getElementById("card-student-group").innerText = `المجموعة: ${currentStudent.group} | الكود: ${studentCode}`;
-            document.getElementById("card-behavior-points").innerText = currentStudent.behaviorPoints || 0;
+            let codeInput = document.getElementById("studentCode").value.trim();
+            let phoneInput = document.getElementById("parentPhone").value.trim();
 
-            // رسم باركود الـ ID الرقمي فوراً للـ Scanner على الباب
-            if (typeof JsBarcode !== 'undefined') {
-                JsBarcode("#digitalIdBarcode", currentStudent.code, {
-                    format: "CODE128", lineColor: "#0f172a", width: 2, height: 40, displayValue: false
-                });
+            if (!codeInput || !phoneInput) {
+                errorMsg.innerText = "يرجى إدخال الكود ورقم ولي الأمر!";
+                errorMsg.style.display = "block";
+                return;
             }
 
-            // ... (أكواد رصيد المحفظة والجداول العادية بتاعتك زي ما هي تحت هنا) ...
+            if (!globalTeacherId) {
+                errorMsg.innerText = "عفواً، رابط المنصة غير مكتمل (ينقص كود السنتر). يرجى طلب الرابط الصحيح من السنتر.";
+                errorMsg.style.display = "block";
+                return;
+            }
 
-            // 📊 4️⃣ حساب شريط تتبع خطة المذاكرة لايف للمحتوى الحالي
-            let totalItems = 0;
-            let completedItems = 0;
-            let missingLectures = 0;
-            let missingExams = 0;
+            if(btn && !autoLogin) { btn.innerText = "جاري التحقق... ⏳"; btn.disabled = true; }
+            errorMsg.style.display = "none";
 
-            // جلب الإجابات والامتحانات الإلكترونية المتاحة له
             try {
-                let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
-                let allSubs = await subRes.json() || {};
+                // 1️⃣ جلب بيانات الطالب للتحقق من هويته
+                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
+                let data = await res.json() || {};
                 
-                let myExams = allOnlineExams.filter(e => e && (e.status === "open" || e.status === "closed") && (Array.isArray(e.group) ? e.group.includes(currentStudent.group) || e.group.includes("all") : e.group === currentStudent.group || e.group === "all"));
+                let studentsList = data.students ? Object.values(data.students).filter(s => s !== null) : [];
                 
-                totalItems += myExams.length;
-                myExams.forEach(e => {
-                    if (allSubs[e.id] && allSubs[e.id][currentStudent.phone]) completedItems++;
-                    else if (e.status === "open") missingExams++;
+                // التحقق من صحة الكود ورقم ولي الأمر
+                let student = studentsList.find(s => String(s.code) === codeInput && String(s.parentPhone) === phoneInput);
+                
+                if (!student) {
+                    errorMsg.innerText = "الكود أو رقم ولي الأمر غير صحيح!";
+                    errorMsg.style.display = "block";
+                    if(btn && !autoLogin) { btn.innerText = "دخول للمنصة 🚀"; btn.disabled = false; }
+                    return;
+                }
+
+                // 2️⃣ نجاح الدخول - حفظ الجلسة وتجهيز الجلوبال
+                currentStudent = student;
+                window.studentCode = student.code;
+                
+                // حفظ البيانات الأساسية
+                window.allOnlineExams = data.onlineExams ? Object.values(data.onlineExams).filter(e => e !== null) : [];
+                window.allClassSessions = data.classSessions ? Object.values(data.classSessions).filter(s => s !== null) : [];
+                
+                // جلب المحاضرات
+                let lecRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/lectures.json`);
+                let lecData = await lecRes.json() || {};
+                window.allLectures = Object.values(lecData).filter(l => l !== null);
+
+                localStorage.setItem("edu_student_code", codeInput);
+                localStorage.setItem("edu_parent_phone", phoneInput);
+                localStorage.setItem("edu_teacher_id", globalTeacherId);
+
+                // إخفاء شاشة الدخول وإظهار المنصة
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("app-layout").style.display = "block";
+
+                // ==============================================
+                // 3️⃣ تشغيل كل أكواد الواجهة وشريط التتبع (Sync UI)
+                // ==============================================
+                
+                // أ) تحديث كارت الـ ID ونقاط السلوك
+                document.getElementById("top-name").innerText = currentStudent.name;
+                document.getElementById("top-group").innerText = currentStudent.group;
+                document.getElementById("card-student-name").innerText = currentStudent.name;
+                document.getElementById("card-student-group").innerText = `المجموعة: ${currentStudent.group} | الكود: ${window.studentCode}`;
+                document.getElementById("card-behavior-points").innerText = currentStudent.behaviorPoints || 0;
+
+                if (typeof JsBarcode !== 'undefined') {
+                    JsBarcode("#digitalIdBarcode", currentStudent.code, {
+                        format: "CODE128", lineColor: "#0f172a", width: 2, height: 40, displayValue: false
+                    });
+                }
+
+                // ب) تحديث المحفظة
+                let walletBalance = currentStudent.walletBalance || 0;
+                document.getElementById("top-balance").innerText = walletBalance;
+
+                // ج) 📊 حساب شريط تتبع خطة المذاكرة لايف
+                let totalItems = 0;
+                let completedItems = 0;
+                let missingLectures = 0;
+                let missingExams = 0;
+
+                try {
+                    let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
+                    let allSubs = await subRes.json() || {};
+                    
+                    let myExams = window.allOnlineExams.filter(e => e && (e.status === "open" || e.status === "closed") && (Array.isArray(e.group) ? e.group.includes(currentStudent.group) || e.group.includes("all") : e.group === currentStudent.group || e.group === "all"));
+                    
+                    totalItems += myExams.length;
+                    myExams.forEach(e => {
+                        if (allSubs[e.id] && allSubs[e.id][currentStudent.phone]) completedItems++;
+                        else if (e.status === "open") missingExams++;
+                    });
+
+                    let myLectures = window.allLectures.filter(l => l && (l.level === "all" || l.level === currentStudent.level));
+                    totalItems += myLectures.length;
+                    
+                    let trackRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking.json`);
+                    let allTracks = await trackRes.json() || {};
+                    
+                    myLectures.forEach(l => {
+                        let hasWatched = allTracks[l.id] && allTracks[l.id][currentStudent.phone];
+                        if (hasWatched) completedItems++;
+                        else missingLectures++;
+                    });
+
+                    let percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 100;
+                    document.getElementById("tracker-bar").style.width = percent + "%";
+                    document.getElementById("tracker-percentage").innerText = percent + "%";
+                    document.getElementById("tracker-text").innerText = percent === 100 ? "🎉 ممتاز! لقد أتممت خطتك الدراسية بالكامل!" : "📈 تتبع خطة المذاكرة والمحتوى الرقمي:";
+                    
+                    let reminder = "";
+                    if (missingLectures > 0) reminder += `🎬 متبقي لك (${missingLectures}) محاضرة. `;
+                    if (missingExams > 0) reminder += `📝 ولديك (${missingExams}) امتحان متبقي. `;
+                    document.getElementById("tracker-reminder").innerText = reminder || "🎯 أنت تسير على خطى العباقرة، واصل تقدمك!";
+
+                } catch(err) { console.log("Tracker error: ", err); }
+
+                // د) جلب الإشعارات الذكية (بالعداد)
+                fetchStudentNotifications();
+
+                // هـ) جلب أسئلة المنتدى "اسأل المستر"
+                if(typeof loadForumQuestions === "function") loadForumQuestions();
+                
+                // و) رسم الكورسات والامتحانات في الشاشة
+                if(typeof showOnlineExams === "function") showOnlineExams();
+                if(typeof renderStudentLectures === "function") renderStudentLectures();
+
+            } catch(err) {
+                console.error("Login Error: ", err);
+                errorMsg.innerText = "حدث خطأ في الاتصال بقاعدة البيانات!";
+                errorMsg.style.display = "block";
+                if(btn && !autoLogin) { btn.innerText = "دخول للمنصة 🚀"; btn.disabled = false; }
+            }
+        };
+
+        // ==========================================
+        // 🔔 فصلنا دالة الإشعارات عشان الكود يبقى نظيف
+        // ==========================================
+        async function fetchStudentNotifications() {
+            try {
+                let notifRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/notifications.json`);
+                let notifsData = await notifRes.json() || {};
+                
+                let notifsList = Object.values(notifsData).filter(n => {
+                    if (!n || !n.target) return false;
+                    if (n.target === 'all') return true;
+                    if (n.target === currentStudent.phone) return true;
+                    if (n.target === currentStudent.group) return true;
+                    if (n.target === currentStudent.level) return true;
+                    return false;
+                }).reverse();
+                
+                let readNotifs = JSON.parse(localStorage.getItem(`read_notifs_${currentStudent.code}`)) || [];
+                let unreadCount = 0;
+                let notifHtml = "";
+
+                notifsList.forEach(n => {
+                    let isRead = readNotifs.includes(n.id);
+                    if (!isRead) unreadCount++;
+
+                    notifHtml += `
+                    <div style="background: ${isRead ? 'var(--card-bg)' : '#eff6ff'}; padding: 12px 15px; border-radius: 8px; border-right: 4px solid ${isRead ? 'var(--text-muted)' : 'var(--primary)'}; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid var(--border); border-right-width: 4px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                            <h5 style="margin: 0; color: var(--text-main); font-size: 14px; font-weight: bold;">${n.title}</h5>
+                            ${!isRead ? '<span style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%;"></span>' : ''}
+                        </div>
+                        <p style="margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5;">${n.message}</p>
+                        <span style="font-size: 10px; color: #94a3b8; display: block; text-align: left;">🕒 ${n.date || ''}</span>
+                    </div>`;
                 });
-
-                let myLectures = allLectures.filter(l => l && (l.level === "all" || l.level === currentStudent.level));
-                totalItems += myLectures.length;
                 
-                // جلب تراكر المشاهدات الخاص بالطالب
-                let trackRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking.json`);
-                let allTracks = await trackRes.json() || {};
+                window.currentLoadedNotifsIds = notifsList.map(n => n.id);
+                let notifListContainer = document.getElementById("notif-list");
+                let notifBadge = document.getElementById("notif-badge");
                 
-                myLectures.forEach(l => {
-                    let hasWatched = allTracks[l.id] && allTracks[l.id][currentStudent.phone];
-                    if (hasWatched) completedItems++;
-                    else missingLectures++;
-                });
-
-                // تفعيل الأنيميشن والنسبة
-                let percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 100;
-                document.getElementById("tracker-bar").style.width = percent + "%";
-                document.getElementById("tracker-percentage").innerText = percent + "%";
-                document.getElementById("tracker-text").innerText = percent === 100 ? "🎉 ممتاز! لقد أتممت خطتك الدراسية بالكامل!" : "📈 تتبع خطة المذاكرة والمحتوى الرقمي:";
-                
-                // التذكير الذكي
-                let reminder = "";
-                if (missingLectures > 0) reminder += `🎬 متبقي لك عدد (${missingLectures}) محاضرة لم تشاهدها. `;
-                if (missingExams > 0) reminder += `📝 ولديك عدد (${missingExams}) امتحان إلكتروني بانتظار حلك. `;
-                document.getElementById("tracker-reminder").innerText = reminder || "🎯 أنت تسير على خطى العباقرة، واصل تقدمك!";
-
-            } catch(err) { console.log(err); }
-
-            // جلب أسئلة المنتدى "اسأل المستر"
-            loadForumQuestions();
+                if(notifsList.length > 0) {
+                    if(notifListContainer) notifListContainer.innerHTML = notifHtml;
+                    if(notifBadge) {
+                        if (unreadCount > 0) {
+                            notifBadge.style.display = "inline-block";
+                            notifBadge.innerText = unreadCount;
+                        } else {
+                            notifBadge.style.display = "none";
+                        }
+                    }
+                } else {
+                    if(notifListContainer) notifListContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 15px; font-size: 13px;">لا توجد إشعارات حالياً 📭</div>`;
+                    if(notifBadge) notifBadge.style.display = "none";
+                }
+            } catch(e) { console.log("Error fetching notifications"); }
         }
-
         // ==========================================
         // 🎁 1️⃣ نظام استبدال نقاط السلوك بمكافآت في المحفظة
         // ==========================================
