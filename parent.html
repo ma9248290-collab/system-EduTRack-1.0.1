@@ -144,15 +144,6 @@
         /* سكرول بار أنيق للنافذة */
         #detailsCoursePlaylist::-webkit-scrollbar { width: 6px; }
         #detailsCoursePlaylist::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
-
-
-        /* 🗂️ تنسيقات تابات الطالب الجديدة */
-        .tabs-grid { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 8px; }
-        .tab-card { background: var(--card-bg); padding: 12px 22px; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 15px; color: var(--text-muted); border-bottom: 4px solid transparent; transition: 0.3s; white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border); }
-        .tab-card:hover { transform: translateY(-3px); color: var(--secondary); box-shadow: 0 6px 12px rgba(0,0,0,0.05); }
-        .tab-card.active { color: var(--primary); border-bottom-color: var(--primary); background: #fffaf5; }
-        .tab-section { display: none; animation: fadeIn 0.4s ease; }
-        .tab-section.active { display: block; }
     </style>
 </head>
 <body>
@@ -205,103 +196,184 @@
 
         <div class="main-container">
             <aside class="sidebar">
-                <div class="nav-item active" onclick="switchTab('tab-exams')">🏠 الرئيسية (الامتحانات)</div>
+                <div class="nav-item active" onclick="switchTab('tab-home')">🏠 الرئيسية</div>
+                <div class="nav-item" onclick="switchTab('tab-attendance')">📅 سجل الحضور</div>
+                <div class="nav-item" onclick="switchTab('tab-exams')">📝 الامتحانات</div>
                 <div class="nav-item" onclick="switchTab('tab-lectures')">🎬 المحاضرات</div>
-                <div class="nav-item" onclick="switchTab('tab-rewards')">🎁 متجر المكافآت</div>
-                <div class="nav-item" onclick="switchTab('tab-forum')">💬 اسأل المستر</div>
                 <div class="nav-item" onclick="switchTab('tab-wallet')">💰 محفظتي</div>
+                <div class="nav-item" onclick="switchTab('tab-rewards')" style="color: #fda4af;">🎁 متجر المكافآت</div>
+                <div class="nav-item" onclick="switchTab('tab-forum')" style="color: #c4b5fd;">💬 اسأل المستر</div>
                 <div class="nav-item" style="color: #ef4444; margin-top: auto;" onclick="logoutStudent()">🚪 خروج</div>
             </aside>
 
-            <main class="main-content">
-        <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:5px;">
-                <h4 style="margin:0; font-weight:800; color:var(--secondary);" id="tracker-text">📈 جاري حساب خطة المذاكرة...</h4>
-                <span id="tracker-percentage" style="background:var(--primary); color:white; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:bold;">0%</span>
-            </div>
-            <div style="width:100%; height:10px; background:var(--bg-color); border-radius:10px; overflow:hidden;">
-                <div id="tracker-bar" style="width: 0%; height:100%; background: linear-gradient(90deg, var(--primary), #f97316); transition: 0.5s ease-out;"></div>
-            </div>
-            <p id="tracker-reminder" style="margin: 10px 0 0 0; font-size:13px; color:var(--text-muted); font-weight:bold;"></p>
-        </div>
-
-        <div style="background: linear-gradient(135deg, var(--secondary), #0f172a); color: white; padding: 25px; border-radius: 20px; margin-bottom: 25px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(15,23,42,0.25);">
-            <div style="position:absolute; top:-20px; left:-20px; font-size:120px; opacity:0.05;">🎓</div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <span style="font-weight:900; letter-spacing:1px; font-size:18px; color:var(--primary);">EduTrack DIGITAL ID</span>
-                <span style="background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:30px; font-size:11px; font-weight:bold; color:#10b981;">● لايف نشط</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
-                <div style="flex:1;">
-                    <h2 id="card-student-name" style="margin:0 0 5px 0; font-size:22px;">اسم الطالب</h2>
-                    <p id="card-student-group" style="margin:0 0 10px 0; color:#cbd5e1; font-size:14px; font-weight:bold;">المجموعة</p>
-                    <div style="font-size:13px; color:var(--primary); font-weight:bold;">🏆 رصيد نقاط السلوك: <span id="card-behavior-points" style="font-size:18px; font-weight:900; color:white;">0</span> نقطة</div>
-                </div>
-                <div style="background:white; padding:8px; border-radius:12px; display:flex; align-items:center; justify-content:center; min-width:140px;">
-                    <svg id="digitalIdBarcode" style="height:50px; width:auto;"></svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="tabs-grid">
-            <div class="tab-card active" onclick="switchTab('tab-exams')">📝 الامتحانات</div>
-            <div class="tab-card" onclick="switchTab('tab-lectures')">🎬 المحاضرات</div>
-            <div class="tab-card" onclick="switchTab('tab-rewards')" style="border-bottom: 3px solid #e11d48;">🎁 متجر المكافآت</div>
-            <div class="tab-card" onclick="switchTab('tab-forum')" style="border-bottom: 3px solid #8b5cf6;">💬 اسأل المستر</div>
-            <div class="tab-card" onclick="switchTab('tab-wallet')">💳 محفظتي</div>
-        </div>
-
-        <div id="tab-rewards" class="tab-section" style="display:none;">
-            <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border);">
-                <h3 style="margin-top:0; color:#e11d48;">🎁 متجر مكافآت نقاط التميز</h3>
-                <p style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">استبدل نقاط السلوك والتميز التي حصلت عليها في السنتر بجوائز مالية مباشرة في محفظتك!</p>
+            <main class="content-area">
                 
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:15px;">
-                    <div style="background:var(--bg-color); padding:20px; border-radius:12px; text-align:center; border:1px solid var(--border);">
-                        <div style="font-size:40px; margin-bottom:10px;">💵</div>
-                        <h4 style="margin:0 0 5px 0;">+ 20 ج.م للمحفظة</h4>
-                        <p style="color:#e11d48; font-weight:bold; font-size:14px; margin-bottom:15px;">تكلفة الطلب: 50 نقطة</p>
-                        <button class="btn" style="background:#e11d48; font-size:13px; padding:8px;" onclick="claimReward(50, 20)">استبدال الجائزة 🎁</button>
+                <div id="tab-home" class="tab-content active">
+                    <div class="page-header">
+                        <h2>نظرة عامة</h2>
+                        <p>ملخص نشاطك في السنتر</p>
                     </div>
 
-                    <div style="background:var(--bg-color); padding:20px; border-radius:12px; text-align:center; border:1px solid var(--border);">
-                        <div style="font-size:40px; margin-bottom:10px;">💰</div>
-                        <h4 style="margin:0 0 5px 0;">+ 50 ج.م للمحفظة</h4>
-                        <p style="color:#e11d48; font-weight:bold; font-size:14px; margin-bottom:15px;">تكلفة الطلب: 100 نقطة</p>
-                        <button class="btn" style="background:#e11d48; font-size:13px; padding:8px;" onclick="claimReward(100, 50)">استبدال الجائزة 🎁</button>
+                    <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:5px;">
+                            <h4 style="margin:0; font-weight:800; color:var(--secondary);" id="tracker-text">📈 جاري حساب خطة المذاكرة...</h4>
+                            <span id="tracker-percentage" style="background:var(--primary); color:white; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:bold;">0%</span>
+                        </div>
+                        <div style="width:100%; height:10px; background:var(--bg-color); border-radius:10px; overflow:hidden;">
+                            <div id="tracker-bar" style="width: 0%; height:100%; background: linear-gradient(90deg, var(--primary), #f97316); transition: 0.5s ease-out;"></div>
+                        </div>
+                        <p id="tracker-reminder" style="margin: 10px 0 0 0; font-size:13px; color:var(--text-muted); font-weight:bold;"></p>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, var(--secondary), #0f172a); color: white; padding: 25px; border-radius: 20px; margin-bottom: 25px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(15,23,42,0.25);">
+                        <div style="position:absolute; top:-20px; left:-20px; font-size:120px; opacity:0.05;">🎓</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <span style="font-weight:900; letter-spacing:1px; font-size:18px; color:var(--primary);">EduTrack DIGITAL ID</span>
+                            <span style="background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:30px; font-size:11px; font-weight:bold; color:#10b981;">● لايف نشط</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+                            <div style="flex:1;">
+                                <h2 id="card-student-name" style="margin:0 0 5px 0; font-size:22px;">اسم الطالب</h2>
+                                <p id="card-student-group" style="margin:0 0 10px 0; color:#cbd5e1; font-size:14px; font-weight:bold;">المجموعة</p>
+                                <div style="font-size:13px; color:var(--primary); font-weight:bold;">🏆 رصيد نقاط السلوك: <span id="card-behavior-points" style="font-size:18px; font-weight:900; color:white;">0</span> نقطة</div>
+                            </div>
+                            <div style="background:white; padding:8px; border-radius:12px; display:flex; align-items:center; justify-content:center; min-width:140px;">
+                                <svg id="digitalIdBarcode" style="height:50px; width:auto;"></svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); margin-bottom: 40px; position: relative; overflow: hidden; border: 1px solid #334155;">
+                        <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+                        <div style="position: absolute; bottom: -50px; left: 10%; width: 150px; height: 150px; background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+                        
+                        <div style="z-index: 1;">
+                            <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 16px; font-weight: bold;">رصيد المحفظة المتاح</p>
+                            <h2 style="margin: 0; font-size: 40px; font-weight: 900; display: flex; align-items: center; gap: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                                <span id="walletBalanceDisplay" style="color: #fff;">0</span> 
+                                <span style="font-size: 20px; color: #10b981; background: rgba(16,185,129,0.1); padding: 4px 10px; border-radius: 8px;">ج.م</span>
+                            </h2>
+                        </div>
+                        <div style="z-index: 1;">
+                            <button class="btn" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 12px; box-shadow: 0 8px 15px rgba(16,185,129,0.3); transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'" onclick="switchTab('tab-wallet')">
+                                ➕ شحن المحفظة
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="empty-state" style="padding: 30px;">
+                        <h3 style="color: var(--secondary);">أهلاً بك في منصتك الجديدة! 🚀</h3>
+                        <p>استخدم القائمة للتنقل بين الحضور، الامتحانات، المحاضرات، وشحن المحفظة.</p>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div id="tab-forum" class="tab-section" style="display:none;">
-            <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border); margin-bottom:20px;">
-                <h3 style="margin-top:0; color:#8b5cf6;">💬 منتدى اسأل المستر والنقاشات</h3>
-                <p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">هل وقف أمامك سؤال أثناء المذاكرة؟ اكتبه هنا وسيقوم المستر أو الأسيستنت بالرد عليك، وتظهر الإجابة لجميع زملائك في المجموعة!</p>
-                
-                <textarea id="forumQuestionInput" class="custom-input" placeholder="اكتب سؤالك بالتفصيل هنا..." rows="3" style="text-align:right; padding:12px;"></textarea>
-                <button class="btn" style="background:#8b5cf6; margin-top:10px;" onclick="submitForumQuestion()">نشر السؤال في المنتدى 🚀</button>
-            </div>
-
-            <h4 style="margin-bottom:10px; color:var(--secondary);">📌 مناقشات وأسئلة زملائك في المجموعة</h4>
-            <div id="forum-questions-list" style="display:flex; flex-direction:column; gap:12px;">
+                <div id="tab-attendance" class="tab-content">
+                    <div class="page-header">
+                        <h2>سجل الحضور والغياب 📅</h2>
+                        <p>متابعة تفصيلية لحضورك في الحصص</p>
+                    </div>
+                    <div class="table-card">
+                        <table class="full-table" id="attendance-details"></table>
+                    </div>
                 </div>
-        </div>
 
-        <div id="tab-exams" class="tab-section">
-            <div style="background: white; padding: 30px; text-align: center; border-radius: 16px; border: 1px dashed var(--border);">
-                <h3 style="color: var(--secondary);">📝 قسم الامتحانات الإلكترونية</h3>
-                <p style="color: var(--text-muted); margin-bottom: 20px;">ادخل إلى منصة الامتحانات الخاصة بك لحل الاختبارات أو مراجعة أخطائك.</p>
-                <button class="btn" style="width: auto; padding: 12px 30px;" onclick="showOnlineExams()">الدخول للامتحانات 🚀</button>
-            </div>
-        </div>
-        
-        <div id="tab-lectures" class="tab-section" style="display:none;">
-            <div id="studentLecturesList" class="lectures-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;"></div>
-        </div>
-        <div id="tab-wallet" class="tab-section" style="display:none;">
-            </div>
-    </main>
+                <div id="tab-exams" class="tab-content">
+                    <div class="page-header">
+                        <h2>سجل الامتحانات 📝</h2>
+                        <p>درجاتك في الامتحانات والواجبات</p>
+                    </div>
+                    
+                    <button class="btn" style="margin-bottom: 20px; font-size: 18px; padding: 15px;" onclick="showOnlineExams()">💻 الدخول لمنصة الامتحانات الإلكترونية (المباشرة)</button>
+                    
+                    <div class="table-card">
+                        <table class="full-table" id="exams-details"></table>
+                    </div>
+                </div>
+
+                <div id="tab-lectures" class="tab-content">
+                    <div class="page-header">
+                        <h2>المكتبة المرئية (المحاضرات) 🎬</h2>
+                        <p>شاهد دروسك المسجلة من هنا</p>
+                    </div>
+                    <div id="studentLecturesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;"></div>
+                </div>
+
+                <div id="tab-wallet" class="tab-content">
+                    <div class="page-header">
+                        <h2>محفظتي الإلكترونية 💰</h2>
+                        <p>إدارة رصيدك لشراء المحاضرات والامتحانات</p>
+                    </div>
+
+                    <div class="wallet-hero">
+                        <h3>الرصيد المتاح حالياً</h3>
+                        <div class="wallet-balance" id="wallet-page-balance">0 <span style="font-size: 24px;">ج.م</span></div>
+                    </div>
+
+                    <div class="charge-section">
+                        <h3 style="color: var(--secondary); margin-top: 0;">💳 شحن الرصيد بكود التفعيل</h3>
+                        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">أدخل الكود المطبوع الذي حصلت عليه من السنتر أو المدرس لشحن رصيدك فوراً.</p>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="rechargeCodeInput" class="custom-input" placeholder="مثال: CHRG-XXXX-XXXX" style="flex: 1;">
+                            <button class="btn" style="width: auto; padding: 0 30px;" onclick="redeemCode()">شحن 🚀</button>
+                        </div>
+                    </div>
+
+                    <div class="charge-section">
+                        <h3 style="color: var(--secondary); margin-top: 0;">📱 طرق شحن أخرى (قريباً)</h3>
+                        <div class="charge-grid">
+                            <div class="payment-method coming-soon">
+                                <h3 style="margin:0; color:#e60000; font-weight:900; font-size: 22px;">Vodafone Cash</h3>
+                            </div>
+                            <div class="payment-method coming-soon">
+                                <h3 style="margin:0; color:#f59e0b; font-weight:900; font-size: 22px;">fawry</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-rewards" class="tab-content">
+                    <div class="page-header">
+                        <h2>متجر المكافآت 🎁</h2>
+                        <p>استبدل نقاط السلوك بـ رصيد في المحفظة</p>
+                    </div>
+                    <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border);">
+                        <p style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">استبدل نقاط السلوك والتميز التي حصلت عليها في السنتر بجوائز مالية مباشرة في محفظتك!</p>
+                        
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:15px;">
+                            <div style="background:var(--bg-color); padding:20px; border-radius:12px; text-align:center; border:1px solid var(--border);">
+                                <div style="font-size:40px; margin-bottom:10px;">💵</div>
+                                <h4 style="margin:0 0 5px 0;">+ 20 ج.م للمحفظة</h4>
+                                <p style="color:#e11d48; font-weight:bold; font-size:14px; margin-bottom:15px;">تكلفة الطلب: 50 نقطة</p>
+                                <button class="btn" style="background:#e11d48; font-size:13px; padding:8px;" onclick="claimReward(50, 20)">استبدال الجائزة 🎁</button>
+                            </div>
+
+                            <div style="background:var(--bg-color); padding:20px; border-radius:12px; text-align:center; border:1px solid var(--border);">
+                                <div style="font-size:40px; margin-bottom:10px;">💰</div>
+                                <h4 style="margin:0 0 5px 0;">+ 50 ج.م للمحفظة</h4>
+                                <p style="color:#e11d48; font-weight:bold; font-size:14px; margin-bottom:15px;">تكلفة الطلب: 100 نقطة</p>
+                                <button class="btn" style="background:#e11d48; font-size:13px; padding:8px;" onclick="claimReward(100, 50)">استبدال الجائزة 🎁</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-forum" class="tab-content">
+                    <div class="page-header">
+                        <h2>منتدى النقاشات 💬</h2>
+                        <p>اسأل المستر وشوف أسئلة زمايلك</p>
+                    </div>
+                    <div style="background:#fff; border-radius:16px; padding:20px; border:1px solid var(--border); margin-bottom:20px;">
+                        <p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">هل وقف أمامك سؤال أثناء المذاكرة؟ اكتبه هنا وسيقوم المستر أو الأسيستنت بالرد عليك، وتظهر الإجابة لجميع زملائك في المجموعة!</p>
+                        
+                        <textarea id="forumQuestionInput" class="custom-input" placeholder="اكتب سؤالك بالتفصيل هنا..." rows="3" style="text-align:right; padding:12px;"></textarea>
+                        <button class="btn" style="background:#8b5cf6; margin-top:10px;" onclick="submitForumQuestion()">نشر السؤال في المنتدى 🚀</button>
+                    </div>
+
+                    <h4 style="margin-bottom:10px; color:var(--secondary);">📌 مناقشات وأسئلة زملائك في المجموعة</h4>
+                    <div id="forum-questions-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+                </div>
+
+            </main>
         </div>
     </div>
 
@@ -342,8 +414,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <script>
-
-        
         let globalTeacherId = "";
         let currentStudent = null;
         let allOnlineExams = [];
@@ -352,17 +422,13 @@
         window.allLectures = []; 
         window.allClassSessions = []; 
 
-        // 🛡️ دالة فحص صلاحية الطالب للكورس (محمية ضد أخطاء Firebase)
         window.studentHasAccess = function(lec) {
             try {
                 if (!currentStudent) return false;
-                
-                // 1. فحص هل الطالب اشترى الكورس بفلوس؟
                 if (currentStudent.purchasedCourses && Array.isArray(currentStudent.purchasedCourses)) {
                     if (currentStudent.purchasedCourses.includes(lec.id)) return true;
                 }
 
-                // 2. تجميع الحصص المربوطة بطريقة آمنة
                 let linkedArr = [];
                 if (lec.linkedSessions) {
                     if (Array.isArray(lec.linkedSessions)) {
@@ -378,7 +444,6 @@
                     linkedArr.push(lec.linkedSession);
                 }
 
-                // 3. فحص الحضور
                 if (linkedArr.length > 0 && window.allClassSessions) {
                     let sessionsArray = Array.isArray(window.allClassSessions) ? window.allClassSessions : Object.values(window.allClassSessions);
                     
@@ -388,31 +453,21 @@
                         if (session && session.attendance) {
                             let phoneStr = String(currentStudent.phone);
                             let codeStr = String(currentStudent.code);
-                            
                             if (session.attendance[phoneStr] === 'present' || session.attendance[codeStr] === 'present') {
                                 return true; 
                             }
                         }
                     }
                 }
-                
                 return false; 
-                
-            } catch(err) {
-                console.error("خطأ في فحص صلاحية الكورس:", err);
-                return false; 
-            }
+            } catch(err) { return false; }
         };
 
         window.onload = function() {
             const savedCode = localStorage.getItem("edu_student_code");
             const savedPhone = localStorage.getItem("edu_parent_phone");
-            
             const urlParams = new URLSearchParams(window.location.search);
-            const urlTeacherId = urlParams.get('id');
-            const savedTeacherId = localStorage.getItem("edu_teacher_id");
-
-            globalTeacherId = urlTeacherId || savedTeacherId;
+            globalTeacherId = urlParams.get('id') || localStorage.getItem("edu_teacher_id");
 
             if (savedCode && savedPhone && globalTeacherId) {
                 document.getElementById("studentCode").value = savedCode;
@@ -428,36 +483,14 @@
             location.reload(); 
         }
 
-function switchTab(tabId) {
-            // إخفاء كل الأقسام
-            document.querySelectorAll('.tab-section').forEach(sec => {
-                sec.style.display = 'none';
-                sec.classList.remove('active');
-            });
-            
-            // إزالة التفعيل من كل الزراير والسايدبار
-            document.querySelectorAll('.tab-card, .nav-item').forEach(nav => {
-                nav.classList.remove('active');
-            });
-            
-            // إظهار القسم المطلوب
-            let targetSec = document.getElementById(tabId);
-            if (targetSec) {
-                targetSec.style.display = 'block';
-                targetSec.classList.add('active');
-            }
-            
-            // تفعيل الزرار اللي انضغط عليه حالاً
-            if(event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
-            }
+        // دالة التنقل بين تابات القائمة الجانبية
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if(event && event.currentTarget) event.currentTarget.classList.add('active');
         }
-// ==========================================
-        // 🔄 تحديث وتزامن لوحة تحكم الطالب الشاملة
-        // ==========================================
-// ==========================================
-        // 🚀 تسجيل الدخول + تحديث وتزامن لوحة تحكم الطالب 
-        // ==========================================
+
         window.fetchStudentData = async function(autoLogin = false) {
             const btn = document.querySelector(".login-box .btn");
             const errorMsg = document.getElementById("error-msg");
@@ -467,45 +500,35 @@ function switchTab(tabId) {
 
             if (!codeInput || !phoneInput) {
                 errorMsg.innerText = "يرجى إدخال الكود ورقم ولي الأمر!";
-                errorMsg.style.display = "block";
-                return;
+                errorMsg.style.display = "block"; return;
             }
 
             if (!globalTeacherId) {
                 errorMsg.innerText = "عفواً، رابط المنصة غير مكتمل (ينقص كود السنتر). يرجى طلب الرابط الصحيح من السنتر.";
-                errorMsg.style.display = "block";
-                return;
+                errorMsg.style.display = "block"; return;
             }
 
             if(btn && !autoLogin) { btn.innerText = "جاري التحقق... ⏳"; btn.disabled = true; }
             errorMsg.style.display = "none";
 
             try {
-                // 1️⃣ جلب بيانات الطالب للتحقق من هويته
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await res.json() || {};
-                
                 let studentsList = data.students ? Object.values(data.students).filter(s => s !== null) : [];
-                
-                // التحقق من صحة الكود ورقم ولي الأمر
                 let student = studentsList.find(s => String(s.code) === codeInput && String(s.parentPhone) === phoneInput);
                 
                 if (!student) {
-                    errorMsg.innerText = "الكود أو رقم ولي الأمر غير صحيح!";
-                    errorMsg.style.display = "block";
+                    errorMsg.innerText = "الكود أو رقم ولي الأمر غير صحيح!"; errorMsg.style.display = "block";
                     if(btn && !autoLogin) { btn.innerText = "دخول للمنصة 🚀"; btn.disabled = false; }
                     return;
                 }
 
-                // 2️⃣ نجاح الدخول - حفظ الجلسة وتجهيز الجلوبال
                 currentStudent = student;
                 window.studentCode = student.code;
                 
-                // حفظ البيانات الأساسية
                 window.allOnlineExams = data.onlineExams ? Object.values(data.onlineExams).filter(e => e !== null) : [];
                 window.allClassSessions = data.classSessions ? Object.values(data.classSessions).filter(s => s !== null) : [];
                 
-                // جلب المحاضرات
                 let lecRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/lectures.json`);
                 let lecData = await lecRes.json() || {};
                 window.allLectures = Object.values(lecData).filter(l => l !== null);
@@ -514,15 +537,10 @@ function switchTab(tabId) {
                 localStorage.setItem("edu_parent_phone", phoneInput);
                 localStorage.setItem("edu_teacher_id", globalTeacherId);
 
-                // إخفاء شاشة الدخول وإظهار المنصة
                 document.getElementById("login-screen").style.display = "none";
                 document.getElementById("app-layout").style.display = "block";
 
-                // ==============================================
-                // 3️⃣ تشغيل كل أكواد الواجهة وشريط التتبع (Sync UI)
-                // ==============================================
-                
-                // أ) تحديث كارت الـ ID ونقاط السلوك
+                // تحديث بيانات التوب بار وكارت الـ ID
                 document.getElementById("top-name").innerText = currentStudent.name;
                 document.getElementById("top-group").innerText = currentStudent.group;
                 document.getElementById("card-student-name").innerText = currentStudent.name;
@@ -530,100 +548,90 @@ function switchTab(tabId) {
                 document.getElementById("card-behavior-points").innerText = currentStudent.behaviorPoints || 0;
 
                 if (typeof JsBarcode !== 'undefined') {
-                    JsBarcode("#digitalIdBarcode", currentStudent.code, {
-                        format: "CODE128", lineColor: "#0f172a", width: 2, height: 40, displayValue: false
-                    });
+                    JsBarcode("#digitalIdBarcode", currentStudent.code, { format: "CODE128", lineColor: "#0f172a", width: 2, height: 40, displayValue: false });
                 }
 
-                // ب) تحديث المحفظة
                 let walletBalance = currentStudent.walletBalance || 0;
                 document.getElementById("top-balance").innerText = walletBalance;
+                if(document.getElementById("walletBalanceDisplay")) document.getElementById("walletBalanceDisplay").innerText = walletBalance;
+                if(document.getElementById("wallet-page-balance")) document.getElementById("wallet-page-balance").innerHTML = `${walletBalance} <span style="font-size: 24px;">ج.م</span>`;
 
-                // ج) 📊 حساب شريط تتبع خطة المذاكرة لايف
-                let totalItems = 0;
-                let completedItems = 0;
-                let missingLectures = 0;
-                let missingExams = 0;
-
+                // حساب التراكر
+                let totalItems = 0; let completedItems = 0; let missingLectures = 0; let missingExams = 0;
                 try {
                     let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
                     let allSubs = await subRes.json() || {};
-                    
                     let myExams = window.allOnlineExams.filter(e => e && (e.status === "open" || e.status === "closed") && (Array.isArray(e.group) ? e.group.includes(currentStudent.group) || e.group.includes("all") : e.group === currentStudent.group || e.group === "all"));
-                    
                     totalItems += myExams.length;
-                    myExams.forEach(e => {
-                        if (allSubs[e.id] && allSubs[e.id][currentStudent.phone]) completedItems++;
-                        else if (e.status === "open") missingExams++;
-                    });
+                    myExams.forEach(e => { if (allSubs[e.id] && allSubs[e.id][currentStudent.phone]) completedItems++; else if (e.status === "open") missingExams++; });
 
                     let myLectures = window.allLectures.filter(l => l && (l.level === "all" || l.level === currentStudent.level));
                     totalItems += myLectures.length;
-                    
                     let trackRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking.json`);
                     let allTracks = await trackRes.json() || {};
-                    
-                    myLectures.forEach(l => {
-                        let hasWatched = allTracks[l.id] && allTracks[l.id][currentStudent.phone];
-                        if (hasWatched) completedItems++;
-                        else missingLectures++;
-                    });
+                    myLectures.forEach(l => { let hasWatched = allTracks[l.id] && allTracks[l.id][currentStudent.phone]; if (hasWatched) completedItems++; else missingLectures++; });
 
                     let percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 100;
                     document.getElementById("tracker-bar").style.width = percent + "%";
                     document.getElementById("tracker-percentage").innerText = percent + "%";
                     document.getElementById("tracker-text").innerText = percent === 100 ? "🎉 ممتاز! لقد أتممت خطتك الدراسية بالكامل!" : "📈 تتبع خطة المذاكرة والمحتوى الرقمي:";
-                    
                     let reminder = "";
                     if (missingLectures > 0) reminder += `🎬 متبقي لك (${missingLectures}) محاضرة. `;
                     if (missingExams > 0) reminder += `📝 ولديك (${missingExams}) امتحان متبقي. `;
                     document.getElementById("tracker-reminder").innerText = reminder || "🎯 أنت تسير على خطى العباقرة، واصل تقدمك!";
+                } catch(err) {}
 
-                } catch(err) { console.log("Tracker error: ", err); }
+                // بناء جدول الحضور
+                let attHtml = `<tr><th>التاريخ</th><th>الموضوع</th><th>حالة الحضور</th></tr>`;
+                let hasAtt = false;
+                (data.classSessions || []).filter(s => s && s.group === currentStudent.group).reverse().forEach(s => {
+                    hasAtt = true;
+                    let stat = (s.attendance || {})[currentStudent.phone]; 
+                    let badge = stat === 'present' ? `<span class="badge badge-present">حاضر ✓</span>` : (stat === 'absent' ? `<span class="badge badge-absent">غائب ✗</span>` : `<span style="color:var(--text-muted)">لم يسجل</span>`);
+                    attHtml += `<tr><td>${s.date}</td><td>${s.topic || 'حصة عادية'}</td><td>${badge}</td></tr>`;
+                });
+                if(!hasAtt) attHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد حصص مسجلة لك حتى الآن.</td></tr>`;
+                document.getElementById("attendance-details").innerHTML = attHtml;
 
-                // د) جلب الإشعارات الذكية (بالعداد)
+                // بناء جدول الامتحانات الورقية
+                let exHtml = `<tr><th>التاريخ</th><th>اسم التقييم</th><th>الدرجة التي حصلت عليها</th></tr>`;
+                let hasEx = false;
+                (data.exams || []).concat(data.homeworks || []).filter(e => e && e.group === currentStudent.group).sort((a,b)=> new Date(b.date) - new Date(a.date)).forEach(e => {
+                    hasEx = true;
+                    let grade = (e.grades || {})[currentStudent.phone]; 
+                    let text = grade !== undefined ? `<span style="font-weight:900; color:var(--primary); font-size:16px;">${grade} <span style="color:var(--text-muted); font-size:13px;">من ${e.maxScore}</span></span>` : `<span style="color:var(--text-muted)">لم يتم الرصد</span>`;
+                    exHtml += `<tr><td>${e.date}</td><td>${e.name}</td><td>${text}</td></tr>`;
+                });
+                if(!hasEx) exHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد تقييمات مسجلة لك حتى الآن.</td></tr>`;
+                document.getElementById("exams-details").innerHTML = exHtml;
+
                 fetchStudentNotifications();
-
-                // هـ) جلب أسئلة المنتدى "اسأل المستر"
                 if(typeof loadForumQuestions === "function") loadForumQuestions();
-                
-                // و) رسم الكورسات والامتحانات في الشاشة
-                if(typeof showOnlineExams === "function") showOnlineExams();
+                if(typeof showOnlineExams === "function") showOnlineExams(true); // render without switching layout
                 if(typeof renderStudentLectures === "function") renderStudentLectures();
 
-            } catch(err) {
-                console.error("Login Error: ", err);
-                errorMsg.innerText = "حدث خطأ في الاتصال بقاعدة البيانات!";
-                errorMsg.style.display = "block";
-                if(btn && !autoLogin) { btn.innerText = "دخول للمنصة 🚀"; btn.disabled = false; }
+            } catch (e) {
+                errorMsg.style.display = "block"; errorMsg.innerText = "خطأ في الاتصال بالسيرفر أو تحميل البيانات!";
+                if(btn && !autoLogin) { btn.innerHTML = "دخول للمنصة 🚀"; btn.disabled = false; }
             }
         };
 
-        // ==========================================
-        // 🔔 فصلنا دالة الإشعارات عشان الكود يبقى نظيف
-        // ==========================================
+        // الإشعارات
         async function fetchStudentNotifications() {
             try {
                 let notifRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/notifications.json`);
                 let notifsData = await notifRes.json() || {};
-                
                 let notifsList = Object.values(notifsData).filter(n => {
                     if (!n || !n.target) return false;
-                    if (n.target === 'all') return true;
-                    if (n.target === currentStudent.phone) return true;
-                    if (n.target === currentStudent.group) return true;
-                    if (n.target === currentStudent.level) return true;
+                    if (n.target === 'all' || n.target === currentStudent.phone || n.target === currentStudent.group || n.target === currentStudent.level) return true;
                     return false;
                 }).reverse();
                 
                 let readNotifs = JSON.parse(localStorage.getItem(`read_notifs_${currentStudent.code}`)) || [];
-                let unreadCount = 0;
-                let notifHtml = "";
-
+                let unreadCount = 0; let notifHtml = "";
                 notifsList.forEach(n => {
                     let isRead = readNotifs.includes(n.id);
                     if (!isRead) unreadCount++;
-
                     notifHtml += `
                     <div style="background: ${isRead ? 'var(--card-bg)' : '#eff6ff'}; padding: 12px 15px; border-radius: 8px; border-right: 4px solid ${isRead ? 'var(--text-muted)' : 'var(--primary)'}; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid var(--border); border-right-width: 4px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
@@ -634,91 +642,72 @@ function switchTab(tabId) {
                         <span style="font-size: 10px; color: #94a3b8; display: block; text-align: left;">🕒 ${n.date || ''}</span>
                     </div>`;
                 });
-                
                 window.currentLoadedNotifsIds = notifsList.map(n => n.id);
                 let notifListContainer = document.getElementById("notif-list");
                 let notifBadge = document.getElementById("notif-badge");
-                
                 if(notifsList.length > 0) {
                     if(notifListContainer) notifListContainer.innerHTML = notifHtml;
                     if(notifBadge) {
-                        if (unreadCount > 0) {
-                            notifBadge.style.display = "inline-block";
-                            notifBadge.innerText = unreadCount;
-                        } else {
-                            notifBadge.style.display = "none";
-                        }
+                        if (unreadCount > 0) { notifBadge.style.display = "inline-block"; notifBadge.innerText = unreadCount; } 
+                        else { notifBadge.style.display = "none"; }
                     }
                 } else {
                     if(notifListContainer) notifListContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 15px; font-size: 13px;">لا توجد إشعارات حالياً 📭</div>`;
                     if(notifBadge) notifBadge.style.display = "none";
                 }
-            } catch(e) { console.log("Error fetching notifications"); }
+            } catch(e) {}
         }
-        // ==========================================
-        // 🎁 1️⃣ نظام استبدال نقاط السلوك بمكافآت في المحفظة
-        // ==========================================
+
+        window.toggleNotifications = function() {
+            let dropdown = document.getElementById("notif-dropdown");
+            if (!dropdown) return;
+            let isOpening = dropdown.style.display === "none";
+            dropdown.style.display = isOpening ? "block" : "none";
+            if (isOpening && window.currentLoadedNotifsIds && window.currentLoadedNotifsIds.length > 0 && currentStudent) {
+                let readNotifs = JSON.parse(localStorage.getItem(`read_notifs_${currentStudent.code}`)) || [];
+                window.currentLoadedNotifsIds.forEach(id => { if (!readNotifs.includes(id)) readNotifs.push(id); });
+                localStorage.setItem(`read_notifs_${currentStudent.code}`, JSON.stringify(readNotifs));
+                let notifBadge = document.getElementById("notif-badge");
+                if (notifBadge) notifBadge.style.display = "none";
+            }
+        };
+
+        // المتجر
         window.claimReward = async function(pointsCost, cashAmount) {
             let currentPoints = currentStudent.behaviorPoints || 0;
-            if (currentPoints < pointsCost) {
-                alert(`عفواً يا بطل! نقاطك الحالية (${currentPoints}) أقل من تكلفة الجائزة (${pointsCost} نقطة). شد حيلك في السنتر والواجبات! 💪`);
-                return;
-            }
+            if (currentPoints < pointsCost) { alert(`عفواً! نقاطك (${currentPoints}) أقل من التكلفة (${pointsCost}).`); return; }
+            if (!confirm(`هل تريد استبدال ${pointsCost} نقطة بمبلغ ${cashAmount} جنيه؟`)) return;
 
-            if (!confirm(`هل تريد استبدال ${pointsCost} نقطة بمبلغ ${cashAmount} جنيه في محفظتك الإلكترونية؟`)) return;
-
-            // 1. خصم النقاط وزيادة رصيد المحفظة محلياً وفي السيرفر
             currentStudent.behaviorPoints = currentPoints - pointsCost;
-            let currentWallet = parseFloat(localStorage.getItem(`wallet_${currentStudent.code}`)) || 0;
+            let currentWallet = currentStudent.walletBalance || 0;
             let newWalletValue = currentWallet + cashAmount;
 
             try {
-                // حفظ الرصيد الجديد في السيرفر
-                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/wallets/${currentStudent.code}.json`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newWalletValue)
+                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students.json`)
+                .then(res => res.json()).then(async studentsArray => {
+                    let sIdx = studentsArray.findIndex(s => s && s.code === currentStudent.code);
+                    if(sIdx > -1) {
+                        studentsArray[sIdx].behaviorPoints = currentStudent.behaviorPoints;
+                        studentsArray[sIdx].walletBalance = newWalletValue;
+                        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${sIdx}.json`, {
+                            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ behaviorPoints: currentStudent.behaviorPoints, walletBalance: newWalletValue })
+                        });
+                        alert(`تم خصم النقاط وشحن محفظتك بـ ${cashAmount} ج.م بنجاح! 🎉`);
+                        location.reload(); 
+                    }
                 });
-                
-                // تحديث سجل الطلاب الكلي على الفايربيز لحفظ نقاط السلوك الجديدة للمدرس
-                let allStRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students.json`);
-                let serverStudents = await allStRes.json() || [];
-                let sIdx = serverStudents.findIndex(s => s && s.code === currentStudent.code);
-                if(sIdx > -1) {
-                    serverStudents[sIdx].behaviorPoints = currentStudent.behaviorPoints;
-                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students.json`, {
-                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverStudents)
-                    });
-                }
-
-                alert(`🎯 مبروك يا بطل! تم خصم النقاط وشحن محفظتك بمبلغ ${cashAmount} ج.م بنجاح! 🎉`);
-                location.reload(); // ريفريش لتحديث كل الأرقام بشياكة
-            } catch(e) { alert("عطل في الاتصال بالسيرفر، حاول مرة أخرى."); }
+            } catch(e) { alert("عطل بالاتصال."); }
         };
 
-        // ==========================================
-        // 💬 2️⃣ منتدى اسأل المستر للطلاب
-        // ==========================================
+        // المنتدى
         window.submitForumQuestion = async function() {
             let text = document.getElementById("forumQuestionInput").value.trim();
-            if(!text) return alert("اكتب السؤال أولاً يا بطل!");
-
-            let questionObj = {
-                id: "q_" + Date.now(),
-                studentName: currentStudent.name,
-                studentGroup: currentStudent.group,
-                studentPhone: currentStudent.phone,
-                questionText: text,
-                replyText: "",
-                date: new Date().toLocaleDateString('ar-EG')
-            };
-
+            if(!text) return alert("اكتب السؤال أولاً!");
+            let questionObj = { id: "q_" + Date.now(), studentName: currentStudent.name, studentGroup: currentStudent.group, studentPhone: currentStudent.phone, questionText: text, replyText: "", date: new Date().toLocaleDateString('ar-EG') };
             try {
-                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/forum/${questionObj.id}.json`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(questionObj)
-                });
-                document.getElementById("forumQuestionInput").value = "";
-                alert("تم نشر سؤالك بنجاح! وبانتظار رد المستر أو الأسيستنت 🚀");
-                loadForumQuestions();
-            } catch(e) { alert("خطأ بالاتصال"); }
+                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/forum/${questionObj.id}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(questionObj) });
+                document.getElementById("forumQuestionInput").value = ""; alert("تم نشر سؤالك بنجاح! 🚀"); loadForumQuestions();
+            } catch(e) {}
         };
 
         window.loadForumQuestions = async function() {
@@ -726,202 +715,114 @@ function switchTab(tabId) {
             if(!container) return;
             try {
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/forum.json`);
-                let data = await res.json() || {};
-                container.innerHTML = "";
-                
-                // تصفية الأسئلة الخاصة بمجموعة هذا الطالب فقط عشان الخصوصية وسرعة التصفح
+                let data = await res.json() || {}; container.innerHTML = "";
                 let myGroupQuestions = Object.values(data).filter(q => q && q.studentGroup === currentStudent.group).reverse();
-                
-                if(myGroupQuestions.length === 0) {
-                    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">لا توجد نقاشات سابقة في مجموعتك حالياً. كن أول من يسأل! 💬</div>`;
-                    return;
-                }
-
+                if(myGroupQuestions.length === 0) { container.innerHTML = `<div style="text-align:center; color:var(--text-muted);">لا توجد نقاشات في مجموعتك.</div>`; return; }
                 container.innerHTML = myGroupQuestions.map(q => `
                     <div style="background:#f8fafc; border:1px solid var(--border); padding:15px; border-radius:12px; box-shadow:0 2px 4px rgba(0,0,0,0.01);">
                         <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; color:var(--text-muted); font-weight:bold;">
-                            <span>👤 الطالب: ${q.studentName}</span>
-                            <span>🕒 ${q.date}</span>
+                            <span>👤 الطالب: ${q.studentName}</span><span>🕒 ${q.date}</span>
                         </div>
-                        <p style="margin:0 0 10px 0; font-weight:bold; color:var(--secondary); font-size:14px; line-height:1.5;">❓ السؤال: ${q.questionText}</p>
-                        <div style="background:white; padding:10px 12px; border-radius:8px; border-right:3px solid ${q.replyText ? 'var(--success)' : 'var(--danger)'}; font-size:13px;">
-                            ${q.replyText ? `💡 <strong>رد الإدارة:</strong> <span style="color:#059669; font-weight:bold;">${q.replyText}</span>` : '⏳ <em>بانتظار مراجعة الإدارة والرد النموذجي...</em>'}
+                        <p style="margin:0 0 10px 0; font-weight:bold; color:var(--secondary); font-size:14px;">❓ السؤال: ${q.questionText}</p>
+                        <div style="background:white; padding:10px; border-radius:8px; border-right:3px solid ${q.replyText ? 'var(--success)' : 'var(--danger)'}; font-size:13px;">
+                            ${q.replyText ? `💡 <strong>الرد:</strong> <span style="color:#059669; font-weight:bold;">${q.replyText}</span>` : '⏳ <em>بانتظار الرد...</em>'}
                         </div>
-                    </div>
-                `).join('');
+                    </div>`).join('');
             } catch(e) {}
         };
-        // ==========================================
-        // 📚 عرض كروت الكورسات
-        // ==========================================
+
         function renderStudentLectures() {
             let list = document.getElementById("studentLecturesList");
-            if(!list) return;
-            list.innerHTML = "";
-            
-            if(window.allLectures.length === 0) {
-                list.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color:var(--text-muted); background: var(--card-bg); border-radius: 16px; border: 1px dashed var(--border);">لا توجد كورسات متاحة حالياً.</div>`;
-                return;
-            }
+            if(!list) return; list.innerHTML = "";
+            if(window.allLectures.length === 0) { list.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">لا توجد كورسات متاحة.</div>`; return; }
 
             window.allLectures.forEach(lec => {
                 let isFree = lec.type === 'free';
                 let hasAccess = window.studentHasAccess(lec);
-                
-                let attendedSession = false;
-                if (!isFree && hasAccess && (!currentStudent.purchasedCourses || !currentStudent.purchasedCourses.includes(lec.id))) {
-                    attendedSession = true;
-                }
-
+                let attendedSession = (!isFree && hasAccess && (!currentStudent.purchasedCourses || !currentStudent.purchasedCourses.includes(lec.id)));
                 let canWatch = isFree || hasAccess;
                 
-                let badgeHtml = "";
-                if (isFree) {
-                    badgeHtml = `<span style="background: rgba(16, 185, 129, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">🎁 مجاني</span>`;
-                } else if (attendedSession) {
-                    badgeHtml = `<span style="background: rgba(59, 130, 246, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">✅ مجاني لحضورك الحصة</span>`;
-                } else if (hasAccess) {
-                    badgeHtml = `<span style="background: rgba(139, 92, 246, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">🔓 تم الشراء</span>`;
-                } else {
-                    badgeHtml = `<span style="background: rgba(239, 68, 68, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">💰 ${lec.price} ج.م</span>`;
-                }
+                let badgeHtml = isFree ? `<span style="background: #10b981; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">🎁 مجاني</span>` 
+                    : attendedSession ? `<span style="background: #3b82f6; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">✅ مجاني للحضور</span>` 
+                    : hasAccess ? `<span style="background: #8b5cf6; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">🔓 تم الشراء</span>` 
+                    : `<span style="background: #ef4444; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">💰 ${lec.price} ج.م</span>`;
 
-                let actionBtn = canWatch 
-                    ? `<button class="btn" style="width: 100%; background: #3b82f6; color: white; font-weight: bold; padding: 12px; border-radius: 8px; transition: 0.3s; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض محتوى الكورس</button>`
-                    : `<button class="btn" style="width: 100%; background: #10b981; color: white; font-weight: bold; padding: 12px; border-radius: 8px; transition: 0.3s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onclick="purchaseCourse('${lec.id}', ${lec.price})">🛒 شراء وخصم من المحفظة</button>`;
+                let actionBtn = canWatch ? `<button class="btn" style="background: #3b82f6;" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض المحتوى</button>` : `<button class="btn" style="background: #10b981;" onclick="purchaseCourse('${lec.id}', ${lec.price})">🛒 شراء</button>`;
 
                 list.innerHTML += `
-                <div style="background: var(--card-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); transition: 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 30px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)';">
-                    <div style="position: relative;">
-                        <img src="${lec.image}" style="width: 100%; height: 180px; object-fit: cover;">
-                        <div style="position: absolute; top: 15px; right: 15px;">${badgeHtml}</div>
-                    </div>
+                <div style="background: var(--card-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                    <div style="position: relative;"><img src="${lec.image}" style="width: 100%; height: 180px; object-fit: cover;"><div style="position: absolute; top: 15px; right: 15px;">${badgeHtml}</div></div>
                     <div style="padding: 20px; display: flex; flex-direction: column; flex: 1;">
-                        <h3 style="margin: 0 0 10px 0; color: var(--secondary); font-size: 18px; font-weight: 800;">${lec.title}</h3>
-                        <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${lec.desc || 'لا توجد تفاصيل إضافية لهذا الكورس.'}</p>
+                        <h3 style="margin: 0 0 10px 0; color: var(--secondary); font-size: 18px;">${lec.title}</h3>
+                        <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted);">${lec.desc || 'لا تفاصيل'}</p>
                         <div style="margin-top: auto;">${actionBtn}</div>
                     </div>
                 </div>`;
             });
         }
 
-        // ==========================================
-        // 📜 عرض تفاصيل الكورس في نافذة منبثقة
-        // ==========================================
         window.openStudentCourseDetails = function(courseId) {
             let course = window.allLectures.find(l => l.id === courseId);
             if(!course) return;
-
             document.getElementById("detailsCourseTitle").innerText = course.title;
-            document.getElementById("detailsCourseImage").src = course.image || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop';
-            document.getElementById("detailsCourseDesc").innerText = course.desc || "لا يوجد وصف إضافي متوفر لهذا الكورس.";
-
+            document.getElementById("detailsCourseImage").src = course.image || '';
+            document.getElementById("detailsCourseDesc").innerText = course.desc || "";
             let vids = course.videos || [];
             if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
-
             let playlistHtml = "";
             vids.forEach((v, idx) => {
                 let safeTitle = v.title.replace(/'/g, "\\'");
-                playlistHtml += `
-                <div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); margin-bottom: 8px;">
-                    <span style="font-weight: bold; color: var(--secondary); font-size: 15px;">▶️ ${v.title}</span>
-                    <button class="btn" style="background: var(--success); padding: 8px 20px; width: auto; font-size: 13px; font-weight: bold;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل المحاضرة 🔒</button>
-                </div>`;
+                playlistHtml += `<div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid var(--border); margin-bottom: 8px;"><span style="font-weight: bold; color: var(--secondary);">▶️ ${v.title}</span><button class="btn" style="background: var(--success); width: auto; padding: 8px 20px;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل 🔒</button></div>`;
             });
             document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
             document.getElementById("studentCourseDetailsModal").style.display = "flex";
         };
 
-        // ==========================================
-        // 🔲 دالة تكبير وتصغير الشاشة المخصصة
-        // ==========================================
         window.toggleCustomFullscreen = function() {
             let player = document.getElementById("video-wrapper");
             let btn = document.getElementById("custom-fs-btn");
-            if (!document.fullscreenElement) {
-                if (player.requestFullscreen) { player.requestFullscreen(); }
-                else if (player.webkitRequestFullscreen) { player.webkitRequestFullscreen(); }
-                else if (player.msRequestFullscreen) { player.msRequestFullscreen(); }
-                btn.innerText = "🗗 تصغير الشاشة";
-            } else {
-                if (document.exitFullscreen) { document.exitFullscreen(); }
-                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
-                else if (document.msExitFullscreen) { document.msExitFullscreen(); }
-                btn.innerText = "⛶ تكبير الشاشة";
-            }
+            if (!document.fullscreenElement) { if (player.requestFullscreen) player.requestFullscreen(); btn.innerText = "🗗 تصغير"; } 
+            else { if (document.exitFullscreen) document.exitFullscreen(); btn.innerText = "⛶ تكبير"; }
         };
 
-        // ==========================================
-        // 🎬 مشغل الكورس والـ DRM
-        // ==========================================
         window.openCoursePlayer = function(courseId, startVideoIndex = 0) {
             let course = window.allLectures.find(l => l.id === courseId);
             if(!course) return;
-
             document.body.classList.add("no-select");
             document.getElementById("app-layout").style.display = "none";
             document.getElementById("protected-course-screen").style.display = "flex";
             document.getElementById("player-course-title").innerText = `${course.title}`;
-            
             document.getElementById("video-watermark").innerText = `${currentStudent.name} \n ${currentStudent.phone}`;
-
             let vids = course.videos || [];
             if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
-
-            let playlistHtml = `<h4 style="color:#94a3b8; margin:0 0 20px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">محتويات الكورس</h4>`;
+            let playlistHtml = ``;
             vids.forEach((v, idx) => {
                 let safeTitle = v.title.replace(/'/g, "\\'");
-                let isActive = idx === startVideoIndex ? "background: rgba(59, 130, 246, 0.15); border-right: 4px solid #3b82f6; color: #3b82f6; font-weight: bold;" : "background: transparent; color: #94a3b8; border-right: 4px solid transparent;";
-                playlistHtml += `
-                <div style="${isActive} padding:15px; border-radius:8px; margin-bottom:8px; cursor:pointer; transition:0.3s; display: flex; align-items: center; gap: 10px;" 
-                     onmouseover="this.style.background='rgba(255,255,255,0.05)'" 
-                     onmouseout="this.style.background='${idx === startVideoIndex ? 'rgba(59, 130, 246, 0.15)' : 'transparent'}'" 
-                     onclick="playCourseVideo('${v.url}', '${safeTitle}', '${course.id}', ${idx}, this)">
-                    <span style="font-size: 18px;">${idx === startVideoIndex ? '▶️' : '🔒'}</span> 
-                    <span style="flex: 1; font-size: 15px;">${v.title}</span>
-                </div>`;
+                let isActive = idx === startVideoIndex ? "color: #3b82f6; font-weight: bold;" : "color: #94a3b8;";
+                playlistHtml += `<div style="${isActive} padding:15px; cursor:pointer;" onclick="playCourseVideo('${v.url}', '${safeTitle}', '${course.id}', ${idx}, this)">▶️ ${v.title}</div>`;
             });
             document.getElementById("player-playlist").innerHTML = playlistHtml;
-
             if(vids.length > startVideoIndex) playCourseVideo(vids[startVideoIndex].url, vids[startVideoIndex].title, course.id, startVideoIndex);
             
-            document.addEventListener('contextmenu', blockContext);
-            document.addEventListener('keydown', blockKeys);
-            window.addEventListener('blur', applyBlackout);
-            window.addEventListener('focus', removeBlackout);
+            document.addEventListener('contextmenu', blockContext); document.addEventListener('keydown', blockKeys);
+            window.addEventListener('blur', applyBlackout); window.addEventListener('focus', removeBlackout);
         };
 
         window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex, element = null) {
             let embedUrl = url;
             if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
             else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
-            
-            if(embedUrl.includes("youtube.com/embed/")) {
-                let sep = embedUrl.includes("?") ? "&" : "?";
-                embedUrl += sep + "modestbranding=1&rel=0&showinfo=0&fs=0"; 
-            }
-            
+            if(embedUrl.includes("youtube.com/embed/")) embedUrl += (embedUrl.includes("?")?"&":"?") + "modestbranding=1&rel=0&showinfo=0&fs=0"; 
             document.getElementById("video-iframe").src = embedUrl;
-
-            if(element) {
-                let allItems = document.getElementById("player-playlist").querySelectorAll("div");
-                allItems.forEach(el => { el.style.background = "transparent"; el.style.borderRight = "4px solid transparent"; el.style.color = "#94a3b8"; });
-                element.style.background = "rgba(59, 130, 246, 0.15)"; element.style.borderRight = "4px solid #3b82f6"; element.style.color = "#3b82f6";
-            }
 
             if(courseId && currentStudent) {
                 try {
                     let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
-                    let res = await fetch(trackingUrl);
-                    let oldData = await res.json();
+                    let res = await fetch(trackingUrl); let oldData = await res.json();
                     let currentViews = (oldData && oldData.views) ? oldData.views : 0;
-                    
-                    let now = new Date();
-                    let dateStr = now.toLocaleDateString('ar-EG') + " | " + now.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
-
-                    let newData = { videoTitle: videoTitle || "المحاضرة", views: currentViews + 1, lastSeen: dateStr };
-                    await fetch(trackingUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newData) });
-                } catch(e) { console.error("Tracking Error:", e); }
+                    let dateStr = new Date().toLocaleString('ar-EG');
+                    await fetch(trackingUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoTitle: videoTitle || "المحاضرة", views: currentViews + 1, lastSeen: dateStr }) });
+                } catch(e) {}
             }
         };
 
@@ -930,421 +831,147 @@ function switchTab(tabId) {
             document.body.classList.remove("no-select");
             document.getElementById("protected-course-screen").style.display = "none";
             document.getElementById("app-layout").style.display = "block";
-            
-            document.removeEventListener('contextmenu', blockContext);
-            document.removeEventListener('keydown', blockKeys);
-            window.removeEventListener('blur', applyBlackout);
-            window.removeEventListener('focus', removeBlackout);
+            document.removeEventListener('contextmenu', blockContext); document.removeEventListener('keydown', blockKeys);
+            window.removeEventListener('blur', applyBlackout); window.removeEventListener('focus', removeBlackout);
         };
 
         function blockContext(e) { e.preventDefault(); }
-        function blockKeys(e) {
-            if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85) || e.keyCode == 44) { 
-                e.preventDefault(); return false;
-            }
-        }
-        
-        function applyBlackout() {
-            if (document.activeElement === document.getElementById("video-iframe")) return;
-            if(document.getElementById("protected-course-screen").style.display === "flex") {
-                document.getElementById("video-iframe").style.filter = "blur(30px)";
-                document.getElementById("blackout-screen").style.display = "flex";
-            }
-        }
-        
-        function removeBlackout() {
-            if(document.getElementById("protected-course-screen").style.display === "flex") {
-                document.getElementById("video-iframe").style.filter = "none";
-                document.getElementById("blackout-screen").style.display = "none";
-                window.focus(); 
-            }
-        }
+        function blockKeys(e) { if(e.keyCode == 123 || e.keyCode == 44) { e.preventDefault(); return false; } }
+        function applyBlackout() { if (document.activeElement !== document.getElementById("video-iframe") && document.getElementById("protected-course-screen").style.display === "flex") { document.getElementById("video-iframe").style.filter = "blur(30px)"; document.getElementById("blackout-screen").style.display = "flex"; } }
+        function removeBlackout() { if(document.getElementById("protected-course-screen").style.display === "flex") { document.getElementById("video-iframe").style.filter = "none"; document.getElementById("blackout-screen").style.display = "none"; window.focus(); } }
 
-        // ==========================================
-        // 🛒 نظام المحفظة المحدث 
-        // ==========================================
         window.purchaseCourse = async function(courseId, price) {
-            if(!confirm(`هل تريد تأكيد اشتراكك في هذا الكورس بمبلغ ${price} ج.م؟\n(سيتم خصم المبلغ من رصيد محفظتك)`)) return;
-
-            let currentBalance = parseFloat(currentStudent.walletBalance || 0);
-            if(currentBalance < price) {
-                alert(`عفواً، رصيد محفظتك (${currentBalance} ج.م) لا يكفي لشراء الكورس.\nيرجى التوجه لخانة "محفظتي" لشحن الرصيد أولاً.`);
-                switchTab('tab-wallet');
-                return;
-            }
-
+            if(!confirm(`تأكيد شراء الكورس بـ ${price} ج.م؟`)) return;
+            if((currentStudent.walletBalance || 0) < price) { alert("رصيد محفظتك لا يكفي!"); return; }
             try {
                 let dataRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await dataRes.json();
                 let studentIndex = data.students.findIndex(s => s && s.code === currentStudent.code);
-
                 if(studentIndex !== -1) {
-                    currentStudent.walletBalance = parseFloat(currentStudent.walletBalance || 0) - price;
-                    
-                    if (!currentStudent.purchasedCourses) currentStudent.purchasedCourses = [];
-                    currentStudent.purchasedCourses = Array.isArray(currentStudent.purchasedCourses) ? currentStudent.purchasedCourses : Object.values(currentStudent.purchasedCourses);
-
-                    if(!currentStudent.purchasedCourses.includes(courseId)) {
-                        currentStudent.purchasedCourses.push(courseId);
-                    }
-
-                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${studentIndex}.json`, {
-                        method: 'PATCH', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ 
-                            walletBalance: currentStudent.walletBalance,
-                            purchasedCourses: currentStudent.purchasedCourses
-                        })
-                    });
-
-                    document.getElementById("top-balance").innerText = currentStudent.walletBalance;
-                    if(document.getElementById("walletBalanceDisplay")) document.getElementById("walletBalanceDisplay").innerText = currentStudent.walletBalance;
-                    if(document.getElementById("wallet-page-balance")) document.getElementById("wallet-page-balance").innerHTML = `${currentStudent.walletBalance} <span style="font-size: 24px;">ج.م</span>`;
-                    
-                    alert("مبروك! تم الاشتراك في الكورس بنجاح 🎉 يمكنك مشاهدته الآن.");
-                    renderStudentLectures(); 
+                    currentStudent.walletBalance -= price;
+                    currentStudent.purchasedCourses = Array.isArray(currentStudent.purchasedCourses) ? currentStudent.purchasedCourses : [];
+                    if(!currentStudent.purchasedCourses.includes(courseId)) currentStudent.purchasedCourses.push(courseId);
+                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${studentIndex}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ walletBalance: currentStudent.walletBalance, purchasedCourses: currentStudent.purchasedCourses }) });
+                    alert("تم الشراء بنجاح!"); fetchStudentData(true);
                 }
-            } catch(e) {
-                alert("حدث خطأ أثناء عملية الشراء! تأكد من جودة الإنترنت.");
-            }
+            } catch(e) { alert("حدث خطأ!"); }
         };
 
         async function redeemCode() {
-            const codeInput = document.getElementById("rechargeCodeInput").value.trim();
-            if(!codeInput) { alert("يرجى إدخال كود الشحن أولاً!"); return; }
-
-            const btn = document.querySelector('.charge-section .btn');
-            let originalText = btn.innerText;
-            btn.innerText = "جاري التحقق... ⏳";
-            btn.disabled = true;
-
+            const code = document.getElementById("rechargeCodeInput").value.trim();
+            if(!code) return alert("أدخل الكود!");
             try {
-                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/chargeCodes/${codeInput}.json`);
+                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/chargeCodes/${code}.json`);
                 let codeData = await res.json();
-
-                if(!codeData) { alert("الكود غير صحيح أو غير موجود!"); btn.innerText = originalText; btn.disabled = false; return; }
-                if(codeData.status === 'used') { alert("عفواً، هذا الكود تم استخدامه من قبل!"); btn.innerText = originalText; btn.disabled = false; return; }
-
+                if(!codeData || codeData.status === 'used') return alert("الكود غير صحيح أو مستخدم!");
                 let dataRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await dataRes.json();
-                let studentIndex = data.students.findIndex(s => s && s.code === currentStudent.code);
-
-                if(studentIndex !== -1) {
+                let sIdx = data.students.findIndex(s => s && s.code === currentStudent.code);
+                if(sIdx !== -1) {
                     let amount = parseFloat(codeData.amount);
-                    currentStudent.walletBalance = parseFloat(currentStudent.walletBalance || 0) + amount;
-
-                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${studentIndex}.json`, {
-                        method: 'PATCH', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ walletBalance: currentStudent.walletBalance })
-                    });
-
-                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/chargeCodes/${codeInput}/status.json`, {
-                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify("used")
-                    });
-
-                    document.getElementById("top-balance").innerText = currentStudent.walletBalance;
-                    if(document.getElementById("walletBalanceDisplay")) document.getElementById("walletBalanceDisplay").innerText = currentStudent.walletBalance;
-                    if(document.getElementById("wallet-page-balance")) document.getElementById("wallet-page-balance").innerHTML = `${currentStudent.walletBalance} <span style="font-size: 24px;">ج.م</span>`;
-                    
-                    document.getElementById("rechargeCodeInput").value = "";
-                    alert(`مبروك! تم شحن محفظتك بنجاح بمبلغ ${amount} ج.م 🎉`);
+                    currentStudent.walletBalance = (currentStudent.walletBalance || 0) + amount;
+                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${sIdx}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ walletBalance: currentStudent.walletBalance }) });
+                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/chargeCodes/${code}/status.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify("used") });
+                    alert(`تم شحن ${amount} ج.م بنجاح!`); document.getElementById("rechargeCodeInput").value = ""; fetchStudentData(true);
                 }
-            } catch (e) { alert("حدث خطأ أثناء الاتصال بالسيرفر!"); }
-            btn.innerText = originalText; btn.disabled = false;
+            } catch (e) { alert("حدث خطأ!"); }
         }
 
-        // ==========================================
-        // 💻 منصة الامتحانات الإلكترونية
-        // ==========================================
-async function showOnlineExams() {
-            document.getElementById("app-layout").style.display = "none";
-            document.getElementById("online-exams-list-screen").style.display = "block";
-            
+        async function showOnlineExams(isRenderOnly = false) {
+            if(!isRenderOnly) {
+                document.getElementById("app-layout").style.display = "none";
+                document.getElementById("online-exams-list-screen").style.display = "block";
+            }
             const container = document.getElementById("available-exams-container");
-            container.innerHTML = `<div style="text-align:center; padding:40px;"><div class="octo-mascot octo-loading" style="width:60px; height:60px; margin-bottom:15px;"></div><br>جاري جلب الامتحانات... ⏳</div>`;
-
+            container.innerHTML = `جاري جلب الامتحانات...`;
             try {
                 let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
-                let allSubmissions = await subRes.json() || {};
-                window.studentSubmissions = allSubmissions; // حفظها للمراجعة
-
+                let allSubs = await subRes.json() || {};
+                window.studentSubmissions = allSubs;
                 container.innerHTML = "";
-                let myExams = allOnlineExams.filter(e => {
-                    if(!e || (e.status !== "open" && e.status !== "closed")) return false;
-                    if(Array.isArray(e.group)) return e.group.includes(currentStudent.group) || e.group.includes("all");
-                    return e.group === currentStudent.group || e.group === "all";
-                });
-
-                if (myExams.length === 0) {
-                    container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted); background: var(--card-bg); border-radius: 16px; border: 2px dashed var(--border); font-weight: bold; font-size: 16px;">لا توجد امتحانات إلكترونية متاحة لمجموعتك حالياً. 🎉</div>`;
-                    return;
-                }
-
+                let myExams = allOnlineExams.filter(e => e && (e.status === "open" || e.status === "closed") && (Array.isArray(e.group) ? e.group.includes(currentStudent.group) || e.group.includes("all") : e.group === currentStudent.group || e.group === "all"));
+                if (myExams.length === 0) { container.innerHTML = `لا توجد امتحانات إلكترونية.`; return; }
                 myExams.forEach(exam => {
-                    let isSubmitted = allSubmissions[exam.id] && allSubmissions[exam.id][currentStudent.phone];
+                    let isSubmitted = allSubs[exam.id] && allSubs[exam.id][currentStudent.phone];
                     let actionBtn = "";
-                    
                     if (isSubmitted) {
-                        // هل المدرس سمح بعرض النتيجة؟ (يا إما الامتحان autoShowResult أو اتصحح يدوي)
                         let canViewResult = exam.autoShowResult || isSubmitted.isGraded;
-                        let scoreText = canViewResult ? `${isSubmitted.score} / ${exam.totalScore}` : "قيد المراجعة ⏳";
-                        
-                        let viewBtn = canViewResult 
-                            ? `<button class="btn" style="background: var(--primary); padding: 8px 15px; font-size: 13px; width: auto;" onclick="reviewExam('${exam.id}')">👁️ عرض الإجابات والأخطاء</button>`
-                            : `<button class="btn" style="background: var(--text-muted); padding: 8px 15px; font-size: 13px; width: auto; cursor: not-allowed;" disabled>🔒 الإجابات مخفية للتقييم</button>`;
-
-                        actionBtn = `<div style="text-align:center; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-                            <span style="color:var(--success); font-weight:bold; display:block; font-size:14px; margin-bottom: 5px;">تم التسليم بنجاح ✅</span>
-                            <span style="font-weight:900; color:var(--secondary); font-size: 18px; display:block; margin-bottom: 10px;">النتيجة: ${scoreText}</span>
-                            ${viewBtn}
-                        </div>`;
+                        let scoreText = canViewResult ? `${isSubmitted.score} / ${exam.totalScore}` : "قيد المراجعة";
+                        let viewBtn = canViewResult ? `<button class="btn" onclick="reviewExam('${exam.id}')">عرض الإجابات</button>` : `<button class="btn" disabled>الإجابات مخفية</button>`;
+                        actionBtn = `النتيجة: ${scoreText} ${viewBtn}`;
                     } else {
-                        if (exam.status === "closed") {
-                            actionBtn = `<div style="text-align:center; background: #fee2e2; padding: 10px 20px; border-radius: 12px; border: 1px solid #fca5a5;"><span style="color:#ef4444; font-weight:bold;">انتهى وقت الامتحان ❌</span></div>`;
-                        } else {
-                            actionBtn = `<button class="btn" style="width: auto; padding: 12px 25px; font-size: 15px;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
-                        }
+                        actionBtn = exam.status === "closed" ? `انتهى وقت الامتحان` : `<button class="btn" onclick="startExam('${exam.id}')">بدء الامتحان</button>`;
                     }
-
-                    container.innerHTML += `<div class="exam-card"><div><h3 style="margin:0 0 8px 0; color:var(--secondary); font-size: 18px;">📝 ${exam.title}</h3><p style="margin:0; font-size:14px; color:var(--text-muted); font-weight: 600;">⏱️ المدة: ${exam.duration} دقيقة &nbsp;|&nbsp; 🎯 المجموع: ${exam.totalScore} درجة</p></div>${actionBtn}</div>`;
+                    container.innerHTML += `<div class="exam-card"><h3>${exam.title}</h3>${actionBtn}</div>`;
                 });
-            } catch(e) { container.innerHTML = `<div style="text-align:center; color:var(--danger); padding:20px; font-weight:bold;">حدث خطأ أثناء تحميل قائمة الامتحانات!</div>`; }
+            } catch(e) {}
         }
 
-        // دالة عرض تفاصيل الإجابات والأخطاء 👁️
         window.reviewExam = function(examId) {
-            let exam = allOnlineExams.find(e => e.id === examId);
-            let sub = window.studentSubmissions[examId][currentStudent.phone];
+            let exam = allOnlineExams.find(e => e.id === examId); let sub = window.studentSubmissions[examId][currentStudent.phone];
             if(!exam || !sub) return;
-
-            document.getElementById("online-exams-list-screen").style.display = "none";
-            document.getElementById("review-exam-screen").style.display = "block";
-            
-            document.getElementById("review-exam-title").innerText = exam.title;
-            document.getElementById("review-exam-score").innerText = sub.score;
-            document.getElementById("review-exam-total").innerText = exam.totalScore;
-
-            let container = document.getElementById("review-questions-render");
-            container.innerHTML = "";
-
+            document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("review-exam-screen").style.display = "block";
+            document.getElementById("review-exam-title").innerText = exam.title; document.getElementById("review-exam-score").innerText = sub.score; document.getElementById("review-exam-total").innerText = exam.totalScore;
+            let container = document.getElementById("review-questions-render"); container.innerHTML = "";
             exam.questions.forEach((q, index) => {
-                let studentAns = sub.answers[q.id];
-                let qScore = 0;
-                let isCorrect = false;
-
-                let ansHtml = "";
+                let studentAns = sub.answers[q.id]; let qScore = 0; let isCorrect = false; let ansHtml = "";
                 if (q.type === 'mcq') {
-                    isCorrect = (studentAns === q.correctAnswerIndex);
-                    qScore = isCorrect ? q.points : 0;
+                    isCorrect = (studentAns === q.correctAnswerIndex); qScore = isCorrect ? q.points : 0;
                     ansHtml = `<div class="q-options">`;
                     q.options.forEach((opt, optIndex) => {
-                        let bg = "var(--bg-color)"; let border = "var(--border)"; let icon = "";
-                        if (optIndex === q.correctAnswerIndex) { bg = "#d1fae5"; border = "#10b981"; icon = "✅ (الإجابة الصحيحة)"; }
-                        else if (optIndex === studentAns && !isCorrect) { bg = "#fee2e2"; border = "#ef4444"; icon = "❌ (إجابتك الخاطئة)"; }
-                        else if (optIndex === studentAns && isCorrect) { icon = "✅ (إجابتك)"; }
-                        
-                        ansHtml += `<div style="padding: 10px 15px; border: 2px solid ${border}; background: ${bg}; border-radius: 8px; margin-bottom: 5px; font-weight: bold;">${opt} ${icon}</div>`;
+                        let bg = "#f1f5f9"; if (optIndex === q.correctAnswerIndex) bg = "#d1fae5"; else if (optIndex === studentAns && !isCorrect) bg = "#fee2e2";
+                        ansHtml += `<div style="padding: 10px; background: ${bg}; margin-bottom: 5px;">${opt}</div>`;
                     });
                     ansHtml += `</div>`;
                 } else if (q.type === 'tf') {
-                    isCorrect = (String(studentAns) === String(q.correctAnswerTF || q.correctAnswer));
-                    qScore = isCorrect ? q.points : 0;
-                    let correctStr = String(q.correctAnswerTF || q.correctAnswer) === "true" ? "صح" : "خطأ";
-                    let stStr = studentAns === "true" ? "صح" : (studentAns === "false" ? "خطأ" : "لم يُجب");
-                    
-                    ansHtml = `<div style="background: ${isCorrect ? '#d1fae5' : '#fee2e2'}; padding: 15px; border-radius: 8px; font-weight: bold; border: 2px solid ${isCorrect ? '#10b981' : '#ef4444'};">
-                        إجابتك: ${stStr} ${isCorrect ? '✅' : '❌'}<br>
-                        <span style="color: var(--text-muted); font-size: 13px;">الإجابة الصحيحة هي: ${correctStr}</span>
-                    </div>`;
+                    isCorrect = (String(studentAns) === String(q.correctAnswerTF || q.correctAnswer)); qScore = isCorrect ? q.points : 0;
+                    ansHtml = `<div>إجابتك: ${studentAns} | الصحيحة: ${q.correctAnswerTF || q.correctAnswer}</div>`;
                 } else {
-                    // المقالي والفراغات
                     qScore = (sub.manualGrades && sub.manualGrades[q.id] !== undefined) ? sub.manualGrades[q.id] : (studentAns === q.correctAnswerText ? q.points : 0);
-                    ansHtml = `<div style="background: var(--bg-color); padding: 15px; border-radius: 8px; font-weight: bold; border: 1px solid var(--border);">
-                        إجابتك: ${studentAns || 'لم يُجب'}<br>
-                        ${q.correctAnswerText ? `<span style="color: var(--success); font-size: 13px;">الإجابة النموذجية: ${q.correctAnswerText}</span>` : ''}
-                    </div>`;
+                    ansHtml = `<div>إجابتك: ${studentAns || 'لم يُجب'}</div>`;
                 }
-
-                container.innerHTML += `<div class="q-box" style="border-right: 5px solid ${qScore > 0 ? '#10b981' : '#ef4444'};">
-                    <div class="q-title">${index + 1}. ${q.text} <br><span style="color: ${qScore > 0 ? '#10b981' : '#ef4444'}; font-size:14px; font-weight:900;">(أخذت: ${qScore} من ${q.points} درجة)</span></div>
-                    ${ansHtml}
-                </div>`;
+                container.innerHTML += `<div class="q-box" style="border-right: 5px solid ${qScore > 0 ? '#10b981' : '#ef4444'};"><h4>${index + 1}. ${q.text} (${qScore}/${q.points})</h4>${ansHtml}</div>`;
             });
         };
 
-        window.closeReviewScreen = function() {
-            document.getElementById("review-exam-screen").style.display = "none";
-            document.getElementById("online-exams-list-screen").style.display = "block";
-        };
-
-
-        function backToDashboard() {
-            document.getElementById("online-exams-list-screen").style.display = "none";
-            document.getElementById("app-layout").style.display = "block";
-        }
+        window.closeReviewScreen = function() { document.getElementById("review-exam-screen").style.display = "none"; document.getElementById("online-exams-list-screen").style.display = "block"; };
+        function backToDashboard() { document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("app-layout").style.display = "block"; }
 
         function startExam(examId) {
-            currentExam = allOnlineExams.find(e => e.id === examId);
-            if(!currentExam) return;
-            if(!confirm(`هل أنت مستعد لبدء "${currentExam.title}"؟\nالمدة المحددة: ${currentExam.duration} دقيقة.`)) return;
-
-            document.getElementById("online-exams-list-screen").style.display = "none";
-            document.getElementById("active-exam-screen").style.display = "block";
+            currentExam = allOnlineExams.find(e => e.id === examId); if(!currentExam) return;
+            if(!confirm(`بدء الامتحان؟`)) return;
+            document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("active-exam-screen").style.display = "block";
             document.getElementById("active-exam-title").innerText = currentExam.title;
-
-            renderQuestions();
-            startTimer(currentExam.duration);
-        }
-
-        function renderQuestions() {
             const container = document.getElementById("exam-questions-render"); container.innerHTML = "";
             currentExam.questions.forEach((q, index) => {
-                let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} <br><span style="color:var(--primary); font-size:14px; font-weight:600;">(الدرجة: ${q.points})</span></div>`;
-                if (q.type === 'mcq') {
-                    qHtml += `<div class="q-options">`;
-                    q.options.forEach((opt, optIndex) => { qHtml += `<label class="q-option-label"><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label>`; });
-                    qHtml += `</div>`;
-                } else if (q.type === 'tf') {
-                    qHtml += `<div class="q-options"><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="true"> ✔️ صح</label><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="false"> ❌ خطأ</label></div>`;
-                } else if (q.type === 'blank') {
-                    qHtml += `<input type="text" id="ans_${q.id}" class="custom-input" placeholder="اكتب إجابتك هنا...">`;
-                } else if (q.type === 'essay') {
-                    qHtml += `<textarea id="ans_${q.id}" class="custom-input" rows="5" placeholder="اكتب إجابتك المقالية هنا..."></textarea>`;
-                }
-                qHtml += `</div>`; container.innerHTML += qHtml;
+                let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} (${q.points})</div>`;
+                if (q.type === 'mcq') { qHtml += `<div class="q-options">`; q.options.forEach((opt, optIndex) => { qHtml += `<label><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label><br>`; }); qHtml += `</div>`; } 
+                else if (q.type === 'tf') { qHtml += `<label><input type="radio" name="ans_${q.id}" value="true"> صح</label><br><label><input type="radio" name="ans_${q.id}" value="false"> خطأ</label>`; } 
+                else if (q.type === 'blank') { qHtml += `<input type="text" id="ans_${q.id}" class="custom-input">`; } 
+                else if (q.type === 'essay') { qHtml += `<textarea id="ans_${q.id}" class="custom-input"></textarea>`; }
+                container.innerHTML += qHtml + `</div>`;
             });
-        }
-
-        function startTimer(durationMinutes) {
-            let timeInSeconds = durationMinutes * 60;
-            const timerDisplay = document.getElementById('exam-timer');
-            examTimerInterval = setInterval(() => {
-                let m = Math.floor(timeInSeconds / 60), s = timeInSeconds % 60;
-                timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
-                if (timeInSeconds <= 0) { clearInterval(examTimerInterval); alert("انتهى الوقت!"); submitOnlineExam(true); }
-                timeInSeconds--;
-            }, 1000);
+            let timeInSeconds = currentExam.duration * 60; const timerDisplay = document.getElementById('exam-timer');
+            examTimerInterval = setInterval(() => { let m = Math.floor(timeInSeconds / 60), s = timeInSeconds % 60; timerDisplay.innerText = `${m}:${s < 10 ? '0'+s : s}`; if (timeInSeconds <= 0) { clearInterval(examTimerInterval); submitOnlineExam(true); } timeInSeconds--; }, 1000);
         }
 
         async function submitOnlineExam(isTimeOut = false) {
-            if (!isTimeOut && !confirm("هل أنت متأكد من تسليم ورقة الإجابة؟")) return;
-            clearInterval(examTimerInterval);
-            const btn = document.getElementById("submitExamBtn");
-            btn.innerHTML = "جاري رفع الإجابات... ⏳"; btn.disabled = true;
-
+            if (!isTimeOut && !confirm("تسليم ورقة الإجابة؟")) return; clearInterval(examTimerInterval);
             let totalScore = 0; let studentAnswers = {};
             currentExam.questions.forEach(q => {
                 let qScore = 0;
-                if (q.type === 'mcq') {
-                    let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`);
-                    let ansVal = selected ? parseInt(selected.value) : -1; studentAnswers[q.id] = ansVal;
-                    if (ansVal === q.correctAnswerIndex) qScore = q.points;
-                } else if (q.type === 'tf') {
-                    let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`);
-                    let ansVal = selected ? selected.value : ""; studentAnswers[q.id] = ansVal;
-                    let correctStr = String(q.correctAnswerTF || q.correctAnswer);
-                    if (ansVal === correctStr) qScore = q.points;
-                } else if (q.type === 'blank') {
-                    let ansVal = document.getElementById(`ans_${q.id}`).value.trim(); studentAnswers[q.id] = ansVal;
-                    if (ansVal.toLowerCase() === (q.correctAnswerText || "").toLowerCase()) qScore = q.points;
-                } else if (q.type === 'essay') {
-                    let ansVal = document.getElementById(`ans_${q.id}`).value.trim(); studentAnswers[q.id] = ansVal;
-                }
+                if (q.type === 'mcq') { let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`); let ansVal = selected ? parseInt(selected.value) : -1; studentAnswers[q.id] = ansVal; if (ansVal === q.correctAnswerIndex) qScore = q.points; } 
+                else if (q.type === 'tf') { let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`); let ansVal = selected ? selected.value : ""; studentAnswers[q.id] = ansVal; if (ansVal === String(q.correctAnswerTF || q.correctAnswer)) qScore = q.points; } 
+                else if (q.type === 'blank') { let ansVal = document.getElementById(`ans_${q.id}`).value.trim(); studentAnswers[q.id] = ansVal; if (ansVal.toLowerCase() === (q.correctAnswerText || "").toLowerCase()) qScore = q.points; } 
+                else if (q.type === 'essay') { studentAnswers[q.id] = document.getElementById(`ans_${q.id}`).value.trim(); }
                 totalScore += qScore;
             });
-
-            const submissionData = { score: totalScore, maxScore: currentExam.totalScore, answers: studentAnswers, timestamp: new Date().toISOString() };
             try {
-                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions/${currentExam.id}/${currentStudent.phone}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(submissionData) });
-                alert(currentExam.autoShowResult ? `تم التسليم! نتيجتك المبدئية: ${totalScore} من ${currentExam.totalScore}` : "تم التسليم بنجاح! نتيجتك قيد المراجعة.");
-                document.getElementById("active-exam-screen").style.display = "none";
-                btn.innerHTML = "✅ تسليم ورقة الإجابة نهائياً"; btn.disabled = false;
-                showOnlineExams(); 
-            } catch (e) { alert("خطأ في الاتصال! أعد المحاولة."); btn.innerHTML = "✅ تسليم الإجابة"; btn.disabled = false; }
+                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions/${currentExam.id}/${currentStudent.phone}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ score: totalScore, maxScore: currentExam.totalScore, answers: studentAnswers, timestamp: new Date().toISOString() }) });
+                alert("تم التسليم بنجاح!"); document.getElementById("active-exam-screen").style.display = "none"; showOnlineExams(); 
+            } catch (e) { alert("خطأ في الاتصال!"); }
         }
-
-
-        window.toggleNotifications = function() {
-            let dropdown = document.getElementById("notif-dropdown");
-            if (!dropdown) return;
-
-            let isOpening = dropdown.style.display === "none";
-            dropdown.style.display = isOpening ? "block" : "none";
-
-            // لو بيفتح القائمة.. هنعلم على كل اللي معروض حالياً إنه "تمت رؤيته"
-            if (isOpening && window.currentLoadedNotifsIds && window.currentLoadedNotifsIds.length > 0 && currentStudent) {
-                // جلب المصفوفة القديمة أو إنشاء واحدة جديدة
-                let readNotifs = JSON.parse(localStorage.getItem(`read_notifs_${currentStudent.code}`)) || [];
-                
-                // دمج الـ IDs الجديدة مع القديمة بدون تكرار
-                window.currentLoadedNotifsIds.forEach(id => {
-                    if (!readNotifs.includes(id)) readNotifs.push(id);
-                });
-
-                // حفظها في جهاز الطالب
-                localStorage.setItem(`read_notifs_${currentStudent.code}`, JSON.stringify(readNotifs));
-                
-                // إخفاء النقطة الحمراء والعداد فوراً من على الجرس بشياكة
-                let notifBadge = document.getElementById("notif-badge");
-                if (notifBadge) notifBadge.style.display = "none";
-            }
-        };
-
     </script>
-
-    <div id="studentCourseDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999990; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
-        <div class="modal-content" style="background: var(--card-bg); width: 650px; max-width: 95%; border-radius: 16px; padding: 25px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-            <span class="close" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: var(--danger);">&times;</span>
-            
-            <h2 id="detailsCourseTitle" style="color: var(--secondary); margin-top: 0; padding-left: 30px;"></h2>
-            
-            <div style="display: flex; gap: 15px; margin-bottom: 20px; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-                <img id="detailsCourseImage" src="" style="width: 140px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid var(--primary);">
-                <div style="flex: 1;">
-                    <h4 style="margin: 0 0 5px 0; color: var(--primary);">عن الكورس:</h4>
-                    <p id="detailsCourseDesc" style="color: var(--text-muted); font-size: 13px; line-height: 1.6; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></p>
-                </div>
-            </div>
-            
-            <h4 style="border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 15px; color: var(--secondary);">محتويات الكورس 🎥</h4>
-            
-            <div id="detailsCoursePlaylist" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-left: 5px;">
-            </div>
-        </div>
-    </div>
-
-    <div id="protected-course-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 999999; flex-direction: column;">
-        <div style="padding: 15px 25px; background: rgba(15, 23, 42, 0.95); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <button onclick="closeCoursePlayer()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='#ef4444'; this.style.color='#fff';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='#ef4444';">🔙 العودة للمنصة</button>
-                <h3 id="player-course-title" style="color: #f8fafc; margin: 0; font-size: 18px; border-right: 2px solid #3b82f6; padding-right: 20px;">جاري التحميل...</h3>
-            </div>
-        </div>
-        
-        <div style="display: flex; flex: 1; overflow: hidden; position: relative;" id="anti-record-container">
-            <div id="player-playlist" style="width: 320px; background: #0f172a; overflow-y: auto; padding: 20px; border-left: 1px solid #1e293b;"></div>
-            
-            <div style="flex: 1; position: relative; background: #000; display: flex; justify-content: center; align-items: center;" id="video-wrapper">
-                <iframe id="video-iframe" sandbox="allow-scripts allow-same-origin allow-presentation" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
-                
-                <div id="video-watermark" style="position: absolute; color: rgba(255,255,255,0.25); font-size: 24px; font-weight: 900; pointer-events: none; z-index: 10; transform: rotate(-30deg); animation: floatWatermark 20s infinite linear; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);"></div>
-                
-                <div style="position: absolute; top:0; left:0; width:100%; height:80px; z-index: 5; background: transparent;"></div> 
-                <div style="position: absolute; bottom:0; right:0; width:500px; height:60px; z-index: 5; background: transparent;"></div> 
-                <div style="position: absolute; bottom:0; left:0; width:500px; height:60px; z-index: 5; background: transparent;"></div> 
-                
-                <div id="blackout-screen" style="position: absolute; top:0; left:0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(10px);">
-                    <span style="font-size: 60px; margin-bottom: 20px;">⚠️</span>
-                    <h2 style="color: #ef4444; text-align: center; margin: 0;">تم إخفاء المحتوى للحماية!</h2>
-                    <p style="color: #94a3b8; margin-top: 10px; font-weight: bold;">غير مسموح بتسجيل الشاشة أو فتح أدوات خارجية.</p>
-                </div>
-
-                <button onclick="toggleCustomFullscreen()" id="custom-fs-btn" style="position: absolute; bottom: 20px; right: 20px; z-index: 15; background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Cairo'; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.5);" onmouseover="this.style.background='rgba(59, 130, 246, 0.9)'; this.style.borderColor='#3b82f6';" onmouseout="this.style.background='rgba(15, 23, 42, 0.8)'; this.style.borderColor='rgba(255,255,255,0.2)';">
-                    ⛶ تكبير الشاشة
-                </button>
-            </div>
-        </div>
-    </div>
+    
 </body>
 </html>
