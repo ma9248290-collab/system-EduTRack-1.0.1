@@ -829,33 +829,10 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 💬 تاب منتدى الأسئلة (الجديد) -->
+    <!-- 📢 تاب مركز الإشعارات (الجديد) -->
     <!-- ========================================== -->
-    <div id="platform-forum" class="platform-section" style="display: none;">
-        <div class="card" style="padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: var(--primary-color); margin: 0;">💬 أسئلة منتدى "اسأل المستر"</h3>
-                <button class="theme-btn" style="padding: 8px 15px; border-color: var(--primary-color); color: var(--primary-color); width: auto;" onclick="loadPlatformForumQuestions()">🔄 تحديث قائمة الأسئلة</button>
-            </div>
-            
-            <div class="table-container" style="max-height: 500px; overflow-y: auto;">
-                <table class="students-table" style="width: 100%;">
-                    <thead>
-                        <tr>
-                            <th>الطالب</th>
-                            <th>السؤال</th>
-                            <th>الرد الحالي</th>
-                            <th>إجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="forum-questions-tbody">
-                        <tr><td colspan="4" style="text-align:center;">جاري جلب الأسئلة... ⏳</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-       
+    <div id="platform-notifications" class="platform-section" style="display: none;">
+        
         <!-- بوكس إرسال الإشعار -->
         <div class="card" style="margin-bottom: 20px; padding: 25px; border-top: 4px solid #f59e0b; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
             <h3 style="color: #f59e0b; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
@@ -916,10 +893,17 @@
 
     </div>
 
-
-    <div class="card" style="margin-top: 30px; padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <h3 style="color: var(--primary-color); margin-top: 0; margin-bottom: 20px;">💬 أسئلة منتدى "اسأل المستر"</h3>
-            <div class="table-container">
+    <!-- ========================================== -->
+    <!-- 💬 تاب منتدى الأسئلة (الجديد) -->
+    <!-- ========================================== -->
+    <div id="platform-forum" class="platform-section" style="display: none;">
+        <div class="card" style="padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: var(--primary-color); margin: 0;">💬 أسئلة منتدى "اسأل المستر"</h3>
+                <button class="theme-btn" style="padding: 8px 15px; border-color: var(--primary-color); color: var(--primary-color); width: auto;" onclick="loadPlatformForumQuestions()">🔄 تحديث قائمة الأسئلة</button>
+            </div>
+            
+            <div class="table-container" style="max-height: 500px; overflow-y: auto;">
                 <table class="students-table" style="width: 100%;">
                     <thead>
                         <tr>
@@ -930,14 +914,12 @@
                         </tr>
                     </thead>
                     <tbody id="forum-questions-tbody">
-                        <tr><td colspan="4" style="text-align:center;">اضغط على تحديث لجلب الأسئلة لايف</td></tr>
+                        <tr><td colspan="4" style="text-align:center;">جاري جلب الأسئلة... ⏳</td></tr>
                     </tbody>
                 </table>
             </div>
-            <button class="theme-btn" style="border-color: var(--primary-color); color: var(--primary-color);" onclick="loadPlatformForumQuestions()">🔄 تحديث قائمة الأسئلة</button>
         </div>
-
-
+    </div>
 
         <!-- ========================================== -->
     <!-- 🛒 تاب إدارة المتجر (الجديد) -->
