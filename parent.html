@@ -332,6 +332,7 @@
                 </div>
 
                 <!-- 🎁 تاب متجر المكافآت -->
+        <!-- 🎁 تاب متجر المكافآت -->
         <div id="tab-rewards" class="tab-section" style="display:none;">
             <div class="page-header">
                 <h2>متجر السنتر 🎁</h2>
@@ -664,7 +665,6 @@
             }
         };
 
-        // المتجر
 // ==========================================
         // 🛒 نظام متجر الطالب (عرض العناصر والشراء)
         // ==========================================
@@ -754,14 +754,14 @@
                     });
 
                     alert(`🎉 مبروك يا بطل! تم استبدال/شراء "${itemName}" بنجاح! سيتم تسليمها لك في السنتر.`);
-                    location.reload(); // ريفريش لتحديث كل الأرقام بشياكة
+                    location.reload(); 
                 }
             } catch (e) {
                 alert("حدث خطأ بالاتصال! يرجى المحاولة مرة أخرى.");
                 if(btn) { btn.innerText = "استبدال / شراء 🎁"; btn.disabled = false; }
             }
         };
-        // المنتدى
+       // المنتدى
         window.submitForumQuestion = async function() {
             let text = document.getElementById("forumQuestionInput").value.trim();
             if(!text) return alert("اكتب السؤال أولاً!");
