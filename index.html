@@ -672,7 +672,7 @@
         <button class="save-btn" id="tab-btn-notifications" onclick="switchPlatformTab('notifications')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color); flex-shrink: 0;">📢 الإشعارات المباشرة</button>
         <!-- 🔥 الزرار الجديد بتاع المتجر -->
         <button class="save-btn" id="tab-btn-store" onclick="switchPlatformTab('store')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color); flex-shrink: 0;">🛒 متجر السنتر</button>
-    
+        <button class="save-btn" id="tab-btn-forum" onclick="switchPlatformTab('forum')" style="width: auto; padding: 10px 20px; font-size: 15px; background: var(--secondary-color); flex-shrink: 0;">💬 منتدى الأسئلة</button>
     </div>
 
     <div id="platform-codes" class="platform-section">
@@ -829,10 +829,33 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 📢 تاب مركز الإشعارات (الجديد) -->
+    <!-- 💬 تاب منتدى الأسئلة (الجديد) -->
     <!-- ========================================== -->
-    <div id="platform-notifications" class="platform-section" style="display: none;">
-        
+    <div id="platform-forum" class="platform-section" style="display: none;">
+        <div class="card" style="padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: var(--primary-color); margin: 0;">💬 أسئلة منتدى "اسأل المستر"</h3>
+                <button class="theme-btn" style="padding: 8px 15px; border-color: var(--primary-color); color: var(--primary-color); width: auto;" onclick="loadPlatformForumQuestions()">🔄 تحديث قائمة الأسئلة</button>
+            </div>
+            
+            <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                <table class="students-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>الطالب</th>
+                            <th>السؤال</th>
+                            <th>الرد الحالي</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="forum-questions-tbody">
+                        <tr><td colspan="4" style="text-align:center;">جاري جلب الأسئلة... ⏳</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+       
         <!-- بوكس إرسال الإشعار -->
         <div class="card" style="margin-bottom: 20px; padding: 25px; border-top: 4px solid #f59e0b; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
             <h3 style="color: #f59e0b; margin-top: 0; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
@@ -1497,6 +1520,7 @@
                 <div class="input-group"><label>المجموعة (أو السنتر)</label><select id="schedGroup" required class="custom-input"><option value="">اختر الصف أولاً...</option></select></div>
                 <div class="input-group"><label>المكان / السنتر:</label><input type="text" id="schedLocation" class="custom-input" placeholder="اسم السنتر أو المكان" required></div>
                 <button type="submit" class="save-btn">إضافة للجدول</button>
+
             </form>
         </div>
     </div>
