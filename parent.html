@@ -144,6 +144,15 @@
         /* سكرول بار أنيق للنافذة */
         #detailsCoursePlaylist::-webkit-scrollbar { width: 6px; }
         #detailsCoursePlaylist::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+
+        /* 🗂️ تنسيقات تابات الطالب الجديدة */
+        .tabs-grid { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 8px; }
+        .tab-card { background: var(--card-bg); padding: 12px 22px; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 15px; color: var(--text-muted); border-bottom: 4px solid transparent; transition: 0.3s; white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border); }
+        .tab-card:hover { transform: translateY(-3px); color: var(--secondary); box-shadow: 0 6px 12px rgba(0,0,0,0.05); }
+        .tab-card.active { color: var(--primary); border-bottom-color: var(--primary); background: #fffaf5; }
+        .tab-section { display: none; animation: fadeIn 0.4s ease; }
+        .tab-section.active { display: block; }
     </style>
 </head>
 <body>
@@ -196,10 +205,10 @@
 
         <div class="main-container">
             <aside class="sidebar">
-                <div class="nav-item active" onclick="switchTab('tab-home')">🏠 الرئيسية</div>
-                <div class="nav-item" onclick="switchTab('tab-attendance')">📅 سجل الحضور</div>
-                <div class="nav-item" onclick="switchTab('tab-exams')">📝 الامتحانات</div>
+                <div class="nav-item active" onclick="switchTab('tab-exams')">🏠 الرئيسية (الامتحانات)</div>
                 <div class="nav-item" onclick="switchTab('tab-lectures')">🎬 المحاضرات</div>
+                <div class="nav-item" onclick="switchTab('tab-rewards')">🎁 متجر المكافآت</div>
+                <div class="nav-item" onclick="switchTab('tab-forum')">💬 اسأل المستر</div>
                 <div class="nav-item" onclick="switchTab('tab-wallet')">💰 محفظتي</div>
                 <div class="nav-item" style="color: #ef4444; margin-top: auto;" onclick="logoutStudent()">🚪 خروج</div>
             </aside>
@@ -419,13 +428,30 @@
             location.reload(); 
         }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            if(event) event.currentTarget.classList.add('active');
+function switchTab(tabId) {
+            // إخفاء كل الأقسام
+            document.querySelectorAll('.tab-section').forEach(sec => {
+                sec.style.display = 'none';
+                sec.classList.remove('active');
+            });
+            
+            // إزالة التفعيل من كل الزراير والسايدبار
+            document.querySelectorAll('.tab-card, .nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            
+            // إظهار القسم المطلوب
+            let targetSec = document.getElementById(tabId);
+            if (targetSec) {
+                targetSec.style.display = 'block';
+                targetSec.classList.add('active');
+            }
+            
+            // تفعيل الزرار اللي انضغط عليه حالاً
+            if(event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
         }
-
 // ==========================================
         // 🔄 تحديث وتزامن لوحة تحكم الطالب الشاملة
         // ==========================================
