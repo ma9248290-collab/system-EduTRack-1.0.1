@@ -906,52 +906,6 @@
             } catch(e) {}
         };
 
-        function renderStudentLectures() {
-            let list = document.getElementById("studentLecturesList");
-            if(!list) return; list.innerHTML = "";
-            if(window.allLectures.length === 0) { list.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">لا توجد كورسات متاحة.</div>`; return; }
-
-            window.allLectures.forEach(lec => {
-                let isFree = lec.type === 'free';
-                let hasAccess = window.studentHasAccess(lec);
-                let attendedSession = (!isFree && hasAccess && (!currentStudent.purchasedCourses || !currentStudent.purchasedCourses.includes(lec.id)));
-                let canWatch = isFree || hasAccess;
-                
-                let badgeHtml = isFree ? `<span style="background: #10b981; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">🎁 مجاني</span>` 
-                    : attendedSession ? `<span style="background: #3b82f6; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">✅ مجاني للحضور</span>` 
-                    : hasAccess ? `<span style="background: #8b5cf6; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">🔓 تم الشراء</span>` 
-                    : `<span style="background: #ef4444; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">💰 ${lec.price} ج.م</span>`;
-
-                let actionBtn = canWatch ? `<button class="btn" style="background: #3b82f6;" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض المحتوى</button>` : `<button class="btn" style="background: #10b981;" onclick="purchaseCourse('${lec.id}', ${lec.price})">🛒 شراء</button>`;
-
-                list.innerHTML += `
-                <div style="background: var(--card-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
-                    <div style="position: relative;"><img src="${lec.image}" style="width: 100%; height: 180px; object-fit: cover;"><div style="position: absolute; top: 15px; right: 15px;">${badgeHtml}</div></div>
-                    <div style="padding: 20px; display: flex; flex-direction: column; flex: 1;">
-                        <h3 style="margin: 0 0 10px 0; color: var(--secondary); font-size: 18px;">${lec.title}</h3>
-                        <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted);">${lec.desc || 'لا تفاصيل'}</p>
-                        <div style="margin-top: auto;">${actionBtn}</div>
-                    </div>
-                </div>`;
-            });
-        }
-
-        window.openStudentCourseDetails = function(courseId) {
-            let course = window.allLectures.find(l => l.id === courseId);
-            if(!course) return;
-            document.getElementById("detailsCourseTitle").innerText = course.title;
-            document.getElementById("detailsCourseImage").src = course.image || '';
-            document.getElementById("detailsCourseDesc").innerText = course.desc || "";
-            let vids = course.videos || [];
-            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
-            let playlistHtml = "";
-            vids.forEach((v, idx) => {
-                let safeTitle = v.title.replace(/'/g, "\\'");
-                playlistHtml += `<div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid var(--border); margin-bottom: 8px;"><span style="font-weight: bold; color: var(--secondary);">▶️ ${v.title}</span><button class="btn" style="background: var(--success); width: auto; padding: 8px 20px;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل 🔒</button></div>`;
-            });
-            document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
-            document.getElementById("studentCourseDetailsModal").style.display = "flex";
-        };
 
         window.toggleCustomFullscreen = function() {
             let player = document.getElementById("video-wrapper");
@@ -1052,36 +1006,65 @@
             } catch (e) { alert("حدث خطأ!"); }
         }
 
-        async function showOnlineExams(isRenderOnly = false) {
+ // ==========================================
+        // 💻 منصة الامتحانات الإلكترونية وإصلاح الفلترة
+        // ==========================================
+        window.showOnlineExams = async function(isRenderOnly = false) {
             if(!isRenderOnly) {
                 document.getElementById("app-layout").style.display = "none";
                 document.getElementById("online-exams-list-screen").style.display = "block";
             }
+            
             const container = document.getElementById("available-exams-container");
-            container.innerHTML = `جاري جلب الامتحانات...`;
+            container.innerHTML = `<div style="text-align:center; padding:40px;"><div class="octo-mascot octo-loading" style="width:60px; height:60px; margin-bottom:15px;"></div><br>جاري جلب الامتحانات... ⏳</div>`;
+            
             try {
                 let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
                 let allSubs = await subRes.json() || {};
                 window.studentSubmissions = allSubs;
+                
+                // 🔥 التعديل هنا: فلترة قوية للامتحانات عشان تظهر للطالب صح
+                let myExams = window.allOnlineExams.filter(e => {
+                    if(!e || (e.status !== "open" && e.status !== "closed")) return false;
+                    let groupArray = Array.isArray(e.group) ? e.group : [e.group];
+                    return groupArray.includes(currentStudent.group) || groupArray.includes("all");
+                });
+
                 container.innerHTML = "";
-                let myExams = allOnlineExams.filter(e => e && (e.status === "open" || e.status === "closed") && (Array.isArray(e.group) ? e.group.includes(currentStudent.group) || e.group.includes("all") : e.group === currentStudent.group || e.group === "all"));
-                if (myExams.length === 0) { container.innerHTML = `لا توجد امتحانات إلكترونية.`; return; }
+                
+                if (myExams.length === 0) { 
+                    container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted); background: var(--card-bg); border-radius: 16px; border: 2px dashed var(--border); font-weight: bold; font-size: 16px;">لا توجد امتحانات إلكترونية متاحة لمجموعتك حالياً. 🎉</div>`; 
+                    return; 
+                }
+
                 myExams.forEach(exam => {
                     let isSubmitted = allSubs[exam.id] && allSubs[exam.id][currentStudent.phone];
                     let actionBtn = "";
+                    
                     if (isSubmitted) {
                         let canViewResult = exam.autoShowResult || isSubmitted.isGraded;
-                        let scoreText = canViewResult ? `${isSubmitted.score} / ${exam.totalScore}` : "قيد المراجعة";
-                        let viewBtn = canViewResult ? `<button class="btn" onclick="reviewExam('${exam.id}')">عرض الإجابات</button>` : `<button class="btn" disabled>الإجابات مخفية</button>`;
-                        actionBtn = `النتيجة: ${scoreText} ${viewBtn}`;
+                        let scoreText = canViewResult ? `${isSubmitted.score} / ${exam.totalScore}` : "قيد المراجعة ⏳";
+                        let viewBtn = canViewResult ? `<button class="btn" style="background: var(--primary); width: auto;" onclick="reviewExam('${exam.id}')">عرض الإجابات</button>` : `<button class="btn" style="background: var(--text-muted); width: auto;" disabled>الإجابات مخفية</button>`;
+                        
+                        actionBtn = `<div style="text-align:center; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+                            <span style="color:var(--success); font-weight:bold; display:block; margin-bottom: 5px;">تم التسليم بنجاح ✅</span>
+                            <span style="font-weight:900; color:var(--secondary); font-size: 18px; display:block; margin-bottom: 10px;">النتيجة: ${scoreText}</span>
+                            ${viewBtn}
+                        </div>`;
                     } else {
-                        actionBtn = exam.status === "closed" ? `انتهى وقت الامتحان` : `<button class="btn" onclick="startExam('${exam.id}')">بدء الامتحان</button>`;
+                        if (exam.status === "closed") {
+                            actionBtn = `<div style="text-align:center; background: #fee2e2; padding: 10px 20px; border-radius: 12px; border: 1px solid #fca5a5;"><span style="color:#ef4444; font-weight:bold;">انتهى وقت الامتحان ❌</span></div>`;
+                        } else {
+                            actionBtn = `<button class="btn" style="width: auto; padding: 12px 25px; font-size: 15px;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
+                        }
                     }
-                    container.innerHTML += `<div class="exam-card"><h3>${exam.title}</h3>${actionBtn}</div>`;
+                    
+                    container.innerHTML += `<div class="exam-card"><div><h3 style="margin:0 0 8px 0; color:var(--secondary); font-size: 18px;">📝 ${exam.title}</h3><p style="margin:0; font-size:14px; color:var(--text-muted); font-weight: 600;">⏱️ المدة: ${exam.duration} دقيقة &nbsp;|&nbsp; 🎯 المجموع: ${exam.totalScore} درجة</p></div>${actionBtn}</div>`;
                 });
-            } catch(e) {}
-        }
-
+            } catch(e) { 
+                container.innerHTML = `<div style="text-align:center; color:var(--danger); padding:20px; font-weight:bold;">حدث خطأ أثناء تحميل قائمة الامتحانات!</div>`; 
+            }
+        };
         window.reviewExam = function(examId) {
             let exam = allOnlineExams.find(e => e.id === examId); let sub = window.studentSubmissions[examId][currentStudent.phone];
             if(!exam || !sub) return;
@@ -1146,6 +1129,69 @@
                 alert("تم التسليم بنجاح!"); document.getElementById("active-exam-screen").style.display = "none"; showOnlineExams(); 
             } catch (e) { alert("خطأ في الاتصال!"); }
         }
+
+
+
+
+        // ==========================================
+        // 📚 عرض كروت الكورسات وإصلاح زرار العرض
+        // ==========================================
+        function renderStudentLectures() {
+            let list = document.getElementById("studentLecturesList");
+            if(!list) return; list.innerHTML = "";
+            if(window.allLectures.length === 0) { list.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">لا توجد كورسات متاحة.</div>`; return; }
+
+            window.allLectures.forEach(lec => {
+                let isFree = lec.type === 'free';
+                let hasAccess = window.studentHasAccess(lec);
+                let attendedSession = (!isFree && hasAccess && (!currentStudent.purchasedCourses || !currentStudent.purchasedCourses.includes(lec.id)));
+                let canWatch = isFree || hasAccess;
+                
+                let badgeHtml = isFree ? `<span style="background: #10b981; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">🎁 مجاني</span>` 
+                    : attendedSession ? `<span style="background: #3b82f6; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">✅ مجاني للحضور</span>` 
+                    : hasAccess ? `<span style="background: #8b5cf6; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">🔓 تم الشراء</span>` 
+                    : `<span style="background: #ef4444; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">💰 ${lec.price} ج.م</span>`;
+
+                // 🔥 التعديل هنا: التأكد من عمل زر عرض المحتوى
+                let actionBtn = canWatch 
+                    ? `<button class="btn" style="background: #3b82f6;" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض المحتوى</button>` 
+                    : `<button class="btn" style="background: #10b981;" onclick="purchaseCourse('${lec.id}', ${lec.price})">🛒 شراء</button>`;
+
+                list.innerHTML += `
+                <div style="background: var(--card-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                    <div style="position: relative;"><img src="${lec.image}" style="width: 100%; height: 180px; object-fit: cover;"><div style="position: absolute; top: 15px; right: 15px;">${badgeHtml}</div></div>
+                    <div style="padding: 20px; display: flex; flex-direction: column; flex: 1;">
+                        <h3 style="margin: 0 0 10px 0; color: var(--secondary); font-size: 18px;">${lec.title}</h3>
+                        <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted);">${lec.desc || 'لا تفاصيل'}</p>
+                        <div style="margin-top: auto;">${actionBtn}</div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        window.openStudentCourseDetails = function(courseId) {
+            let course = window.allLectures.find(l => l.id === courseId);
+            if(!course) return;
+            
+            document.getElementById("detailsCourseTitle").innerText = course.title;
+            document.getElementById("detailsCourseImage").src = course.image || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop';
+            document.getElementById("detailsCourseDesc").innerText = course.desc || "لا يوجد وصف إضافي.";
+            
+            let vids = course.videos || [];
+            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
+            
+            let playlistHtml = "";
+            vids.forEach((v, idx) => {
+                let safeTitle = v.title.replace(/'/g, "\\'");
+                playlistHtml += `<div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items:center; border: 1px solid var(--border); margin-bottom: 8px;"><span style="font-weight: bold; color: var(--secondary);">▶️ ${v.title}</span><button class="btn" style="background: var(--success); width: auto; padding: 8px 20px;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل 🔒</button></div>`;
+            });
+            
+            document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
+            // 🔥 التعديل هنا: التأكد من إظهار النافذة في أعلى طبقة (z-index)
+            let modal = document.getElementById("studentCourseDetailsModal");
+            modal.style.display = "flex";
+            modal.style.zIndex = "9999999"; 
+        };
     </script>
     
 </body>
