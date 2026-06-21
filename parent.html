@@ -791,58 +791,58 @@
         };
 
         // ==========================================
-        // 📚 الكورسات
+        // 📚 عرض كروت الكورسات
         // ==========================================
         function renderStudentLectures() {
             let list = document.getElementById("studentLecturesList");
-            if(!list) return; list.innerHTML = "";
-            if(window.allLectures.length === 0) { list.innerHTML = `<div style="grid-column: 1/-1; text-align:center;">لا توجد كورسات.</div>`; return; }
+            if(!list) return;
+            list.innerHTML = "";
+            
+            if(window.allLectures.length === 0) {
+                list.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color:var(--text-muted); background: var(--card-bg); border-radius: 16px; border: 1px dashed var(--border);">لا توجد كورسات متاحة حالياً.</div>`;
+                return;
+            }
 
             window.allLectures.forEach(lec => {
                 let isFree = lec.type === 'free';
                 let hasAccess = window.studentHasAccess(lec);
-                let attendedSession = (!isFree && hasAccess && (!currentStudent.purchasedCourses || !currentStudent.purchasedCourses.includes(lec.id)));
+                
+                let attendedSession = false;
+                if (!isFree && hasAccess && (!currentStudent.purchasedCourses || !currentStudent.purchasedCourses.includes(lec.id))) {
+                    attendedSession = true;
+                }
+
                 let canWatch = isFree || hasAccess;
                 
-                let badgeHtml = isFree ? `<span style="background: #10b981; color: white; padding: 6px 12px; border-radius: 8px;">🎁 مجاني</span>` 
-                    : attendedSession ? `<span style="background: #3b82f6; color: white; padding: 6px 12px; border-radius: 8px;">✅ مجاني للحضور</span>` 
-                    : hasAccess ? `<span style="background: #8b5cf6; color: white; padding: 6px 12px; border-radius: 8px;">🔓 تم الشراء</span>` 
-                    : `<span style="background: #ef4444; color: white; padding: 6px 12px; border-radius: 8px;">💰 ${lec.price} ج.م</span>`;
+                let badgeHtml = "";
+                if (isFree) {
+                    badgeHtml = `<span style="background: rgba(16, 185, 129, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">🎁 مجاني</span>`;
+                } else if (attendedSession) {
+                    badgeHtml = `<span style="background: rgba(59, 130, 246, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">✅ مجاني لحضورك الحصة</span>`;
+                } else if (hasAccess) {
+                    badgeHtml = `<span style="background: rgba(139, 92, 246, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">🔓 تم الشراء</span>`;
+                } else {
+                    badgeHtml = `<span style="background: rgba(239, 68, 68, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">💰 ${lec.price} ج.م</span>`;
+                }
 
-                // 🔥 الزرار شغال هنا 100%
                 let actionBtn = canWatch 
-                    ? `<button class="btn" style="background: #3b82f6;" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض المحتوى</button>` 
-                    : `<button class="btn" style="background: #10b981;" onclick="purchaseCourse('${lec.id}', ${lec.price})">🛒 شراء</button>`;
+                    ? `<button class="btn" style="width: 100%; background: #3b82f6; color: white; font-weight: bold; padding: 12px; border-radius: 8px; transition: 0.3s; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض محتوى الكورس</button>`
+                    : `<button class="btn" style="width: 100%; background: #10b981; color: white; font-weight: bold; padding: 12px; border-radius: 8px; transition: 0.3s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onclick="purchaseCourse('${lec.id}', ${lec.price})">🛒 شراء وخصم من المحفظة</button>`;
 
                 list.innerHTML += `
-                <div style="background: var(--card-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column;">
-                    <div style="position: relative;"><img src="${lec.image}" style="width: 100%; height: 180px; object-fit: cover;"><div style="position: absolute; top: 15px; right: 15px;">${badgeHtml}</div></div>
+                <div style="background: var(--card-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); transition: 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 30px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)';">
+                    <div style="position: relative;">
+                        <img src="${lec.image}" style="width: 100%; height: 180px; object-fit: cover;">
+                        <div style="position: absolute; top: 15px; right: 15px;">${badgeHtml}</div>
+                    </div>
                     <div style="padding: 20px; display: flex; flex-direction: column; flex: 1;">
-                        <h3 style="margin: 0 0 10px 0;">${lec.title}</h3>
+                        <h3 style="margin: 0 0 10px 0; color: var(--secondary); font-size: 18px; font-weight: 800;">${lec.title}</h3>
+                        <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${lec.desc || 'لا توجد تفاصيل إضافية لهذا الكورس.'}</p>
                         <div style="margin-top: auto;">${actionBtn}</div>
                     </div>
                 </div>`;
             });
         }
-
-        window.openStudentCourseDetails = function(courseId) {
-            let course = window.allLectures.find(l => l.id === courseId);
-            if(!course) return;
-            document.getElementById("detailsCourseTitle").innerText = course.title;
-            document.getElementById("detailsCourseImage").src = course.image || '';
-            document.getElementById("detailsCourseDesc").innerText = course.desc || "";
-            let vids = course.videos || [];
-            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
-            let playlistHtml = "";
-            vids.forEach((v, idx) => {
-                let safeTitle = v.title.replace(/'/g, "\\'");
-                playlistHtml += `<div style="background: var(--bg-color); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid var(--border); margin-bottom: 8px;"><span style="font-weight: bold;">▶️ ${v.title}</span><button class="btn" style="background: var(--success); width: auto; padding: 8px 20px;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل</button></div>`;
-            });
-            document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
-            // إظهار النافذة في أعلى طبقة عشان تبان فوق الامتحانات
-            let modal = document.getElementById("studentCourseDetailsModal");
-            modal.style.display = "flex"; modal.style.zIndex = "9999999"; 
-        };
 
         // ==========================================
         // 💻 الامتحانات وشكل الامتحان الأنيق
@@ -958,54 +958,135 @@
         }
 
         // ==========================================
-        // 🎬 مشغل الكورس والـ DRM
+        // 📜 عرض تفاصيل الكورس في نافذة منبثقة
+        // ==========================================
+        window.openStudentCourseDetails = function(courseId) {
+            let course = window.allLectures.find(l => l.id === courseId);
+            if(!course) return;
+
+            document.getElementById("detailsCourseTitle").innerText = course.title;
+            document.getElementById("detailsCourseImage").src = course.image || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop';
+            document.getElementById("detailsCourseDesc").innerText = course.desc || "لا يوجد وصف إضافي متوفر لهذا الكورس.";
+
+            let vids = course.videos || [];
+            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
+
+            let playlistHtml = "";
+            vids.forEach((v, idx) => {
+                let safeTitle = v.title.replace(/'/g, "\\'");
+                playlistHtml += `
+                <div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); margin-bottom: 8px;">
+                    <span style="font-weight: bold; color: var(--secondary); font-size: 15px;">▶️ ${v.title}</span>
+                    <button class="btn" style="background: var(--success); padding: 8px 20px; width: auto; font-size: 13px; font-weight: bold;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل المحاضرة 🔒</button>
+                </div>`;
+            });
+            document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
+            document.getElementById("studentCourseDetailsModal").style.display = "flex";
+        };
+
+        // ==========================================
+        // 🔲 دالة تكبير وتصغير الشاشة المخصصة
         // ==========================================
         window.toggleCustomFullscreen = function() {
             let player = document.getElementById("video-wrapper");
             let btn = document.getElementById("custom-fs-btn");
-            if (!document.fullscreenElement) { if (player.requestFullscreen) player.requestFullscreen(); btn.innerText = "🗗 تصغير"; } 
-            else { if (document.exitFullscreen) document.exitFullscreen(); btn.innerText = "⛶ تكبير"; }
+            if (!document.fullscreenElement) {
+                if (player.requestFullscreen) { player.requestFullscreen(); }
+                else if (player.webkitRequestFullscreen) { player.webkitRequestFullscreen(); }
+                else if (player.msRequestFullscreen) { player.msRequestFullscreen(); }
+                btn.innerText = "🗗 تصغير الشاشة";
+            } else {
+                if (document.exitFullscreen) { document.exitFullscreen(); }
+                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+                else if (document.msExitFullscreen) { document.msExitFullscreen(); }
+                btn.innerText = "⛶ تكبير الشاشة";
+            }
         };
 
+        // ==========================================
+        // 🎬 مشغل الكورس والـ DRM
+        // ==========================================
         window.openCoursePlayer = function(courseId, startVideoIndex = 0) {
-            let course = window.allLectures.find(l => l.id === courseId); if(!course) return;
-            document.body.classList.add("no-select"); document.getElementById("app-layout").style.display = "none"; document.getElementById("protected-course-screen").style.display = "flex"; document.getElementById("player-course-title").innerText = course.title;
-            let vids = course.videos || []; if(vids.length === 0 && course.url) vids.push({title: "المحاضرة", url: course.url});
-            let playlistHtml = ``;
+            let course = window.allLectures.find(l => l.id === courseId);
+            if(!course) return;
+
+            document.body.classList.add("no-select");
+            document.getElementById("app-layout").style.display = "none";
+            document.getElementById("protected-course-screen").style.display = "flex";
+            document.getElementById("player-course-title").innerText = `${course.title}`;
+            
+            document.getElementById("video-watermark").innerText = `${currentStudent.name} \n ${currentStudent.phone}`;
+
+            let vids = course.videos || [];
+            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
+
+            let playlistHtml = `<h4 style="color:#94a3b8; margin:0 0 20px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">محتويات الكورس</h4>`;
             vids.forEach((v, idx) => {
-                let safeTitle = v.title.replace(/'/g, "\\'"); let isActive = idx === startVideoIndex ? "color: #3b82f6; font-weight: bold;" : "color: #94a3b8;";
-                playlistHtml += `<div style="${isActive} padding:15px; cursor:pointer;" onclick="playCourseVideo('${v.url}', '${safeTitle}', '${course.id}', ${idx}, this)">▶️ ${v.title}</div>`;
+                let safeTitle = v.title.replace(/'/g, "\\'");
+                let isActive = idx === startVideoIndex ? "background: rgba(59, 130, 246, 0.15); border-right: 4px solid #3b82f6; color: #3b82f6; font-weight: bold;" : "background: transparent; color: #94a3b8; border-right: 4px solid transparent;";
+                playlistHtml += `
+                <div style="${isActive} padding:15px; border-radius:8px; margin-bottom:8px; cursor:pointer; transition:0.3s; display: flex; align-items: center; gap: 10px;" 
+                     onmouseover="this.style.background='rgba(255,255,255,0.05)'" 
+                     onmouseout="this.style.background='${idx === startVideoIndex ? 'rgba(59, 130, 246, 0.15)' : 'transparent'}'" 
+                     onclick="playCourseVideo('${v.url}', '${safeTitle}', '${course.id}', ${idx}, this)">
+                    <span style="font-size: 18px;">${idx === startVideoIndex ? '▶️' : '🔒'}</span> 
+                    <span style="flex: 1; font-size: 15px;">${v.title}</span>
+                </div>`;
             });
             document.getElementById("player-playlist").innerHTML = playlistHtml;
+
             if(vids.length > startVideoIndex) playCourseVideo(vids[startVideoIndex].url, vids[startVideoIndex].title, course.id, startVideoIndex);
             
-            document.addEventListener('contextmenu', blockContext); document.addEventListener('keydown', blockKeys);
-            window.addEventListener('blur', applyBlackout); window.addEventListener('focus', removeBlackout);
+            document.addEventListener('contextmenu', blockContext);
+            document.addEventListener('keydown', blockKeys);
+            window.addEventListener('blur', applyBlackout);
+            window.addEventListener('focus', removeBlackout);
         };
 
         window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex, element = null) {
             let embedUrl = url;
             if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
             else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
-            if(embedUrl.includes("youtube.com/embed/")) embedUrl += (embedUrl.includes("?")?"&":"?") + "modestbranding=1&rel=0&showinfo=0&fs=0"; 
+            
+            if(embedUrl.includes("youtube.com/embed/")) {
+                let sep = embedUrl.includes("?") ? "&" : "?";
+                embedUrl += sep + "modestbranding=1&rel=0&showinfo=0&fs=0"; 
+            }
+            
             document.getElementById("video-iframe").src = embedUrl;
+
+            if(element) {
+                let allItems = document.getElementById("player-playlist").querySelectorAll("div");
+                allItems.forEach(el => { el.style.background = "transparent"; el.style.borderRight = "4px solid transparent"; el.style.color = "#94a3b8"; });
+                element.style.background = "rgba(59, 130, 246, 0.15)"; element.style.borderRight = "4px solid #3b82f6"; element.style.color = "#3b82f6";
+            }
 
             if(courseId && currentStudent) {
                 try {
                     let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
-                    let res = await fetch(trackingUrl); let oldData = await res.json();
+                    let res = await fetch(trackingUrl);
+                    let oldData = await res.json();
                     let currentViews = (oldData && oldData.views) ? oldData.views : 0;
-                    let dateStr = new Date().toLocaleString('ar-EG');
-                    await fetch(trackingUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoTitle: videoTitle || "المحاضرة", views: currentViews + 1, lastSeen: dateStr }) });
-                } catch(e) {}
+                    
+                    let now = new Date();
+                    let dateStr = now.toLocaleDateString('ar-EG') + " | " + now.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
+
+                    let newData = { videoTitle: videoTitle || "المحاضرة", views: currentViews + 1, lastSeen: dateStr };
+                    await fetch(trackingUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newData) });
+                } catch(e) { console.error("Tracking Error:", e); }
             }
         };
 
         window.closeCoursePlayer = function() {
-            document.getElementById("video-iframe").src = ""; document.body.classList.remove("no-select");
-            document.getElementById("protected-course-screen").style.display = "none"; document.getElementById("app-layout").style.display = "block";
-            document.removeEventListener('contextmenu', blockContext); document.removeEventListener('keydown', blockKeys);
-            window.removeEventListener('blur', applyBlackout); window.removeEventListener('focus', removeBlackout);
+            document.getElementById("video-iframe").src = ""; 
+            document.body.classList.remove("no-select");
+            document.getElementById("protected-course-screen").style.display = "none";
+            document.getElementById("app-layout").style.display = "block";
+            
+            document.removeEventListener('contextmenu', blockContext);
+            document.removeEventListener('keydown', blockKeys);
+            window.removeEventListener('blur', applyBlackout);
+            window.removeEventListener('focus', removeBlackout);
         };
 
         function blockContext(e) { e.preventDefault(); }
