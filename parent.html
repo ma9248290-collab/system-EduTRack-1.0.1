@@ -423,8 +423,7 @@
         <div id="review-questions-render"></div>
     </div>
 
-    <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -571,8 +570,6 @@
         #detailsCoursePlaylist::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
     </style>
 </head>
-<body>
-
     <div class="login-wrapper" id="login-screen">
         <div class="login-box">
             <div style="margin-top: -80px; margin-bottom: 15px;"><div class="octo-mascot octo-loading"></div></div>
@@ -1408,7 +1405,6 @@
             document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
             document.getElementById("studentCourseDetailsModal").style.display = "flex";
         };
-
         // ==========================================
         // 🔲 دالة تكبير وتصغير الشاشة المخصصة
         // ==========================================
@@ -1556,6 +1552,45 @@
             } catch (e) { alert("حدث خطأ!"); }
         }
     </script>
+
+    <!-- نافذة تفاصيل الكورس -->
+    <div id="studentCourseDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999990; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="modal-content" style="background: var(--card-bg); width: 650px; max-width: 95%; border-radius: 16px; padding: 25px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <span class="close" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: var(--danger);">&times;</span>
+            <h2 id="detailsCourseTitle" style="color: var(--secondary); margin-top: 0; padding-left: 30px;"></h2>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+                <img id="detailsCourseImage" src="" style="width: 140px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid var(--primary);">
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 5px 0; color: var(--primary);">عن الكورس:</h4>
+                    <p id="detailsCourseDesc" style="color: var(--text-muted); font-size: 13px; line-height: 1.6; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></p>
+                </div>
+            </div>
+            <h4 style="border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 15px; color: var(--secondary);">محتويات الكورس 🎥</h4>
+            <div id="detailsCoursePlaylist" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-left: 5px;"></div>
+        </div>
+    </div>
+
+    <!-- نافذة مشغل الفيديو والحماية -->
+    <div id="protected-course-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 999999; flex-direction: column;">
+        <div style="padding: 15px 25px; background: rgba(15, 23, 42, 0.95); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <button onclick="closeCoursePlayer()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;">🔙 العودة للمنصة</button>
+                <h3 id="player-course-title" style="color: #f8fafc; margin: 0; font-size: 18px; border-right: 2px solid #3b82f6; padding-right: 20px;">جاري التحميل...</h3>
+            </div>
+        </div>
+        <div style="display: flex; flex: 1; overflow: hidden; position: relative;" id="anti-record-container">
+            <div id="player-playlist" style="width: 320px; background: #0f172a; overflow-y: auto; padding: 20px; border-left: 1px solid #1e293b;"></div>
+            <div style="flex: 1; position: relative; background: #000; display: flex; justify-content: center; align-items: center;" id="video-wrapper">
+                <iframe id="video-iframe" sandbox="allow-scripts allow-same-origin allow-presentation" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
+                <div id="video-watermark" style="position: absolute; color: rgba(255,255,255,0.25); font-size: 24px; font-weight: 900; pointer-events: none; z-index: 10; transform: rotate(-30deg); animation: floatWatermark 20s infinite linear;"></div>
+                <div id="blackout-screen" style="position: absolute; top:0; left:0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column;">
+                    <span style="font-size: 60px; margin-bottom: 20px;">⚠️</span>
+                    <h2 style="color: #ef4444; text-align: center; margin: 0;">تم إخفاء المحتوى للحماية!</h2>
+                </div>
+                <button onclick="toggleCustomFullscreen()" id="custom-fs-btn" style="position: absolute; bottom: 20px; right: 20px; z-index: 15; background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">⛶ تكبير الشاشة</button>
+            </div>
+        </div>
+    </div>
     
 </body>
 </html>
