@@ -1006,7 +1006,7 @@
             } catch (e) { alert("حدث خطأ!"); }
         }
 
- // ==========================================
+        // ==========================================
         // 💻 منصة الامتحانات الإلكترونية وإصلاح الفلترة
         // ==========================================
         window.showOnlineExams = async function(isRenderOnly = false) {
@@ -1023,7 +1023,6 @@
                 let allSubs = await subRes.json() || {};
                 window.studentSubmissions = allSubs;
                 
-                // 🔥 التعديل هنا: فلترة قوية للامتحانات عشان تظهر للطالب صح
                 let myExams = window.allOnlineExams.filter(e => {
                     if(!e || (e.status !== "open" && e.status !== "closed")) return false;
                     let groupArray = Array.isArray(e.group) ? e.group : [e.group];
@@ -1044,7 +1043,7 @@
                     if (isSubmitted) {
                         let canViewResult = exam.autoShowResult || isSubmitted.isGraded;
                         let scoreText = canViewResult ? `${isSubmitted.score} / ${exam.totalScore}` : "قيد المراجعة ⏳";
-                        let viewBtn = canViewResult ? `<button class="btn" style="background: var(--primary); width: auto;" onclick="reviewExam('${exam.id}')">عرض الإجابات</button>` : `<button class="btn" style="background: var(--text-muted); width: auto;" disabled>الإجابات مخفية</button>`;
+                        let viewBtn = canViewResult ? `<button class="btn" style="background: var(--primary); width: auto; padding: 8px 15px;" onclick="reviewExam('${exam.id}')">عرض الإجابات</button>` : `<button class="btn" style="background: var(--text-muted); width: auto; padding: 8px 15px;" disabled>الإجابات مخفية</button>`;
                         
                         actionBtn = `<div style="text-align:center; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
                             <span style="color:var(--success); font-weight:bold; display:block; margin-bottom: 5px;">تم التسليم بنجاح ✅</span>
@@ -1055,7 +1054,8 @@
                         if (exam.status === "closed") {
                             actionBtn = `<div style="text-align:center; background: #fee2e2; padding: 10px 20px; border-radius: 12px; border: 1px solid #fca5a5;"><span style="color:#ef4444; font-weight:bold;">انتهى وقت الامتحان ❌</span></div>`;
                         } else {
-                            actionBtn = `<button class="btn" style="width: auto; padding: 12px 25px; font-size: 15px;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
+                            // 🔥 تم إصلاح زرار بدء الامتحان ورجوعه للظهور
+                            actionBtn = `<button class="btn" style="width: auto; padding: 12px 25px; font-size: 15px; background: #10b981;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
                         }
                     }
                     
@@ -1065,7 +1065,8 @@
                 container.innerHTML = `<div style="text-align:center; color:var(--danger); padding:20px; font-weight:bold;">حدث خطأ أثناء تحميل قائمة الامتحانات!</div>`; 
             }
         };
-        window.reviewExam = function(examId) {
+    
+     window.reviewExam = function(examId) {
             let exam = allOnlineExams.find(e => e.id === examId); let sub = window.studentSubmissions[examId][currentStudent.phone];
             if(!exam || !sub) return;
             document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("review-exam-screen").style.display = "block";
@@ -1130,13 +1131,10 @@
             } catch (e) { alert("خطأ في الاتصال!"); }
         }
 
-
-
-
         // ==========================================
-        // 📚 عرض كروت الكورسات وإصلاح زرار العرض
+        // 📚 عرض كروت الكورسات وإصلاح النوافذ المنبثقة
         // ==========================================
-        function renderStudentLectures() {
+        window.renderStudentLectures = function() {
             let list = document.getElementById("studentLecturesList");
             if(!list) return; list.innerHTML = "";
             if(window.allLectures.length === 0) { list.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-muted);">لا توجد كورسات متاحة.</div>`; return; }
@@ -1152,7 +1150,7 @@
                     : hasAccess ? `<span style="background: #8b5cf6; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">🔓 تم الشراء</span>` 
                     : `<span style="background: #ef4444; color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;">💰 ${lec.price} ج.م</span>`;
 
-                // 🔥 التعديل هنا: التأكد من عمل زر عرض المحتوى
+                // 🔥 إصلاح زر عرض المحتوى
                 let actionBtn = canWatch 
                     ? `<button class="btn" style="background: #3b82f6;" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض المحتوى</button>` 
                     : `<button class="btn" style="background: #10b981;" onclick="purchaseCourse('${lec.id}', ${lec.price})">🛒 شراء</button>`;
@@ -1167,7 +1165,7 @@
                     </div>
                 </div>`;
             });
-        }
+        };
 
         window.openStudentCourseDetails = function(courseId) {
             let course = window.allLectures.find(l => l.id === courseId);
@@ -1183,16 +1181,23 @@
             let playlistHtml = "";
             vids.forEach((v, idx) => {
                 let safeTitle = v.title.replace(/'/g, "\\'");
-                playlistHtml += `<div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items:center; border: 1px solid var(--border); margin-bottom: 8px;"><span style="font-weight: bold; color: var(--secondary);">▶️ ${v.title}</span><button class="btn" style="background: var(--success); width: auto; padding: 8px 20px;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل 🔒</button></div>`;
+                // 🔥 إصلاح زر "تشغيل" الداخلي لفتح مشغل الفيديو
+                playlistHtml += `<div style="background: var(--bg-color); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items:center; border: 1px solid var(--border); margin-bottom: 8px;">
+                    <span style="font-weight: bold; color: var(--secondary);">▶️ ${v.title}</span>
+                    <button class="btn" style="background: var(--success); width: auto; padding: 8px 20px;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل 🔒</button>
+                </div>`;
             });
             
             document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
-            // 🔥 التعديل هنا: التأكد من إظهار النافذة في أعلى طبقة (z-index)
+            
+            // 🔥 إجبار النافذة إنها تظهر فوق كل حاجة
             let modal = document.getElementById("studentCourseDetailsModal");
             modal.style.display = "flex";
-            modal.style.zIndex = "9999999"; 
+            modal.style.zIndex = "99999999"; 
         };
-    </script>
+
+
+       </script>
     
 </body>
 </html>
