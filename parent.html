@@ -434,7 +434,6 @@
         window.allLectures = []; 
         window.allClassSessions = []; 
 
-        // 🛡️ دالة فحص صلاحية الطالب للكورس
         window.studentHasAccess = function(lec) {
             try {
                 if (!currentStudent) return false;
@@ -501,9 +500,6 @@
             if(event && event.currentTarget) event.currentTarget.classList.add('active');
         }
 
-        // ==========================================
-        // 🚀 تسجيل الدخول وتزامن واجهة الطالب الشاملة
-        // ==========================================
         async function fetchStudentData(isAutoLogin = false) {
             const code = document.getElementById("studentCode").value.trim();
             const phone = document.getElementById("parentPhone").value.trim();
@@ -563,7 +559,6 @@
                 allOnlineExams = data.onlineExams || [];
                 window.studentCode = code;
 
-                // تحديث كارت הـ ID
                 document.getElementById("top-name").innerText = currentStudent.name;
                 document.getElementById("top-group").innerText = currentStudent.group;
                 let cName = document.getElementById("card-student-name"); if(cName) cName.innerText = currentStudent.name;
@@ -574,13 +569,11 @@
                     JsBarcode("#digitalIdBarcode", currentStudent.code, { format: "CODE128", lineColor: "#0f172a", width: 2, height: 40, displayValue: false });
                 }
 
-                // تحديث المحفظة
                 let balance = currentStudent.walletBalance || 0;
                 document.getElementById("top-balance").innerText = balance;
                 if(document.getElementById("walletBalanceDisplay")) document.getElementById("walletBalanceDisplay").innerText = balance;
                 if(document.getElementById("wallet-page-balance")) document.getElementById("wallet-page-balance").innerHTML = `${balance} <span style="font-size: 24px;">ج.م</span>`;
 
-                // 📊 حساب شريط تتبع خطة المذاكرة لايف
                 let totalItems = 0; let completedItems = 0; let missingLectures = 0; let missingExams = 0;
                 try {
                     let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
@@ -605,7 +598,6 @@
                     if(document.getElementById("tracker-reminder")) document.getElementById("tracker-reminder").innerText = reminder || "🎯 واصل تقدمك!";
                 } catch(err) {}
 
-                // بناء جدول الحضور
                 let attHtml = `<tr><th>التاريخ</th><th>الموضوع</th><th>حالة الحضور</th></tr>`;
                 let hasAtt = false;
                 (data.classSessions || []).filter(s => s && s.group === currentStudent.group).reverse().forEach(s => {
@@ -617,7 +609,6 @@
                 if(!hasAtt) attHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد حصص مسجلة.</td></tr>`;
                 document.getElementById("attendance-details").innerHTML = attHtml;
 
-                // بناء جدول الامتحانات
                 let exHtml = `<tr><th>التاريخ</th><th>اسم التقييم</th><th>الدرجة التي حصلت عليها</th></tr>`;
                 let hasEx = false;
                 (data.exams || []).concat(data.homeworks || []).filter(e => e && e.group === currentStudent.group).sort((a,b)=> new Date(b.date) - new Date(a.date)).forEach(e => {
@@ -629,12 +620,11 @@
                 if(!hasEx) exHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد تقييمات.</td></tr>`;
                 document.getElementById("exams-details").innerHTML = exHtml;
 
-                // استدعاء الدوال الإضافية
                 fetchStudentNotifications();
                 if(typeof loadStudentStore === "function") loadStudentStore();
                 if(typeof loadForumQuestions === "function") loadForumQuestions();
-                showOnlineExams(true); // جلب الامتحانات في الخلفية
-                renderStudentLectures(); // جلب المحاضرات
+                showOnlineExams(true); 
+                renderStudentLectures(); 
 
                 document.getElementById("login-screen").style.display = "none";
                 document.getElementById("app-layout").style.display = "block";
@@ -645,9 +635,6 @@
             }
         }
 
-        // ==========================================
-        // 🔔 الإشعارات
-        // ==========================================
         async function fetchStudentNotifications() {
             try {
                 let notifRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/notifications.json`);
@@ -708,9 +695,6 @@
             }
         };
 
-        // ==========================================
-        // 🛒 المتجر
-        // ==========================================
         window.loadStudentStore = async function() {
             let container = document.getElementById("student-store-grid");
             if(!container) return;
@@ -777,9 +761,6 @@
             } catch (e) { alert("حدث خطأ."); }
         };
 
-        // ==========================================
-        // 💬 المنتدى
-        // ==========================================
         window.submitForumQuestion = async function() {
             let text = document.getElementById("forumQuestionInput").value.trim();
             if(!text) return alert("اكتب السؤال أولاً!");
@@ -810,7 +791,7 @@
         };
 
         // ==========================================
-        // 📚 الكورسات والامتحانات
+        // 📚 الكورسات
         // ==========================================
         function renderStudentLectures() {
             let list = document.getElementById("studentLecturesList");
@@ -828,6 +809,7 @@
                     : hasAccess ? `<span style="background: #8b5cf6; color: white; padding: 6px 12px; border-radius: 8px;">🔓 تم الشراء</span>` 
                     : `<span style="background: #ef4444; color: white; padding: 6px 12px; border-radius: 8px;">💰 ${lec.price} ج.م</span>`;
 
+                // 🔥 الزرار شغال هنا 100%
                 let actionBtn = canWatch 
                     ? `<button class="btn" style="background: #3b82f6;" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض المحتوى</button>` 
                     : `<button class="btn" style="background: #10b981;" onclick="purchaseCourse('${lec.id}', ${lec.price})">🛒 شراء</button>`;
@@ -850,17 +832,21 @@
             document.getElementById("detailsCourseImage").src = course.image || '';
             document.getElementById("detailsCourseDesc").innerText = course.desc || "";
             let vids = course.videos || [];
-            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة", url: course.url});
+            if(vids.length === 0 && course.url) vids.push({title: "المحاضرة كاملة", url: course.url});
             let playlistHtml = "";
             vids.forEach((v, idx) => {
                 let safeTitle = v.title.replace(/'/g, "\\'");
                 playlistHtml += `<div style="background: var(--bg-color); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid var(--border); margin-bottom: 8px;"><span style="font-weight: bold;">▶️ ${v.title}</span><button class="btn" style="background: var(--success); width: auto; padding: 8px 20px;" onclick="document.getElementById('studentCourseDetailsModal').style.display='none'; openCoursePlayer('${course.id}', ${idx})">تشغيل</button></div>`;
             });
             document.getElementById("detailsCoursePlaylist").innerHTML = playlistHtml;
+            // إظهار النافذة في أعلى طبقة عشان تبان فوق الامتحانات
             let modal = document.getElementById("studentCourseDetailsModal");
             modal.style.display = "flex"; modal.style.zIndex = "9999999"; 
         };
 
+        // ==========================================
+        // 💻 الامتحانات وشكل الامتحان الأنيق
+        // ==========================================
         window.showOnlineExams = async function(isRenderOnly = false) {
             if(!isRenderOnly) {
                 document.getElementById("app-layout").style.display = "none";
@@ -906,18 +892,20 @@
                     isCorrect = (studentAns === q.correctAnswerIndex); qScore = isCorrect ? q.points : 0;
                     ansHtml = `<div class="q-options">`;
                     q.options.forEach((opt, optIndex) => {
-                        let bg = "#f1f5f9"; if (optIndex === q.correctAnswerIndex) bg = "#d1fae5"; else if (optIndex === studentAns && !isCorrect) bg = "#fee2e2";
-                        ansHtml += `<div style="padding: 10px; background: ${bg}; margin-bottom: 5px;">${opt}</div>`;
+                        let bg = "var(--bg-color)"; let border = "var(--border)"; let icon = "";
+                        if (optIndex === q.correctAnswerIndex) { bg = "#d1fae5"; border = "#10b981"; icon = "✅"; }
+                        else if (optIndex === studentAns && !isCorrect) { bg = "#fee2e2"; border = "#ef4444"; icon = "❌"; }
+                        ansHtml += `<div class="q-option-label" style="background:${bg}; border-color:${border};">${opt} ${icon}</div>`;
                     });
                     ansHtml += `</div>`;
                 } else if (q.type === 'tf') {
                     isCorrect = (String(studentAns) === String(q.correctAnswerTF || q.correctAnswer)); qScore = isCorrect ? q.points : 0;
-                    ansHtml = `<div>إجابتك: ${studentAns} | الصحيحة: ${q.correctAnswerTF || q.correctAnswer}</div>`;
+                    ansHtml = `<div style="background: ${isCorrect?'#d1fae5':'#fee2e2'}; padding:15px; border-radius:12px; font-weight:bold; border:2px solid ${isCorrect?'#10b981':'#ef4444'};">إجابتك: ${studentAns} | الصحيحة: ${q.correctAnswerTF || q.correctAnswer}</div>`;
                 } else {
                     qScore = (sub.manualGrades && sub.manualGrades[q.id] !== undefined) ? sub.manualGrades[q.id] : (studentAns === q.correctAnswerText ? q.points : 0);
-                    ansHtml = `<div>إجابتك: ${studentAns || 'لم يُجب'}</div>`;
+                    ansHtml = `<div style="background:var(--bg-color); padding:15px; border-radius:12px; border:1px solid var(--border);">إجابتك: ${studentAns || 'لم يُجب'}</div>`;
                 }
-                container.innerHTML += `<div class="q-box" style="border-right: 5px solid ${qScore > 0 ? '#10b981' : '#ef4444'};"><h4>${index + 1}. ${q.text} (${qScore}/${q.points})</h4>${ansHtml}</div>`;
+                container.innerHTML += `<div class="q-box" style="border-right: 5px solid ${qScore > 0 ? '#10b981' : '#ef4444'};"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary);">(${qScore}/${q.points})</span></div>${ansHtml}</div>`;
             });
         };
 
@@ -930,16 +918,26 @@
             document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("active-exam-screen").style.display = "block";
             document.getElementById("active-exam-title").innerText = currentExam.title;
             const container = document.getElementById("exam-questions-render"); container.innerHTML = "";
+            
+            // 🔥 عودة شياكة الأسئلة (الكلاسات الأصلية)
             currentExam.questions.forEach((q, index) => {
-                let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} (${q.points})</div>`;
-                if (q.type === 'mcq') { qHtml += `<div class="q-options">`; q.options.forEach((opt, optIndex) => { qHtml += `<label><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label><br>`; }); qHtml += `</div>`; } 
-                else if (q.type === 'tf') { qHtml += `<label><input type="radio" name="ans_${q.id}" value="true"> صح</label><br><label><input type="radio" name="ans_${q.id}" value="false"> خطأ</label>`; } 
-                else if (q.type === 'blank') { qHtml += `<input type="text" id="ans_${q.id}" class="custom-input">`; } 
-                else if (q.type === 'essay') { qHtml += `<textarea id="ans_${q.id}" class="custom-input"></textarea>`; }
+                let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary); font-size:14px;">(${q.points} درجات)</span></div>`;
+                if (q.type === 'mcq') { 
+                    qHtml += `<div class="q-options">`; 
+                    q.options.forEach((opt, optIndex) => { 
+                        qHtml += `<label class="q-option-label"><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label>`; 
+                    }); 
+                    qHtml += `</div>`; 
+                } 
+                else if (q.type === 'tf') { 
+                    qHtml += `<div class="q-options"><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="true"> ✔️ صح</label><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="false"> ❌ خطأ</label></div>`; 
+                } 
+                else if (q.type === 'blank') { qHtml += `<input type="text" id="ans_${q.id}" class="custom-input" placeholder="اكتب إجابتك...">`; } 
+                else if (q.type === 'essay') { qHtml += `<textarea id="ans_${q.id}" class="custom-input" rows="4" placeholder="اكتب التفاصيل..."></textarea>`; }
                 container.innerHTML += qHtml + `</div>`;
             });
             let timeInSeconds = currentExam.duration * 60; const timerDisplay = document.getElementById('exam-timer');
-            examTimerInterval = setInterval(() => { let m = Math.floor(timeInSeconds / 60), s = timeInSeconds % 60; timerDisplay.innerText = `${m}:${s < 10 ? '0'+s : s}`; if (timeInSeconds <= 0) { clearInterval(examTimerInterval); submitOnlineExam(true); } timeInSeconds--; }, 1000);
+            examTimerInterval = setInterval(() => { let m = Math.floor(timeInSeconds / 60), s = timeInSeconds % 60; timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`; if (timeInSeconds <= 0) { clearInterval(examTimerInterval); submitOnlineExam(true); } timeInSeconds--; }, 1000);
         }
 
         async function submitOnlineExam(isTimeOut = false) {
@@ -960,8 +958,15 @@
         }
 
         // ==========================================
-        // 🎬 مشغل الكورس والحماية
+        // 🎬 مشغل الكورس والـ DRM
         // ==========================================
+        window.toggleCustomFullscreen = function() {
+            let player = document.getElementById("video-wrapper");
+            let btn = document.getElementById("custom-fs-btn");
+            if (!document.fullscreenElement) { if (player.requestFullscreen) player.requestFullscreen(); btn.innerText = "🗗 تصغير"; } 
+            else { if (document.exitFullscreen) document.exitFullscreen(); btn.innerText = "⛶ تكبير"; }
+        };
+
         window.openCoursePlayer = function(courseId, startVideoIndex = 0) {
             let course = window.allLectures.find(l => l.id === courseId); if(!course) return;
             document.body.classList.add("no-select"); document.getElementById("app-layout").style.display = "none"; document.getElementById("protected-course-screen").style.display = "flex"; document.getElementById("player-course-title").innerText = course.title;
@@ -973,48 +978,77 @@
             });
             document.getElementById("player-playlist").innerHTML = playlistHtml;
             if(vids.length > startVideoIndex) playCourseVideo(vids[startVideoIndex].url, vids[startVideoIndex].title, course.id, startVideoIndex);
+            
+            document.addEventListener('contextmenu', blockContext); document.addEventListener('keydown', blockKeys);
+            window.addEventListener('blur', applyBlackout); window.addEventListener('focus', removeBlackout);
         };
 
         window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex, element = null) {
-            let embedUrl = url; if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/"); else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
+            let embedUrl = url;
+            if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
+            else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
             if(embedUrl.includes("youtube.com/embed/")) embedUrl += (embedUrl.includes("?")?"&":"?") + "modestbranding=1&rel=0&showinfo=0&fs=0"; 
             document.getElementById("video-iframe").src = embedUrl;
+
+            if(courseId && currentStudent) {
+                try {
+                    let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
+                    let res = await fetch(trackingUrl); let oldData = await res.json();
+                    let currentViews = (oldData && oldData.views) ? oldData.views : 0;
+                    let dateStr = new Date().toLocaleString('ar-EG');
+                    await fetch(trackingUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoTitle: videoTitle || "المحاضرة", views: currentViews + 1, lastSeen: dateStr }) });
+                } catch(e) {}
+            }
         };
 
         window.closeCoursePlayer = function() {
             document.getElementById("video-iframe").src = ""; document.body.classList.remove("no-select");
             document.getElementById("protected-course-screen").style.display = "none"; document.getElementById("app-layout").style.display = "block";
+            document.removeEventListener('contextmenu', blockContext); document.removeEventListener('keydown', blockKeys);
+            window.removeEventListener('blur', applyBlackout); window.removeEventListener('focus', removeBlackout);
         };
-        
+
+        function blockContext(e) { e.preventDefault(); }
+        function blockKeys(e) { if(e.keyCode == 123 || e.keyCode == 44) { e.preventDefault(); return false; } }
+        function applyBlackout() { if (document.activeElement !== document.getElementById("video-iframe") && document.getElementById("protected-course-screen").style.display === "flex") { document.getElementById("video-iframe").style.filter = "blur(30px)"; document.getElementById("blackout-screen").style.display = "flex"; } }
+        function removeBlackout() { if(document.getElementById("protected-course-screen").style.display === "flex") { document.getElementById("video-iframe").style.filter = "none"; document.getElementById("blackout-screen").style.display = "none"; window.focus(); } }
+
         window.purchaseCourse = async function(courseId, price) {
-            if(!confirm(`تأكيد الشراء؟`)) return; if((currentStudent.walletBalance || 0) < price) return alert("الرصيد لا يكفي.");
+            if(!confirm(`تأكيد شراء الكورس بـ ${price} ج.م؟`)) return;
+            if((currentStudent.walletBalance || 0) < price) { alert("رصيد محفظتك لا يكفي!"); return; }
             try {
-                let dataRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`); let data = await dataRes.json();
-                let sIdx = data.students.findIndex(s => s && s.code === currentStudent.code);
-                if(sIdx !== -1) {
-                    currentStudent.walletBalance -= price; currentStudent.purchasedCourses = Array.isArray(currentStudent.purchasedCourses) ? currentStudent.purchasedCourses : [];
+                let dataRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
+                let data = await dataRes.json();
+                let studentIndex = data.students.findIndex(s => s && s.code === currentStudent.code);
+                if(studentIndex !== -1) {
+                    currentStudent.walletBalance -= price;
+                    currentStudent.purchasedCourses = Array.isArray(currentStudent.purchasedCourses) ? currentStudent.purchasedCourses : [];
                     if(!currentStudent.purchasedCourses.includes(courseId)) currentStudent.purchasedCourses.push(courseId);
-                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${sIdx}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ walletBalance: currentStudent.walletBalance, purchasedCourses: currentStudent.purchasedCourses }) });
+                    await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${studentIndex}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ walletBalance: currentStudent.walletBalance, purchasedCourses: currentStudent.purchasedCourses }) });
                     alert("تم الشراء بنجاح!"); fetchStudentData(true);
                 }
-            } catch(e) {}
+            } catch(e) { alert("حدث خطأ!"); }
         };
 
         window.redeemCode = async function() {
-            const code = document.getElementById("rechargeCodeInput").value.trim(); if(!code) return alert("أدخل الكود!");
+            const code = document.getElementById("rechargeCodeInput").value.trim();
+            if(!code) return alert("أدخل الكود!");
             try {
-                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/chargeCodes/${code}.json`); let codeData = await res.json();
-                if(!codeData || codeData.status === 'used') return alert("الكود خطأ أو مستخدم!");
-                let dataRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`); let data = await dataRes.json();
+                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/chargeCodes/${code}.json`);
+                let codeData = await res.json();
+                if(!codeData || codeData.status === 'used') return alert("الكود غير صحيح أو مستخدم!");
+                let dataRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
+                let data = await dataRes.json();
                 let sIdx = data.students.findIndex(s => s && s.code === currentStudent.code);
                 if(sIdx !== -1) {
-                    let amount = parseFloat(codeData.amount); currentStudent.walletBalance = (currentStudent.walletBalance || 0) + amount;
+                    let amount = parseFloat(codeData.amount);
+                    currentStudent.walletBalance = (currentStudent.walletBalance || 0) + amount;
                     await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students/${sIdx}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ walletBalance: currentStudent.walletBalance }) });
                     await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/chargeCodes/${code}/status.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify("used") });
-                    alert(`تم شحن ${amount} ج.م`); fetchStudentData(true);
+                    alert(`تم شحن ${amount} ج.م بنجاح!`); document.getElementById("rechargeCodeInput").value = ""; fetchStudentData(true);
                 }
-            } catch (e) {}
-        };
+            } catch (e) { alert("حدث خطأ!"); }
+        }
     </script>
     
 </body>
