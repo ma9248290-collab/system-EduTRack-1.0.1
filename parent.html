@@ -1511,10 +1511,27 @@
         };
 
         function blockContext(e) { e.preventDefault(); }
-        function blockKeys(e) { if(e.keyCode == 123 || e.keyCode == 44) { e.preventDefault(); return false; } }
-        function applyBlackout() { if (document.activeElement !== document.getElementById("video-iframe") && document.getElementById("protected-course-screen").style.display === "flex") { document.getElementById("video-iframe").style.filter = "blur(30px)"; document.getElementById("blackout-screen").style.display = "flex"; } }
-        function removeBlackout() { if(document.getElementById("protected-course-screen").style.display === "flex") { document.getElementById("video-iframe").style.filter = "none"; document.getElementById("blackout-screen").style.display = "none"; window.focus(); } }
-
+        function blockKeys(e) {
+            if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85) || e.keyCode == 44) { 
+                e.preventDefault(); return false;
+            }
+        }
+        
+        function applyBlackout() {
+            if (document.activeElement === document.getElementById("video-iframe")) return;
+            if(document.getElementById("protected-course-screen").style.display === "flex") {
+                document.getElementById("video-iframe").style.filter = "blur(30px)";
+                document.getElementById("blackout-screen").style.display = "flex";
+            }
+        }
+        
+        function removeBlackout() {
+            if(document.getElementById("protected-course-screen").style.display === "flex") {
+                document.getElementById("video-iframe").style.filter = "none";
+                document.getElementById("blackout-screen").style.display = "none";
+                window.focus(); 
+            }
+        }
         window.purchaseCourse = async function(courseId, price) {
             if(!confirm(`تأكيد شراء الكورس بـ ${price} ج.م؟`)) return;
             if((currentStudent.walletBalance || 0) < price) { alert("رصيد محفظتك لا يكفي!"); return; }
@@ -1550,6 +1567,27 @@
                     alert(`تم شحن ${amount} ج.م بنجاح!`); document.getElementById("rechargeCodeInput").value = ""; fetchStudentData(true);
                 }
             } catch (e) { alert("حدث خطأ!"); }
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById("exam-questions-render"); container.innerHTML = "";
+            currentExam.questions.forEach((q, index) => {
+                let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary); font-size:14px;">(${q.points} درجات)</span></div>`;
+                if (q.type === 'mcq') { 
+                    qHtml += `<div class="q-options">`; 
+                    q.options.forEach((opt, optIndex) => { 
+                        // 🪄 السحر هنا: إضافة كلاس q-option-label لعمل شكل البلوكات الرمادية اللي بتنور
+                        qHtml += `<label class="q-option-label"><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label>`; 
+                    }); 
+                    qHtml += `</div>`; 
+                } 
+                else if (q.type === 'tf') { 
+                    qHtml += `<div class="q-options"><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="true"> ✔️ صح</label><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="false"> ❌ خطأ</label></div>`; 
+                } 
+                else if (q.type === 'blank') { qHtml += `<input type="text" id="ans_${q.id}" class="custom-input" placeholder="اكتب إجابتك...">`; } 
+                else if (q.type === 'essay') { qHtml += `<textarea id="ans_${q.id}" class="custom-input" rows="4" placeholder="اكتب التفاصيل..."></textarea>`; }
+                container.innerHTML += qHtml + `</div>`;
+            });
         }
     </script>
 
