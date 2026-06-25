@@ -140,83 +140,20 @@ function isValidEgyptianPhone(phone) {
 // ==========================================
 const ADMIN_USER = "shefo", ADMIN_PASS = "12345"; 
 
-if(sessionStorage.getItem("isLoggedIn") === "true") {
+// ==========================================
+// 3. التحقق من الدخول عند تحميل الصفحة
+// ==========================================
+if (sessionStorage.getItem("isLoggedIn") === "true" || localStorage.getItem("keepLoggedIn") === "true") {
+    sessionStorage.setItem("isLoggedIn", "true");
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("main-app").style.display = "flex";
-    if(isAssistantMode) enableAssistantMode();
+    
+    // 🔥 الحل السحري: لازم نأمر السيستم يسحب الداتا ويتأكد من الباقة أول ما الصفحة تفتح
+    setTimeout(() => {
+        if (typeof applyAssistantPermissions === "function") applyAssistantPermissions();
+        if (typeof loadDataFromFirebase === "function") loadDataFromFirebase();
+    }, 100);
 }
-// دالة تسجيل الدخول (مع خاصية تذكرني)
-document.getElementById("loginForm")?.addEventListener("submit", function(e) {
-    e.preventDefault();
-    const user = document.getElementById("loginUsername").value.trim();
-    const pass = document.getElementById("loginPassword").value.trim();
-    const remember = document.getElementById("rememberMeCheck")?.checked;
-    
-    const savedUser = localStorage.getItem("adminUser");
-    const savedPass = localStorage.getItem("adminPass");
-    const currentKey = localStorage.getItem("licenseKey");
-
-
-    // 🌟 --- بداية كود الحساب التجريبي --- 🌟
-    if (user === "demo" && pass === "demo123") {
-        // فحص هل سجل بياناته ولا لأ
-        if (!localStorage.getItem("demo_registered")) {
-            // لو مسجلش، نظهرله نافذة طلب الاسم والرقم ونوقف الدخول
-            document.getElementById('demoRegistrationModal').style.display = 'flex';
-            return; 
-        }
-
-        // لو مسجل بياناته قبل كده، نكمل فحص الـ 7 أيام
-        let demoStart = localStorage.getItem("demo_start_date");
-        let now = new Date().getTime();
-        let daysPassed = (now - parseInt(demoStart)) / (1000 * 60 * 60 * 24);
-
-        if (daysPassed > 7) {
-            document.getElementById('loginError').innerText = "انتهت فترة التجربة المجانية (7 أيام). يرجى شراء كود تفعيل!";
-            document.getElementById('loginError').style.display = 'block';
-            return; 
-        }
-
-        // لو لسه في فترة التجربة، نسمحله بالدخول
-        localStorage.setItem("is_demo_mode", "true"); 
-        
-        let daysLeft = Math.ceil(7 - daysPassed);
-        showToast(`أهلاً بك! متبقي لك ${daysLeft} أيام في النسخة التجريبية ⏳`);
-        
-        setTimeout(() => { location.reload(); }, 800);
-        return; 
-    }
-
-    
-    // فحص لو بيحاول يسجل ومفيش حساب متفعل أصلاً
-    if (!savedUser || !currentKey) {
-        document.getElementById("loginError").innerText = "لم يتم تفعيل حسابك! اضغط على 'تسجيل كمدرس جديد'.";
-        document.getElementById("loginError").style.display = "block";
-        return;
-    }
-
-    // التحقق من البيانات
-    if(user === savedUser && pass === savedPass) {
-        if(remember) {
-            localStorage.setItem("keepLoggedIn", "true"); // تذكرني للابد
-        } else {
-            localStorage.setItem("keepLoggedIn", "false"); // الجلسة دي بس
-            sessionStorage.setItem("isLoggedIn", "true");
-        }
-        
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("main-app").style.display = "flex";
-        
-        // 👇 والسطر ده كمان عشان لو سجل دخول يدوي 👇
-        if(document.getElementById("shefo-assistant-btn")) document.getElementById("shefo-assistant-btn").style.display = "block";
-        
-        setTimeout(renderDashboardCharts, 100);
-        loadDataFromFirebase();
-    } else {
-        document.getElementById("loginError").innerText = "البيانات غير صحيحة!";
-        document.getElementById("loginError").style.display = "block";
-    }
-});
 // دوال التنقل بين شاشة الدخول وشاشة التفعيل
 function showActivationScreen() {
     document.getElementById("login-screen").style.display = "none";
@@ -337,12 +274,34 @@ if(loginForm) {
         let user = document.getElementById("loginUsername").value.trim();
         let pass = document.getElementById("loginPassword").value.trim();
         let errorMsg = document.getElementById("loginError");
+        let rememberMe = document.getElementById("rememberMeCheck")?.checked;
 
+        // 🌟 --- فحص حساب الديمو التجريبي --- 🌟
+        if (user === "demo" && pass === "demo123") {
+            if (!localStorage.getItem("demo_registered")) {
+                document.getElementById('demoRegistrationModal').style.display = 'flex';
+                return; 
+            }
+            let demoStart = localStorage.getItem("demo_start_date");
+            let daysPassed = (new Date().getTime() - parseInt(demoStart)) / (1000 * 60 * 60 * 24);
+            if (daysPassed > 7) {
+                errorMsg.innerText = "انتهت فترة التجربة المجانية (7 أيام). يرجى شراء كود تفعيل!";
+                errorMsg.style.display = 'block';
+                return; 
+            }
+            localStorage.setItem("is_demo_mode", "true"); 
+            localStorage.setItem("keepLoggedIn", rememberMe ? "true" : "false");
+            sessionStorage.setItem("isLoggedIn", "true");
+            showToast(`أهلاً بك! متبقي لك ${Math.ceil(7 - daysPassed)} أيام في النسخة التجريبية ⏳`);
+            setTimeout(() => { location.reload(); }, 800);
+            return; 
+        }
+
+        // 🛑 --- الفحص الأمني للسناتر عبر السيرفر ---
         let btn = this.querySelector('button[type="submit"]');
         let originalText = btn.innerText; btn.innerText = "جاري التحقق... ⏳"; errorMsg.style.display = "none";
 
         try {
-            // 🛑 1. الفحص الأمني الأول: هل السنتر موقوف أو منتهي؟
             let licRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/licenses/${code}.json`);
             let licData = await licRes.json();
             
@@ -365,17 +324,18 @@ if(loginForm) {
                 errorMsg.style.color = "red"; errorMsg.style.display = "block"; btn.innerText = originalText; return;
             }
 
-            // 👑 2. الفحص التاني: هل ده المدير؟
+            // 👑 فحص المدير
             let settingsRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${code}/data/settings.json`);
             let settings = await settingsRes.json();
             
             if (settings && settings.adminUser === user && settings.adminPass === pass) {
                 localStorage.setItem("licenseKey", code); localStorage.setItem("adminUser", user);
                 localStorage.setItem("adminPass", pass); localStorage.setItem("isAssistantMode", "false");
+                localStorage.setItem("keepLoggedIn", rememberMe ? "true" : "false");
                 sessionStorage.setItem("isLoggedIn", "true"); location.reload(); return;
             }
             
-            // 👥 3. الفحص التالت: هل ده مساعد؟
+            // 👥 فحص المساعد
             let asstRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${code}/assistants/${user}.json`);
             let asstData = await asstRes.json();
             
@@ -680,7 +640,9 @@ async function loadDataFromFirebase() {
 
             // 🚫 الطرد المباشر
             if (licData.status === 'suspended' || isExpired) {
-                sessionStorage.removeItem("isLoggedIn"); // مسح الجلسة عشان ميقدرش يعمل ريفريش ويدخل
+                sessionStorage.removeItem("isLoggedIn"); // مسح الجلسة
+                localStorage.setItem("keepLoggedIn", "false"); // 🔥 مسح (تذكرني) إجبارياً
+                
                 document.getElementById("login-screen").style.display = "none";
                 document.getElementById("main-app").style.display = "none";
                 
@@ -943,7 +905,7 @@ document.getElementById("addStudentForm")?.addEventListener("submit", function(e
 
     // إرسال واتساب للمدرس
     const currentKey = localStorage.getItem("licenseKey") || "";
-    const portalLink = `https://system-edutrack.netlify.app/parent.html?id=${currentKey}`;
+    const portalLink = `https://ma9248290-collab.github.io/system-EduTRack-1.0.1/parent.html?id=${currentKey}`;
     const msg = `📢 *أهلاً بك في نظام ${localStorage.getItem("teacherName") || "السنتر"} التعليمي*\nتم تسجيل بيانات الطالب بنجاح.\n👤 *اسم الطالب:* ${name}\n🎓 *كود الطالب:* ${code}\n🔗 *رابط بوابة المتابعة:* ${portalLink}`;
     if (typeof sendAutoWhatsApp === "function") sendAutoWhatsApp(parentPhone, msg);
 
@@ -1173,20 +1135,9 @@ function deleteSession(id) { customConfirm("حذف الحصة؟", () => { classS
 function openSessionDetails(id) { currentActiveSessionId = id; const session = classSessions.find(s => s.id === id); document.getElementById("sessions-overview").style.display = "none"; document.getElementById("session-details-view").style.display = "block"; document.getElementById("current-session-title").innerText = session.group; renderAttendanceTable(session); }
 function backToSessions() { document.getElementById("sessions-overview").style.display = "block"; document.getElementById("session-details-view").style.display = "none"; renderSessionCards(); }
 
-function renderAttendanceTable(session) { 
-    const tbody = document.getElementById("attendance-list"); const gStudents = students.filter(s => s.group === session.group); 
-    if(gStudents.length===0) return tbody.innerHTML=`<tr><td colspan="6">لا يوجد طلاب</td></tr>`; tbody.innerHTML = ""; 
-    const groupS = classSessions.filter(s => s.group === session.group).sort((a,b)=>new Date(a.date)-new Date(b.date)); 
-    const prevSession = groupS[groupS.findIndex(s => s.id === session.id) - 1]; 
-    gStudents.forEach(st => { 
-        const stat = session.attendance[st.phone]; 
-        const statHtml = stat === 'present' ? '<span style="color:var(--success-color)">حاضر ✓</span>' : stat === 'absent' ? '<span style="color:var(--danger-color)">غائب ✗</span>' : 'لم يسجل'; 
-        let pHT = '--'; if(prevSession) { const p = prevSession.attendance[st.phone]; pHT = p==='present'?'حاضر':p==='absent'?'غائب':'--'; } 
-        tbody.innerHTML += `<tr><td><strong>${st.code}</strong></td><td>${st.name}</td><td>${st.phone}</td><td>${pHT}</td><td>${statHtml}</td><td><button class="btn-present" onclick="markAttendance('${st.phone}','present')">حاضر</button><button class="btn-absent" onclick="markAttendance('${st.phone}','absent')">غائب</button></td></tr>`; 
-    }); 
-}
 
-function markAttendance(phone, status) { const s = classSessions.find(s => s.id === currentActiveSessionId); if(s && s.status==='open') { s.attendance[phone] = status; localStorage.setItem("classSessions", JSON.stringify(classSessions)); renderAttendanceTable(s); } }
+
+
 
 document.getElementById('attendanceBarcode')?.addEventListener('keypress', function(e) { 
     if(e.key === 'Enter') { 
@@ -1203,20 +1154,9 @@ document.getElementById("addExamForm")?.addEventListener("submit", function(e) {
 function deleteExam(id) { customConfirm("حذف الامتحان؟", () => { exams = exams.filter(e => e.id !== id); localStorage.setItem("exams", JSON.stringify(exams)); renderExamCards(); }); }
 function openExamDetails(id) { currentActiveExamId = id; const e = exams.find(e => e.id === id); document.getElementById("exams-overview").style.display = "none"; document.getElementById("exam-details-view").style.display = "block"; document.getElementById("current-exam-title").innerText = e.name; renderGradesTable(e, "grades-list", saveExamGrade, currentActiveExamId, 'exam'); }
 function backToExams() { document.getElementById("exams-overview").style.display = "block"; document.getElementById("exam-details-view").style.display = "none"; renderExamCards(); }
-function saveExamGrade(phone) { const e = exams.find(e => e.id === currentActiveExamId); const v = document.getElementById(`grade_${phone}`).value; if(v !== "") { e.grades[phone] = v; localStorage.setItem("exams", JSON.stringify(exams)); renderGradesTable(e, "grades-list", saveExamGrade, currentActiveExamId, 'exam'); } }
 
-window.submitExamBarcodeGrade = function() {
-    let c = document.getElementById('examBarcodeCode').value.trim(); let g = document.getElementById('examBarcodeGrade').value.trim();
-    const ex = exams.find(e => e.id === currentActiveExamId);
-    if(c !== "" && g !== "") {
-        let student = findStudentByCodeOrName(c);
-        if(student && ex && ex.status === 'open') {
-            if(parseFloat(g) > parseFloat(ex.maxScore) || parseFloat(g) < 0) return showToast(`الدرجة غير منطقية!`, 'error');
-            ex.grades[student.phone] = g; localStorage.setItem("exams", JSON.stringify(exams)); renderGradesTable(ex, "grades-list", saveExamGrade, currentActiveExamId, 'exam'); showToast(`تم رصد ${g} لـ ${student.name}`);
-            document.getElementById('examBarcodeCode').value = ''; document.getElementById('examBarcodeGrade').value = ''; document.getElementById('examBarcodeCode').focus();
-        }
-    }
-};
+
+
 // ==========================================
 // ✏️ رسم كروت الامتحانات والواجبات (بإضافة زرار التعديل)
 // ==========================================
@@ -1270,20 +1210,8 @@ document.getElementById("addHwForm")?.addEventListener("submit", function(e) { e
 function deleteHw(id) { customConfirm("حذف الواجب؟", () => { homeworks = homeworks.filter(h => h.id !== id); localStorage.setItem("homeworks", JSON.stringify(homeworks)); renderHwCards(); }); }
 function openHwDetails(id) { currentActiveHwId = id; const hw = homeworks.find(h => h.id === id); document.getElementById("hw-overview").style.display = "none"; document.getElementById("hw-details-view").style.display = "block"; document.getElementById("current-hw-title").innerText = hw.name; renderGradesTable(hw, "hw-grades-list", saveHwGrade, currentActiveHwId, 'hw'); }
 function backToHw() { document.getElementById("hw-overview").style.display = "block"; document.getElementById("hw-details-view").style.display = "none"; renderHwCards(); }
-function saveHwGrade(phone) { const hw = homeworks.find(h => h.id === currentActiveHwId); const v = document.getElementById(`grade_${phone}`).value; if(v !== "") { hw.grades[phone] = v; localStorage.setItem("homeworks", JSON.stringify(homeworks)); renderGradesTable(hw, "hw-grades-list", saveHwGrade, currentActiveHwId, 'hw'); } }
 
-window.submitHwBarcodeGrade = function() {
-    let c = document.getElementById('hwBarcodeCode').value.trim(); let g = document.getElementById('hwBarcodeGrade').value.trim();
-    const hw = homeworks.find(h => h.id === currentActiveHwId);
-    if(c !== "" && g !== "") {
-        let student = findStudentByCodeOrName(c);
-        if(student && hw && hw.status === 'open') {
-            if(parseFloat(g) > parseFloat(hw.maxScore) || parseFloat(g) < 0) return showToast(`الدرجة غير منطقية!`, 'error');
-            hw.grades[student.phone] = g; localStorage.setItem("homeworks", JSON.stringify(homeworks)); renderGradesTable(hw, "hw-grades-list", saveHwGrade, currentActiveHwId, 'hw'); showToast(`تم رصد ${g} لـ ${student.name}`);
-            document.getElementById('hwBarcodeCode').value = ''; document.getElementById('hwBarcodeGrade').value = ''; document.getElementById('hwBarcodeCode').focus();
-        }
-    }
-};
+
 
 function renderGradesTable(itemDetails, tbodyId, saveFunction, itemId, itemType) {
     const tbody = document.getElementById(tbodyId); const gStudents = students.filter(s => s.group === itemDetails.group);
@@ -1553,63 +1481,29 @@ function toggleSessionStatus(id) {
     }
 }
 
-async function confirmCloseSession(sendMessages) {
-    const session = classSessions.find(s => s.id === document.getElementById('closeSessionId').value); 
-    if(!session) return;
-    
-    session.status = 'closed'; 
-    localStorage.setItem("classSessions", JSON.stringify(classSessions)); 
-    renderSessionCards(); 
-    closeModal('closeSessionModal');
-    
-    if(!sendMessages) return showToast("تم الإغلاق بدون إرسال.");
-    
-    showToast("جاري الإرسال للطالب وولي الأمر... لا تغلق الصفحة!"); 
-    let successCount = 0;
-    
-    const sessionExam = exams.find(e => e.group === session.group && e.date === session.date);
-    const sessionHw = homeworks.find(h => h.group === session.group && h.date === session.date);
-
-    for (let st of students.filter(s => s.group === session.group)) {
-        // تجميع بيانات التقرير المشتركة
-        let reportData = ``;
-        if(document.getElementById('sendAttCheck').checked) reportData += `📋 *الحضور:* ${session.attendance[st.phone] === 'present' ? 'حاضر ✅' : 'غائب ❌'}\n`;
-        if(document.getElementById('sendExamCheck').checked && sessionExam) reportData += `📝 *الامتحان:* ${sessionExam.grades[st.phone] ? sessionExam.grades[st.phone] + ' / ' + sessionExam.maxScore + ' ⭐' : 'لم يمتحن ⚠️'}\n`;
-        if(document.getElementById('sendHwCheck').checked && sessionHw) reportData += `📚 *الواجب:* ${sessionHw.grades[st.phone] ? sessionHw.grades[st.phone] + ' / ' + sessionHw.maxScore + ' 📚' : 'لم يسلم ⚠️'}\n`;
-        
-        let currentTeacherName = localStorage.getItem("teacherName");
-        let sig = (currentTeacherName && currentTeacherName !== "null" && currentTeacherName.trim() !== "") ? `إدارة مستر ${currentTeacherName}` : "الإدارة";
-        
-        // 1. صيغة رسالة ولي الأمر (رسمية)
-        let parentMsg = `📢 *تقرير حصة:* ${session.topic}\n${getRandomGreeting()} ولي الأمر المحترم،\nنحيط سيادتكم علماً بتقرير الطالب: *${st.name}*\n\n${reportData}\n${sig}`;
-        
-        // 2. صيغة رسالة الطالب (تشجيعية وحماسية)
-        let studentMsg = `🎯 *تقرير حصة:* ${session.topic}\nأهلاً بيك يا بطل *${st.name}* 👑\nعاش جداً، ده تقرير حصتك النهاردة:\n\n${reportData}\nبالتوفيق يا بطل! 💪\n${sig}`;
-
-        // إرسال لولي الأمر
-        if (st.parentPhone && await sendAutoWhatsApp(st.parentPhone, parentMsg)) {
-            successCount++;
-        }
-        
-        // إرسال للطالب (لو رقمه مش نفس رقم ولي الأمر عشان ميزعجهمش برسالتين)
-        if (st.phone && st.phone !== st.parentPhone && await sendAutoWhatsApp(st.phone, studentMsg)) {
-            successCount++;
-        }
-    }
-    showToast(`تم إرسال ${successCount} رسالة تقرير بنجاح! ✅`);
-}
-
 function updateBroadcastCount() { const target = document.getElementById('broadcastTarget').value; document.getElementById('targetCount').innerText = target === 'all' ? students.length : students.filter(s => s.group === target).length; }
 
 
 // ==========================================
-// 1. عرض ملف الطالب كاملاً بالجداول (تم الإصلاح)
+// 1. عرض ملف الطالب كاملاً بالجداول والباركود
 // ==========================================
-function openStudentProfile(code) {
+window.openStudentProfile = function(code) {
     const student = students.find(s => s.code === code); if(!student) return;
     currentStudentProfileCode = code;
     document.getElementById("students-overview").style.display = "none"; document.getElementById("student-profile-view").style.display = "block";
     document.getElementById("profile-name").innerText = student.name; document.getElementById("profile-code-group").innerText = `${student.code} | المجموعة: ${student.group}`;
+    
+    // 🔥 رسم الباركود بناءً على كود الطالب
+    if (typeof JsBarcode !== 'undefined') {
+        JsBarcode("#studentProfileBarcode", student.code, {
+            format: "CODE128",     // صيغة الباركود
+            lineColor: "#0f172a",  // لون الخطوط
+            width: 2,              // عرض الخطوط
+            height: 40,            // الارتفاع
+            displayValue: false    // مش هنعرض الرقم تحت الباركود لأنه مكتوب جنبه أصلاً
+        });
+    }
+
     if(document.getElementById("profile-phone")) document.getElementById("profile-phone").innerText = student.phone;
     if(document.getElementById("profile-parent")) document.getElementById("profile-parent").innerText = student.parentPhone;
     if(document.getElementById("profile-level")) document.getElementById("profile-level").innerText = student.level;
@@ -1633,7 +1527,7 @@ function openStudentProfile(code) {
     let tHw = 0, sHw = 0; const hwTbody = document.getElementById("profile-hw-list"); if(hwTbody) hwTbody.innerHTML = "";
     groupHw.forEach(h => { if(h.grades[student.phone]) { tHw += parseFloat(h.maxScore); sHw += parseFloat(h.grades[student.phone]); } if(hwTbody) hwTbody.innerHTML += `<tr><td>${h.name}</td><td>${h.date}</td><td><strong>${h.grades[student.phone] || '--'}</strong> / ${h.maxScore}</td></tr>`; });
     document.getElementById("profile-hw").innerText = `${tHw > 0 ? Math.round((sHw / tHw) * 100) : 0}%`;
-}
+};
 
 
 // ==========================================
@@ -1986,7 +1880,7 @@ function updateParentLinkUI() {
     const linkInput = document.getElementById("parentPortalLink");
     const currentKey = localStorage.getItem("licenseKey");
     if (linkInput && currentKey) {
-        linkInput.value = `https://system-edutrack.netlify.app/parent.html?id=${currentKey}`;
+        linkInput.value = `https://ma9248290-collab.github.io/system-EduTRack-1.0.1/parent.html?id=${currentKey}`;
     }
 }
 
@@ -2835,11 +2729,17 @@ window.getSafeUid = function() {
 // 1. تعديل دالة switchPlatformTab (عشان تعبي قائمة الصفوف بدل المجموعات)
 
 
-// --- 💳 أكواد الشحن ---
+// ==========================================
+// 💳 إدارة المحفظة وأكواد الشحن (النسخة المطورة)
+// ==========================================
+
+window.latestGeneratedCodes = []; // مصفوفة مؤقتة عشان نحفظ فيها الأكواد الجديدة بس للنافذة
+
 window.generateChargeCodes = async function() {
     let uid = getSafeUid();
     let amount = parseInt(document.getElementById("codeAmount").value);
     let count = parseInt(document.getElementById("codeCount").value);
+    
     if(!amount || !count || count <= 0) {
         if(typeof showToast === 'function') showToast("يرجى إدخال القيمة والعدد بشكل صحيح!", "error");
         else alert("يرجى إدخال القيمة والعدد بشكل صحيح!");
@@ -2847,75 +2747,514 @@ window.generateChargeCodes = async function() {
     }
 
     let newCodes = {};
+    window.latestGeneratedCodes = []; // تصفير المصفوفة القديمة
+    
+    let btn = document.querySelector('#platform-codes .save-btn');
+    let originalText = btn.innerText;
+    btn.innerText = "جاري التوليد... ⏳";
+    btn.disabled = true;
+
     for(let i=0; i<count; i++) {
         let codeStr = "EDU-" + Math.random().toString(36).substr(2, 7).toUpperCase();
         newCodes[codeStr] = { amount: amount, status: "unused", createdAt: new Date().toISOString().split('T')[0] };
+        // حفظ الكود في المصفوفة المؤقتة لعرضها في النافذة
+        window.latestGeneratedCodes.push({ code: codeStr, amount: amount });
     }
 
     try {
         await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${uid}/chargeCodes.json`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newCodes)
         });
-        if(typeof showToast === 'function') showToast(`تم توليد ${count} كود بنجاح! 🎉`);
-        else alert(`تم توليد ${count} كود بنجاح! 🎉`);
         
         document.getElementById("codeAmount").value = "";
         document.getElementById("codeCount").value = "";
-        renderChargeCodes(); 
-    } catch(e) { alert("حدث خطأ أثناء توليد الأكواد!"); }
+        renderChargeCodes(); // تحديث الجدول الأساسي في الخلفية
+        
+        // عرض البيانات في النافذة المنبثقة
+        document.getElementById("newCodesCountDisplay").innerText = count;
+        document.getElementById("newCodesAmountDisplay").innerText = amount;
+        document.getElementById("newCodesListDisplay").innerHTML = window.latestGeneratedCodes.map(c => `<div>${c.code}</div>`).join('');
+        openModal('newCodesModal');
+
+    } catch(e) { 
+        alert("حدث خطأ أثناء توليد الأكواد!"); 
+    }
+    
+    btn.innerText = originalText;
+    btn.disabled = false;
 };
 
-window.renderChargeCodes = async function() {
-    let table = document.getElementById("codes-table");
-    if(!table) return;
-    table.innerHTML = `<tr><th>الكود</th><th>القيمة</th><th>الحالة</th><th>تاريخ الإنشاء</th><th>إجراء</th></tr>`;
+// 📋 نسخ الأكواد الجديدة للذاكرة
+window.copyNewCodes = function() {
+    if(window.latestGeneratedCodes.length === 0) return;
+    let textToCopy = window.latestGeneratedCodes.map(c => c.code).join('\n');
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        showToast("تم نسخ الأكواد بنجاح! 📋");
+    });
+};
+
+// 📥 تحميل الأكواد الجديدة فقط في ملف إكسيل
+window.downloadNewCodesExcel = function() {
+    if(window.latestGeneratedCodes.length === 0) return;
+    let data = window.latestGeneratedCodes.map(c => ({ "كود الشحن": c.code, "القيمة (ج.م)": c.amount }));
+    let ws = XLSX.utils.json_to_sheet(data);
+    
+    // تظبيط عرض العواميد
+    ws['!cols'] = [{wch: 25}, {wch: 15}];
+    
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "أكواد الشحن");
+    XLSX.writeFile(wb, `أكواد_شحن_جديدة_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showToast("تم تحميل الإكسيل بنجاح! 📥");
+};
+
+// 📥 تحميل جميع أكواد السنتر في ملف إكسيل
+window.exportAllCodesToExcel = async function() {
     try {
         let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/chargeCodes.json`);
         let codes = await res.json() || {};
-        Object.keys(codes).reverse().forEach(codeStr => {
+        let data = Object.keys(codes).map(codeStr => ({
+            "كود الشحن": codeStr,
+            "القيمة (ج.م)": codes[codeStr].amount,
+            "الحالة": codes[codeStr].status === 'unused' ? 'متاح' : 'تم الاستخدام',
+            "تاريخ الإنشاء": codes[codeStr].createdAt
+        }));
+        
+        if(data.length === 0) return showToast("لا توجد أكواد لتصديرها!", "error");
+        
+        let ws = XLSX.utils.json_to_sheet(data);
+        ws['!cols'] = [{wch: 25}, {wch: 15}, {wch: 15}, {wch: 20}]; // تظبيط العرض
+        
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "كل الأكواد");
+        XLSX.writeFile(wb, `سجل_أكواد_الشحن_${new Date().toISOString().split('T')[0]}.xlsx`);
+        showToast("تم تصدير سجل الأكواد بالكامل! 📥");
+    } catch(e) { showToast("خطأ في الاتصال أثناء التحميل!", "error"); }
+};
+
+// 📋 عرض الأكواد في الجدول بتصميم فخم
+window.renderChargeCodes = async function() {
+    let table = document.getElementById("codes-table");
+    if(!table) return;
+    
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th style="width:30%;">الكود</th>
+                <th style="width:15%;">القيمة</th>
+                <th style="width:15%;">الحالة</th>
+                <th style="width:20%;">تاريخ الإنشاء</th>
+                <th style="width:10%;">إجراء</th>
+            </tr>
+        </thead>
+        <tbody id="codes-tbody">
+            <tr><td colspan="5" style="text-align:center;">جاري التحميل... ⏳</td></tr>
+        </tbody>`;
+        
+    try {
+        let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/chargeCodes.json`);
+        let codes = await res.json() || {};
+        let tbody = document.getElementById("codes-tbody");
+        tbody.innerHTML = "";
+        let keys = Object.keys(codes).reverse(); // الأحدث فوق
+        
+        if(keys.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); font-weight: bold; padding: 30px;">لم تقم بإنشاء أي أكواد شحن حتى الآن. 💳</td></tr>`;
+            return;
+        }
+
+        keys.forEach(codeStr => {
             let data = codes[codeStr];
-            let statusBadge = data.status === 'unused' ? '<span style="background:#d1fae5; color:#059669; padding:4px 8px; border-radius:8px; font-size:12px;">متاح</span>' : '<span style="background:#fee2e2; color:#ef4444; padding:4px 8px; border-radius:8px; font-size:12px;">مستخدم</span>';
-            table.innerHTML += `<tr><td style="font-weight:bold; color:var(--primary-color);">${codeStr}</td><td style="font-weight:bold;">${data.amount} ج.م</td><td>${statusBadge}</td><td style="font-size:13px; color:var(--text-muted);">${data.createdAt}</td><td><button onclick="deleteChargeCode('${codeStr}')" style="background:#ef4444; color:white; border:none; border-radius:6px; padding:5px 10px; cursor:pointer;">حذف</button></td></tr>`;
+            let isUsed = data.status === 'used';
+            let statusBadge = !isUsed 
+                ? '<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 5px 12px;">متاح ✅</span>' 
+                : '<span class="status-badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 5px 12px;">مستخدم ❌</span>';
+            
+            tbody.innerHTML += `
+            <tr style="${isUsed ? 'opacity: 0.6;' : ''}">
+                <td style="direction: ltr; text-align: right;">
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                        <span style="color: var(--primary-color); font-family: monospace; font-size: 16px; font-weight: 900; letter-spacing: 2px;">${codeStr}</span>
+                        <button onclick="navigator.clipboard.writeText('${codeStr}'); showToast('تم نسخ الكود! 📋');" style="background:var(--hover-bg); border:1px solid var(--border-color); border-radius:6px; cursor:pointer; font-size:14px; padding:4px 8px; transition:0.2s;" title="نسخ الكود" onmouseover="this.style.background='rgba(59, 130, 246, 0.1)'" onmouseout="this.style.background='var(--hover-bg)'">📋</button>
+                    </div>
+                </td>
+                <td><strong style="color: #f59e0b; font-size: 17px;">${data.amount} ج.م</strong></td>
+                <td>${statusBadge}</td>
+                <td style="font-size:13px; color:var(--text-muted); font-weight: bold;">${data.createdAt}</td>
+                <td>
+                    <button class="icon-btn danger" style="margin: 0 auto; display: block;" onclick="deleteChargeCode('${codeStr}')" title="حذف">🗑️</button>
+                </td>
+            </tr>`;
         });
-    } catch(e) {}
+    } catch(e) { 
+         let tbody = document.getElementById("codes-tbody");
+         if(tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: red; font-weight: bold;">حدث خطأ في تحميل الأكواد. أعد المحاولة!</td></tr>`;
+    }
 };
 
 window.deleteChargeCode = async function(codeStr) {
-    if(!confirm("هل أنت متأكد من حذف هذا الكود؟")) return;
+    if(!confirm("⚠️ هل أنت متأكد من حذف هذا الكود نهائياً؟")) return;
     try {
         await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/chargeCodes/${codeStr}.json`, { method: 'DELETE' });
         renderChargeCodes();
+        showToast("تم حذف الكود بنجاح 🗑️");
     } catch(e) { alert("حدث خطأ"); }
 };
 
+
+// ==========================================
+// 🧠 دالة فلترة حصص الكورس بناءً على الصف المختار
+// ==========================================
+window.filterCourseSessions = function(levelSelectId, containerId, selectedIds = []) {
+    let selectEl = document.getElementById(levelSelectId);
+    let container = document.getElementById(containerId);
+    if (!container || !selectEl) return;
+
+    let level = selectEl.value;
+    container.innerHTML = "";
+
+    let validGroups = [];
+    if(typeof groups !== 'undefined') {
+        validGroups = groups.filter(g => level === 'all' || g.level === level).map(g => g.name);
+    }
+
+    let validSessions = [];
+    if(typeof classSessions !== 'undefined') {
+        validSessions = classSessions.filter(s => validGroups.includes(s.group)).reverse();
+    }
+
+    if (validSessions.length === 0) {
+        container.innerHTML = `<span style="color: var(--danger-color); font-size: 13px; font-weight: bold;">لا توجد حصص مسجلة لهذا الصف!</span>`;
+        return;
+    }
+
+    validSessions.forEach(s => {
+        let isChecked = selectedIds.includes(s.id) ? "checked" : "";
+        container.innerHTML += `
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: var(--card-bg); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px; font-weight: bold; transition: 0.2s;" onmouseover="this.style.borderColor='var(--success-color)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <input type="checkbox" value="${s.id}" ${isChecked} style="accent-color: var(--success-color); width: 18px; height: 18px;">
+            ${s.date} - ${s.topic || 'حصة'} (${s.group})
+        </label>`;
+    });
+};
+
+// --- تحديث تبويب المنصة عشان يفلتر أول ما تفتح ---
 window.switchPlatformTab = function(tabName) {
     document.querySelectorAll('.platform-section').forEach(sec => sec.style.display = 'none');
     document.querySelectorAll('[id^="tab-btn-"]').forEach(btn => btn.style.background = 'var(--secondary-color)');
     
-    document.getElementById(`platform-${tabName}`).style.display = 'block';
-    document.getElementById(`tab-btn-${tabName}`).style.background = 'var(--primary-color)';
+    let targetSec = document.getElementById(`platform-${tabName}`);
+    let targetBtn = document.getElementById(`tab-btn-${tabName}`);
+    if(targetSec) targetSec.style.display = 'block';
+    if(targetBtn) targetBtn.style.background = 'var(--primary-color)';
 
     if(tabName === 'codes') renderChargeCodes();
     
     if(tabName === 'lectures') {
         renderLectures();
-        // جلب الصفوف الدراسية
         let selectLevel = document.getElementById("lecLevel");
         if(selectLevel) {
             let activeLevels = JSON.parse(localStorage.getItem("activeLevels")) || ["الصف الأول الثانوي", "الصف الثاني الثانوي", "الصف الثالث الثانوي"];
             selectLevel.innerHTML = '<option value="all">كل الصفوف (عام)</option>';
             activeLevels.forEach(lvl => { selectLevel.innerHTML += `<option value="${lvl}">${lvl}</option>`; });
         }
-        // جلب حصص السنتر لربطها بالحضور
-        let selectSession = document.getElementById("lecLinkedSession");
-        if(selectSession && typeof classSessions !== 'undefined') {
-            selectSession.innerHTML = '<option value="">بدون ربط (يعتمد على السعر فقط)</option>';
-            [...classSessions].reverse().forEach(s => {
-                selectSession.innerHTML += `<option value="${s.id}">${s.date} - ${s.topic || 'حصة'} (${s.group})</option>`;
-            });
-        }
+        filterCourseSessions('lecLevel', 'lecSessionsContainer');
     }
+    
     if(tabName === 'exams') renderOnlineExams();
+
+    if(tabName === 'notifications') {
+        toggleNotifTargetOptions();
+        loadSentNotifications();
+    }
+
+    if(tabName === 'store') {
+        loadStoreData();
+    }
+
+    // 🔥 السطر الجديد: تحميل الأسئلة تلقائي أول ما يفتح التاب
+    if(tabName === 'forum') {
+        loadPlatformForumQuestions();
+    }
+};
+// ==========================================
+// 📢 مركز الإشعارات المطور (يدعم الفلترة بالاختيار المتعدد)
+// ==========================================
+
+window.toggleNotifTargetOptions = function() {
+    let type = document.getElementById("notif-target-type").value;
+    let groupContainer = document.getElementById("notif-group-container");
+    let levelContainer = document.getElementById("notif-level-container");
+    
+    let groupCheckboxesBox = document.getElementById("notif-groups-checkboxes");
+    let levelCheckboxesBox = document.getElementById("notif-levels-checkboxes");
+
+    // إخفاء الحاويات أولاً
+    if(groupContainer) groupContainer.style.display = "none";
+    if(levelContainer) levelContainer.style.display = "none";
+
+    if(type === "group" && groupCheckboxesBox) {
+        groupContainer.style.display = "block";
+        // سحب المجموعات المسجلة عندك في السيستم
+        let uniqueGroups = [...new Set(students.map(s => s.group))].filter(g => g && g.trim() !== '');
+        
+        if(uniqueGroups.length === 0) {
+            groupCheckboxesBox.innerHTML = `<span style="color:var(--danger-color); font-size:13px; font-weight:bold;">⚠️ لا توجد مجموعات مسجلة حالياً!</span>`;
+        } else {
+            groupCheckboxesBox.innerHTML = uniqueGroups.map(g => `
+                <label style="display: flex; align-items: center; gap: 6px; background: white; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px; font-weight: bold; cursor: pointer; user-select: none;">
+                    <input type="checkbox" name="notif_selected_groups" value="${g}" style="accent-color: var(--success-color); width: 16px; height: 18px; cursor:pointer;">
+                    ${g}
+                </label>
+            `).join('');
+        }
+    } 
+    else if(type === "level" && levelCheckboxesBox) {
+        levelContainer.style.display = "block";
+        // سحب الصفوف النشطة حالياً في حساب المدرس من الـ activeLevels المبرمجة بالسيستم
+        let currentActiveLevels = window.activeLevels || JSON.parse(localStorage.getItem("activeLevels")) || ["الصف الأول الثانوي", "الصف الثاني الثانوي", "الصف الثالث الثانوي"];
+        
+        levelCheckboxesBox.innerHTML = currentActiveLevels.map(lvl => `
+            <label style="display: flex; align-items: center; gap: 6px; background: white; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px; font-weight: bold; cursor: pointer; user-select: none;">
+                <input type="checkbox" name="notif_selected_levels" value="${lvl}" style="accent-color: var(--primary-color); width: 16px; height: 18px; cursor:pointer;">
+                🎓 ${lvl}
+            </label>
+        `).join('');
+    }
+};
+
+window.submitCustomNotification = async function() {
+            let title = document.getElementById("notif-title").value.trim();
+            let msg = document.getElementById("notif-message").value.trim();
+            let type = document.getElementById("notif-target-type").value;
+
+            if(!title || !msg) return showToast("⚠️ يرجى كتابة عنوان ورسالة الإشعار!", "error");
+
+            let targetsArray = [];
+
+            if(type === "all") {
+                targetsArray.push("all");
+            } 
+            else if(type === "group") {
+                let checkedGroups = Array.from(document.querySelectorAll('input[name="notif_selected_groups"]:checked')).map(cb => cb.value);
+                if(checkedGroups.length === 0) return showToast("⚠️ يرجى اختيار مجموعة واحدة على الأقل!", "error");
+                targetsArray = checkedGroups;
+            } 
+            else if(type === "level") {
+                let checkedLevels = Array.from(document.querySelectorAll('input[name="notif_selected_levels"]:checked')).map(cb => cb.value);
+                if(checkedLevels.length === 0) return showToast("⚠️ يرجى اختيار صف دراسي واحد على الأقل!", "error");
+                targetsArray = checkedLevels;
+            }
+
+            let btn = document.querySelector("button[onclick='submitCustomNotification()']");
+            let originalText = btn.innerHTML;
+            btn.innerHTML = "جاري بث الإشعارات... ⏳";
+            btn.disabled = true;
+
+            try {
+                // إرسال الإشعار لكل هدف على حدة لضمان قراءته بشكل سليم عند الطالب
+                for(let target of targetsArray) {
+                    await sendPlatformNotification(target, title, msg);
+                }
+                
+                document.getElementById("notif-title").value = "";
+                document.getElementById("notif-message").value = "";
+                document.querySelectorAll('input[name="notif_selected_groups"], input[name="notif_selected_levels"]').forEach(cb => cb.checked = false);
+                
+                showToast("تم بث الإشعار للمستهدفين بنجاح! 🚀", "success");
+                loadSentNotifications();
+            } catch (e) {
+                showToast("حدث خطأ أثناء الإرسال!", "error");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+window.loadSentNotifications = async function() {
+    let container = document.getElementById("sent-notifs-history");
+    if(!container) return;
+
+    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">جاري جلب الإشعارات من السيرفر... ⏳</div>`;
+
+    try {
+        let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/notifications.json`);
+        let data = await res.json() || {};
+        let notifs = Object.values(data).reverse(); 
+        
+        if(notifs.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); background: var(--bg-color); border-radius: 12px; border: 2px dashed var(--border-color);">لا توجد إشعارات سابقة مسجلة. 📭</div>`;
+            return;
+        }
+
+        container.innerHTML = notifs.map(n => {
+            let targetName = 'غير معروف';
+            if(n.target === 'all') targetName = '<span style="color:#10b981; font-weight:bold;">جميع الطلاب 🌍</span>';
+            else if(window.activeLevels && window.activeLevels.includes(n.target)) {
+                targetName = `<span style="color:#3b82f6; font-weight:bold;">المرحلة: ${n.target} 🎓</span>`;
+            } else {
+                targetName = `<span style="color:#f59e0b; font-weight:bold;">مجموعة: ${n.target} 👥</span>`;
+            }
+
+            return `
+            <div style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); border-right: 4px solid #f59e0b; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); gap: 15px;">
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 5px 0; color: var(--secondary-color); font-size: 16px;">${n.title}</h4>
+                    <p style="margin: 0; font-size: 14px; color: var(--text-muted); line-height: 1.6;">${n.message}</p>
+                </div>
+                <div style="text-align: left; min-width: 150px; border-right: 1px solid var(--border-color); padding-right: 15px;">
+                    <span style="display: block; font-size: 12px; background: var(--hover-bg); padding: 6px 10px; border-radius: 6px; margin-bottom: 8px;">إلى: ${targetName}</span>
+                    <span style="display: block; font-size: 12px; color: #94a3b8; font-weight: bold;">🕒 ${n.date}</span>
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e) { 
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--danger-color); font-weight:bold;">حدث خطأ في تحميل السجل!</div>`;
+    }
+};
+
+// --- حفظ الكورس (محدث ليدعم حصص متعددة) ---
+window.saveLecture = async function() {
+    let title = document.getElementById("lecTitle").value.trim();
+    let level = document.getElementById("lecLevel").value;
+    let type = document.getElementById("lecType").value;
+    let price = document.getElementById("lecPrice").value;
+    let desc = document.getElementById("lecDesc").value.trim();
+    
+    // 👈 سحب كل الحصص المتعلم عليها صح
+    let linkedSessions = Array.from(document.querySelectorAll('#lecSessionsContainer input:checked')).map(cb => cb.value);
+
+    let videos = [];
+    document.querySelectorAll(".video-row").forEach(row => {
+        let vTitle = row.querySelector(".vid-title").value.trim();
+        let vUrl = row.querySelector(".vid-url").value.trim();
+        if(vUrl) videos.push({ title: vTitle || "فيديو", url: vUrl });
+    });
+
+    if(!title || videos.length === 0) {
+        if(typeof showToast === 'function') showToast("يرجى إدخال اسم الكورس وفيديو واحد على الأقل!", "error");
+        return; 
+    }
+    if(type === 'paid' && (!price || price <= 0)) {
+        if(typeof showToast === 'function') showToast("يرجى تحديد السعر!", "error"); return;
+    }
+
+    let btn = document.querySelector('#platform-lectures .save-btn');
+    let originalText = btn.innerText; 
+    btn.innerText = "جاري رفع الصورة والنشر... ⏳";
+
+    try {
+        let imageBase64 = await window.readFileAsBase64("lecImageFile");
+        let defaultImage = "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop";
+
+        let newLecture = { 
+            id: "lec_" + Date.now(), 
+            title: title, level: level, linkedSessions: linkedSessions, // 👈 الحصص المربوطة بقت مصفوفة
+            type: type, price: type === 'paid' ? parseFloat(price) : 0,
+            desc: desc, videos: videos,
+            image: imageBase64 || defaultImage,
+            date: new Date().toISOString().split('T')[0] 
+        };
+
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/lectures/${newLecture.id}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newLecture) });
+        if(typeof showToast === 'function') showToast("تم نشر الكورس بالصورة! 🎬");
+        
+        document.getElementById("lecTitle").value = ""; document.getElementById("lecDesc").value = "";
+        document.getElementById("lecPrice").value = ""; document.getElementById("lecImageFile").value = "";
+        document.getElementById("courseVideosContainer").innerHTML = `<div class="video-row" style="display: flex; gap: 10px; margin-bottom: 10px;"><input type="text" class="custom-input vid-title" placeholder="عنوان الفيديو" style="flex: 1;"><input type="url" class="custom-input vid-url" placeholder="رابط الفيديو" style="flex: 2;"></div>`;
+        btn.innerText = originalText; renderLectures();
+    } catch(e) { alert("حدث خطأ أثناء النشر!"); btn.innerText = originalText; }
+};
+
+// --- فتح نافذة التعديل (محدث ليدعم حصص متعددة) ---
+window.openEditCourseModal = function(id) {
+    let lec = window.fetchedLectures.find(l => l.id === id);
+    if(!lec) return;
+
+    document.getElementById("editLecId").value = lec.id;
+    document.getElementById("editLecTitle").value = lec.title;
+    document.getElementById("editLecType").value = lec.type;
+    document.getElementById("editLecPrice").value = lec.price || 0;
+    document.getElementById("editPriceContainer").style.display = lec.type === 'paid' ? 'block' : 'none';
+    document.getElementById("editLecDesc").value = lec.desc || "";
+    
+    document.getElementById("editLecImageBase64").value = lec.image || "";
+    document.getElementById("editLecImageFile").value = ""; 
+
+    let selectLevel = document.getElementById("editLecLevel");
+    let activeLevels = JSON.parse(localStorage.getItem("activeLevels")) || ["الصف الأول الثانوي", "الصف الثاني الثانوي", "الصف الثالث الثانوي"];
+    selectLevel.innerHTML = '<option value="all">كل الصفوف (عام)</option>';
+    activeLevels.forEach(lvl => { selectLevel.innerHTML += `<option value="${lvl}" ${lec.level === lvl ? 'selected' : ''}>${lvl}</option>`; });
+
+    // 👈 تجهيز الحصص المربوطة القديمة وفتح الفلتر
+    let savedSessions = lec.linkedSessions || [];
+    if(lec.linkedSession && !savedSessions.includes(lec.linkedSession)) savedSessions.push(lec.linkedSession); // دعم للكورسات القديمة اللي كانت متسجلة بحصة واحدة
+    
+    filterCourseSessions('editLecLevel', 'editLecSessionsContainer', savedSessions);
+
+    let vContainer = document.getElementById("editCourseVideosContainer");
+    vContainer.innerHTML = "";
+    if(lec.videos && lec.videos.length > 0) {
+        lec.videos.forEach(v => addEditCourseVideoRow(v.title, v.url));
+    } else if (lec.url) {
+        addEditCourseVideoRow("المحاضرة كاملة", lec.url); 
+    } else {
+        addEditCourseVideoRow();
+    }
+
+    openModal("editCourseModal");
+};
+
+// --- حفظ الكورس المتعدل (محدث) ---
+window.saveEditedCourse = async function() {
+    let id = document.getElementById("editLecId").value;
+    let title = document.getElementById("editLecTitle").value.trim();
+    let type = document.getElementById("editLecType").value;
+    let price = document.getElementById("editLecPrice").value;
+    
+    // 👈 سحب كل الحصص المتعلم عليها صح
+    let linkedSessions = Array.from(document.querySelectorAll('#editLecSessionsContainer input:checked')).map(cb => cb.value);
+    
+    let videos = [];
+    document.querySelectorAll(".video-row-edit").forEach(row => {
+        let vTitle = row.querySelector(".vid-title").value.trim();
+        let vUrl = row.querySelector(".vid-url").value.trim();
+        if(vUrl) videos.push({ title: vTitle || "فيديو", url: vUrl });
+    });
+
+    if(!title || videos.length === 0) return alert("يرجى إدخال اسم الكورس وفيديو واحد على الأقل!");
+
+    let btn = document.querySelector('#editCourseModal .save-btn');
+    let originalText = btn.innerText; 
+    btn.innerText = "جاري حفظ التعديلات... ⏳";
+
+    try {
+        let newImageBase64 = await window.readFileAsBase64("editLecImageFile");
+        let oldImage = document.getElementById("editLecImageBase64").value;
+        let finalImage = newImageBase64 || oldImage; 
+
+        let lec = window.fetchedLectures.find(l => l.id === id);
+        let updatedLecture = { 
+            ...lec,
+            title: title,
+            level: document.getElementById("editLecLevel").value,
+            linkedSessions: linkedSessions, // 👈 الحصص المحدثة كمصفوفة
+            linkedSession: null, // تصفير الحقل القديم لو موجود
+            type: type,
+            price: type === 'paid' ? parseFloat(price) : 0,
+            image: finalImage,
+            desc: document.getElementById("editLecDesc").value.trim(),
+            videos: videos
+        };
+
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/lectures/${id}.json`, { 
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedLecture) 
+        });
+        if(typeof showToast === 'function') showToast("تم حفظ التعديلات! 💾");
+        closeModal("editCourseModal");
+        renderLectures();
+    } catch(e) { alert("حدث خطأ أثناء الحفظ!"); }
+    btn.innerText = originalText;
 };
 
 window.addCourseVideoRow = function() {
@@ -3110,153 +3449,7 @@ window.readFileAsBase64 = function(fileInputId) {
 };
 
 
-// ==========================================
-// 🎬 حفظ الكورس الجديد (بالصورة المرفوعة)
-// ==========================================
-window.saveLecture = async function() {
-    let title = document.getElementById("lecTitle").value.trim();
-    let level = document.getElementById("lecLevel").value;
-    let linkedSession = document.getElementById("lecLinkedSession").value;
-    let type = document.getElementById("lecType").value;
-    let price = document.getElementById("lecPrice").value;
-    let desc = document.getElementById("lecDesc").value.trim();
-    
-    // تجميع الفيديوهات
-    let videos = [];
-    document.querySelectorAll(".video-row").forEach(row => {
-        let vTitle = row.querySelector(".vid-title").value.trim();
-        let vUrl = row.querySelector(".vid-url").value.trim();
-        if(vUrl) videos.push({ title: vTitle || "فيديو", url: vUrl });
-    });
 
-    if(!title || videos.length === 0) {
-        if(typeof showToast === 'function') showToast("يرجى إدخال اسم الكورس وفيديو واحد على الأقل!", "error");
-        return; 
-    }
-    if(type === 'paid' && (!price || price <= 0)) {
-        if(typeof showToast === 'function') showToast("يرجى تحديد السعر!", "error"); return;
-    }
-
-    let btn = document.querySelector('#platform-lectures .save-btn');
-    let originalText = btn.innerText; 
-    btn.innerText = "جاري رفع الصورة والنشر... ⏳";
-
-    try {
-        // 🔥 قراءة الصورة من الجهاز
-        let imageBase64 = await window.readFileAsBase64("lecImageFile");
-        let defaultImage = "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=600&auto=format&fit=crop";
-
-        let newLecture = { 
-            id: "lec_" + Date.now(), 
-            title: title, level: level, linkedSession: linkedSession,
-            type: type, price: type === 'paid' ? parseFloat(price) : 0,
-            desc: desc, videos: videos,
-            image: imageBase64 || defaultImage, // يحط الصورة أو الافتراضية لو مرفعش حاجة
-            date: new Date().toISOString().split('T')[0] 
-        };
-
-        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/lectures/${newLecture.id}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newLecture) });
-        if(typeof showToast === 'function') showToast("تم نشر الكورس بالصورة! 🎬");
-        
-        // تفريغ الخانات
-        document.getElementById("lecTitle").value = ""; document.getElementById("lecDesc").value = "";
-        document.getElementById("lecPrice").value = ""; document.getElementById("lecImageFile").value = "";
-        document.getElementById("courseVideosContainer").innerHTML = `<div class="video-row" style="display: flex; gap: 10px; margin-bottom: 10px;"><input type="text" class="custom-input vid-title" placeholder="عنوان الفيديو" style="flex: 1;"><input type="url" class="custom-input vid-url" placeholder="رابط الفيديو" style="flex: 2;"></div>`;
-        btn.innerText = originalText; renderLectures();
-    } catch(e) { alert("حدث خطأ أثناء النشر!"); btn.innerText = originalText; }
-};
-
-// ==========================================
-// ✏️ نافذة التعديل وحفظ التعديلات
-// ==========================================
-window.openEditCourseModal = function(id) {
-    let lec = window.fetchedLectures.find(l => l.id === id);
-    if(!lec) return;
-
-    document.getElementById("editLecId").value = lec.id;
-    document.getElementById("editLecTitle").value = lec.title;
-    document.getElementById("editLecType").value = lec.type;
-    document.getElementById("editLecPrice").value = lec.price || 0;
-    document.getElementById("editPriceContainer").style.display = lec.type === 'paid' ? 'block' : 'none';
-    document.getElementById("editLecDesc").value = lec.desc || "";
-    
-    // حفظ الصورة القديمة في الخفاء عشان لو مرفعش صورة جديدة
-    document.getElementById("editLecImageBase64").value = lec.image || "";
-    document.getElementById("editLecImageFile").value = ""; // تفريغ خانة الرفع
-
-    let selectLevel = document.getElementById("editLecLevel");
-    let activeLevels = JSON.parse(localStorage.getItem("activeLevels")) || ["الصف الأول الثانوي", "الصف الثاني الثانوي", "الصف الثالث الثانوي"];
-    selectLevel.innerHTML = '<option value="all">كل الصفوف (عام)</option>';
-    activeLevels.forEach(lvl => { selectLevel.innerHTML += `<option value="${lvl}" ${lec.level === lvl ? 'selected' : ''}>${lvl}</option>`; });
-
-    let selectSession = document.getElementById("editLecLinkedSession");
-    selectSession.innerHTML = '<option value="">بدون ربط</option>';
-    if(typeof classSessions !== 'undefined') {
-        [...classSessions].reverse().forEach(s => {
-            selectSession.innerHTML += `<option value="${s.id}" ${lec.linkedSession === s.id ? 'selected' : ''}>${s.date} - ${s.topic || 'حصة'} (${s.group})</option>`;
-        });
-    }
-
-    let vContainer = document.getElementById("editCourseVideosContainer");
-    vContainer.innerHTML = "";
-    if(lec.videos && lec.videos.length > 0) {
-        lec.videos.forEach(v => addEditCourseVideoRow(v.title, v.url));
-    } else if (lec.url) {
-        addEditCourseVideoRow("المحاضرة كاملة", lec.url); 
-    } else {
-        addEditCourseVideoRow();
-    }
-
-    openModal("editCourseModal");
-};
-
-window.saveEditedCourse = async function() {
-    let id = document.getElementById("editLecId").value;
-    let title = document.getElementById("editLecTitle").value.trim();
-    let type = document.getElementById("editLecType").value;
-    let price = document.getElementById("editLecPrice").value;
-    
-    let videos = [];
-    document.querySelectorAll(".video-row-edit").forEach(row => {
-        let vTitle = row.querySelector(".vid-title").value.trim();
-        let vUrl = row.querySelector(".vid-url").value.trim();
-        if(vUrl) videos.push({ title: vTitle || "فيديو", url: vUrl });
-    });
-
-    if(!title || videos.length === 0) return alert("يرجى إدخال اسم الكورس وفيديو واحد على الأقل!");
-
-    let btn = document.querySelector('#editCourseModal .save-btn');
-    let originalText = btn.innerText; 
-    btn.innerText = "جاري حفظ التعديلات... ⏳";
-
-    try {
-        // 🔥 فحص لو المدرس رفع صورة جديدة ولا لأ
-        let newImageBase64 = await window.readFileAsBase64("editLecImageFile");
-        let oldImage = document.getElementById("editLecImageBase64").value;
-        let finalImage = newImageBase64 || oldImage; // لو مفيش جديد، حط القديمة
-
-        let lec = window.fetchedLectures.find(l => l.id === id);
-        let updatedLecture = { 
-            ...lec,
-            title: title,
-            level: document.getElementById("editLecLevel").value,
-            linkedSession: document.getElementById("editLecLinkedSession").value,
-            type: type,
-            price: type === 'paid' ? parseFloat(price) : 0,
-            image: finalImage,
-            desc: document.getElementById("editLecDesc").value.trim(),
-            videos: videos
-        };
-
-        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/lectures/${id}.json`, { 
-            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedLecture) 
-        });
-        if(typeof showToast === 'function') showToast("تم حفظ التعديلات! 💾");
-        closeModal("editCourseModal");
-        renderLectures();
-    } catch(e) { alert("حدث خطأ أثناء الحفظ!"); }
-    btn.innerText = originalText;
-};
 
 // --- 📊 دوال التراكر (إحصائيات المشاهدة) ---
 window.openCourseAnalytics = async function(courseId) {
@@ -3411,63 +3604,93 @@ window.renderOnlineExams = async function() {
 // 📊 عرض تفاصيل الامتحان والدرجات (مربوطة بالـ IDs الجديدة)
 // ==========================================
 
-window.openOnlineExamDetails = async function(id) {
-    const exam = window.fetchedOnlineExams.find(e => e.id === id); 
-    if(!exam) return;
-    
-    // إخفاء الكروت وإظهار الجدول الجديد
-    let listContainer = document.getElementById("platform-exams-list-container");
-    let detailsContainer = document.getElementById("platform-exam-details-section");
-    
-    if(listContainer) listContainer.style.display = "none";
-    if(detailsContainer) detailsContainer.style.display = "block";
-    
-    let titleEl = document.getElementById("platform-exam-title");
-    if(titleEl) {
-        let groupsText = Array.isArray(exam.group) ? exam.group.join('، ') : (exam.group === 'all' ? 'الكل' : exam.group);
-        titleEl.innerHTML = `💻 ${exam.title} <br><span style="font-size: 15px; color: var(--text-muted); font-weight: normal;">المجموع: ${exam.totalScore} | المدة: ${exam.duration} دقيقة | المستهدف: ${groupsText}</span>`;
-    }
-    
-    let tbody = document.getElementById("platform-exam-submissions-list");
-    if(!tbody) return;
-    
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">جاري جلب إجابات الطلاب من السحابة... ⏳</td></tr>`;
-
-    try {
-        let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/onlineSubmissions/${id}.json`);
-        let subs = await res.json() || {};
-        exam.submissions = subs; 
-        
-        let subsArray = Object.keys(subs).map(phone => ({ phone: phone, data: subs[phone] }));
-        subsArray.sort((a, b) => b.data.score - a.data.score); 
-        
-        let statsEl = document.getElementById("platform-exam-stats");
-        if(statsEl) statsEl.innerText = `إجمالي التسليمات: ${subsArray.length}`;
-        
-        tbody.innerHTML = "";
-        if(subsArray.length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لم يقم أي طالب بتسليم الامتحان حتى الآن</td></tr>`;
-
-        subsArray.forEach(sub => {
-            let st = typeof students !== 'undefined' ? students.find(s => s.phone === sub.phone) : null;
-            let name = st ? st.name : "طالب غير معروف";
-            let code = st ? st.code : "--";
-            let group = st ? st.group : "--";
+// ==========================================
+        // 📊 عرض تفاصيل الامتحان (ذكية تقسم الطلاب لـ ممتحن ومتهرب)
+        // ==========================================
+        window.openOnlineExamDetails = async function(id) {
+            const exam = window.fetchedOnlineExams.find(e => e.id === id); 
+            if(!exam) return;
             
-            let needsGrading = exam.questions.some(q => q.type === 'essay' && sub.data.answers[q.id] !== undefined && (!sub.data.manualGrades || sub.data.manualGrades[q.id] === undefined));
-            let statusBadge = needsGrading ? `<span style="background:#fef3c7; color:#d97706; padding: 4px 8px; border-radius: 6px; font-size:12px; font-weight:bold;">يحتاج تقييم ⚠️</span>` : `<span style="background:#d1fae5; color:#059669; padding: 4px 8px; border-radius: 6px; font-size:12px; font-weight:bold;">مكتمل ✅</span>`;
-            let scoreColor = needsGrading ? "#d97706" : "#059669";
+            // إخفاء الكروت وإظهار قسم التفاصيل
+            let listContainer = document.getElementById("platform-exams-list-container");
+            let detailsContainer = document.getElementById("platform-exam-details-section");
+            
+            if(listContainer) listContainer.style.display = "none";
+            if(detailsContainer) detailsContainer.style.display = "block";
+            
+            // تحديث العنوان
+            let titleEl = document.getElementById("platform-exam-title");
+            if(titleEl) {
+                let groupsText = Array.isArray(exam.group) ? exam.group.join('، ') : (exam.group === 'all' ? 'الكل' : exam.group);
+                titleEl.innerHTML = `💻 ${exam.title} <br><span style="font-size: 15px; color: var(--text-muted); font-weight: normal;">المجموع: ${exam.totalScore} | المدة: ${exam.duration} دقيقة | المستهدف: ${groupsText}</span>`;
+            }
+            
+            let tbody = document.getElementById("platform-exam-submissions-list");
+            if(!tbody) return;
+            
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">جاري تحليل البيانات ومقارنة الطلاب... ⏳</td></tr>`;
 
-            tbody.innerHTML += `<tr>
-                <td><strong>${code}</strong></td><td>${name}</td><td>${group}</td>
-                <td><strong style="color:${scoreColor}; font-size: 16px;">${sub.data.score} / ${exam.totalScore}</strong></td>
-                <td>${statusBadge}</td>
-                <td><button class="save-btn" style="background: #3b82f6; width: auto; padding: 6px 12px; margin: 0; font-size: 12px;" onclick="openGradeSubmission('${exam.id}', '${sub.phone}')">الاطلاع وتقييم المقالي 📝</button></td>
-            </tr>`;
-        });
-    } catch(e) { 
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">خطأ أثناء جلب البيانات!</td></tr>`; 
-    }
-};
+            try {
+                // جلب الإجابات من السحابة
+                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/onlineSubmissions/${id}.json`);
+                let subs = await res.json() || {};
+                exam.submissions = subs; 
+                
+                // 1. تحديد الطلاب المستهدفين من هذا الامتحان
+                let targetStudents = [];
+                if (exam.group === 'all' || (Array.isArray(exam.group) && exam.group.includes('all'))) {
+                    targetStudents = students; // كل الطلاب
+                } else {
+                    let examGroups = Array.isArray(exam.group) ? exam.group : [exam.group];
+                    targetStudents = students.filter(s => examGroups.includes(s.group));
+                }
+
+                // 2. تقسيم الطلاب (تم التسليم / لم يمتحن)
+                let submittedList = [];
+                let missingList = [];
+
+                targetStudents.forEach(st => {
+                    if (subs[st.phone]) {
+                        submittedList.push({ student: st, data: subs[st.phone] });
+                    } else {
+                        missingList.push(st); // طالب مستهدف بس ممتحنش
+                    }
+                });
+
+                // تأمين لو فيه طالب امتحن وبعدين اتمسح من الجروب
+                Object.keys(subs).forEach(phone => {
+                    if (!submittedList.find(item => item.student.phone === phone)) {
+                        let unknownSt = students.find(s => s.phone === phone) || { phone: phone, name: "طالب غير مسجل", code: "--", group: "--" };
+                        submittedList.push({ student: unknownSt, data: subs[phone] });
+                    }
+                });
+
+                // ترتيب الشاطرين فوق
+                submittedList.sort((a, b) => b.data.score - a.data.score); 
+
+                // حفظ القوائم في الذاكرة للتبديل بين التابات بسهولة
+                window.currentExamSubmittedList = submittedList;
+                window.currentExamMissingList = missingList;
+                window.currentExamObj = exam;
+
+                // 3. رسم زراير الفلترة أعلى الجدول (التابات)
+                let statsEl = document.getElementById("platform-exam-stats");
+                if(statsEl) {
+                    statsEl.innerHTML = `
+                        <button onclick="renderExamSubmissionsList(true)" id="btnShowSubmitted" style="background: #10b981; color: white; border: none; padding: 6px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-left: 10px; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">تم التسليم (${submittedList.length}) ✅</button>
+                        <button onclick="renderExamSubmissionsList(false)" id="btnShowMissing" style="background: #ef4444; color: white; border: none; padding: 6px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">لم يمتحن (${missingList.length}) ❌</button>
+                    `;
+                }
+                
+                // عرض قايمة المسلمين افتراضياً
+                renderExamSubmissionsList(true);
+
+            } catch(e) { 
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">خطأ أثناء جلب البيانات! تأكد من الإنترنت.</td></tr>`; 
+            }
+        };
+
+        
 
 window.backToPlatformExams = function() {
     let listContainer = document.getElementById("platform-exams-list-container");
@@ -3484,67 +3707,259 @@ window.backToExams = function() {
     window.backToPlatformExams();
 };
 
-window.openGradeSubmission = function(examId, studentPhone) {
-    currentGradingExamId = examId; currentGradingStudentPhone = studentPhone;
-    const exam = window.fetchedOnlineExams.find(e => e.id === examId);
-    const sub = exam.submissions[studentPhone];
-    const st = students.find(s => s.phone === studentPhone);
-    
-    document.getElementById("gradeStudentName").innerText = `إجابات: ${st ? st.name : 'طالب'}`;
-    document.getElementById("gradeStudentScore").innerText = `المجموع الحالي: ${sub.score} / ${exam.totalScore}`;
-    const container = document.getElementById("studentAnswersContainer"); container.innerHTML = "";
-    
-    exam.questions.forEach((q, idx) => {
-        let studentAns = sub.answers[q.id];
-        let qHtml = `<div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px;"><p style="font-weight: bold; margin-bottom: 10px; color: var(--text-main);">${idx+1}. ${q.text} <span style="font-size:12px; color:var(--text-muted);">(${q.points} درجات)</span></p>`;
-        
-        if (q.type === 'mcq') {
-            let ansText = studentAns !== undefined && studentAns !== -1 ? q.options[studentAns] : "لم يُجب";
-            let isCorrect = studentAns === q.correctAnswerIndex;
-            qHtml += `<p style="color: ${isCorrect ? 'var(--success-color)' : 'var(--danger-color)'}; font-weight: bold;">إجابة الطالب: ${ansText} ${isCorrect ? '✅' : '❌'}</p>`;
-            if(!isCorrect) qHtml += `<p style="color: var(--success-color); font-size: 13px;">الإجابة الصحيحة: ${q.options[q.correctAnswerIndex]}</p>`;
-        } 
-        else if (q.type === 'tf') {
-            let isCorrect = String(studentAns) === String(q.correctAnswerTF || q.correctAnswer);
-            let ansText = studentAns === "true" ? "صح" : (studentAns === "false" ? "خطأ" : "لم يُجب");
-            let correctText = (q.correctAnswerTF === 'true' || q.correctAnswer === true) ? "صح" : "خطأ";
-            qHtml += `<p style="color: ${isCorrect ? 'var(--success-color)' : 'var(--danger-color)'}; font-weight: bold;">إجابة الطالب: ${ansText} ${isCorrect ? '✅' : '❌'}</p>`;
-            if(!isCorrect) qHtml += `<p style="color: var(--success-color); font-size: 13px;">الإجابة الصحيحة: ${correctText}</p>`;
-        }
-        else if (q.type === 'blank') {
-            let isCorrect = (studentAns || "").toLowerCase() === (q.correctAnswerText || "").toLowerCase();
-            qHtml += `<p style="color: ${isCorrect ? 'var(--success-color)' : 'var(--danger-color)'}; font-weight: bold;">إجابة الطالب: ${studentAns || "لم يُجب"} ${isCorrect ? '✅' : '❌'}</p>`;
-            if(!isCorrect) qHtml += `<p style="color: var(--success-color); font-size: 13px;">الإجابة الصحيحة: ${q.correctAnswerText}</p>`;
-        }
-        else if (q.type === 'essay') {
-            let manualGrade = sub.manualGrades ? sub.manualGrades[q.id] : "";
-            qHtml += `<div style="background: var(--card-bg); padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; margin-bottom: 10px;"><p style="margin: 0; color: #3b82f6;"><strong>ما كتبه الطالب:</strong></p><p style="margin-top: 5px; white-space: pre-wrap;">${studentAns || "لم يكتب شيئاً"}</p></div><div style="display: flex; align-items: center; gap: 10px;"><label style="color: var(--exam-color); font-weight: bold;">الدرجة المستحقة:</label><input type="number" id="grade_${q.id}" class="custom-input manual-grade-input" style="width: 100px; text-align: center;" value="${manualGrade}" max="${q.points}" min="0"><span style="color: var(--text-muted);">من ${q.points}</span></div>`;
-        }
-        qHtml += `</div>`; container.innerHTML += qHtml;
-    });
-    openModal('gradeOnlineExamModal');
-};
 
-window.saveManualGrades = async function() {
-    const exam = window.fetchedOnlineExams.find(e => e.id === currentGradingExamId);
-    const sub = exam.submissions[currentGradingStudentPhone];
-    if(!sub.manualGrades) sub.manualGrades = {};
-    
-    exam.questions.filter(q => q.type === 'essay').forEach(q => {
-        let input = document.getElementById(`grade_${q.id}`);
-        if(input && input.value !== "") {
-            let val = parseFloat(input.value); if(val > q.points) val = q.points;
-            let oldVal = sub.manualGrades[q.id] || 0;
-            sub.score = (sub.score - oldVal) + val; sub.manualGrades[q.id] = val;
-        }
-    });
 
-    try {
-        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/onlineSubmissions/${currentGradingExamId}/${currentGradingStudentPhone}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sub) });
-        closeModal('gradeOnlineExamModal'); openOnlineExamDetails(currentGradingExamId);
-        if(typeof showToast === "function") showToast("تم التحديث! 💾");
-    } catch(e) { alert("خطأ في الحفظ!"); }
-};
+
+       // ==========================================
+        // 🔄 دالة رسم الجدول (محمية ضد الكراش ومُحدثة)
+        // ==========================================
+        window.renderExamSubmissionsList = function(showSubmitted) {
+            let tbody = document.getElementById("platform-exam-submissions-list");
+            let exam = window.currentExamObj;
+
+            let btnSubmitted = document.getElementById("btnShowSubmitted");
+            let btnMissing = document.getElementById("btnShowMissing");
+
+            if(btnSubmitted) btnSubmitted.style.opacity = showSubmitted ? "1" : "0.5";
+            if(btnMissing) btnMissing.style.opacity = showSubmitted ? "0.5" : "1";
+
+            tbody.innerHTML = "";
+
+            if (showSubmitted) {
+                let subsArray = window.currentExamSubmittedList;
+                if(subsArray.length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; font-weight:bold; padding: 20px;">لم يقم أي طالب بتسليم الامتحان حتى الآن</td></tr>`;
+
+                subsArray.forEach(item => {
+                    let st = item.student;
+                    let subData = item.data;
+
+                    // 🔥 التعديل السحري هنا: الحماية من الكراش + إجبار المدرس على التقييم
+                    let needsGrading = (exam.questions || []).some(q => q.type === 'essay' && (!subData.manualGrades || subData.manualGrades[q.id] === undefined));
+
+                    let statusBadge = needsGrading ? `<span style="background:#fef3c7; color:#d97706; padding: 4px 8px; border-radius: 6px; font-size:12px; font-weight:bold;">يحتاج تقييم ⚠️</span>` : `<span style="background:#d1fae5; color:#059669; padding: 4px 8px; border-radius: 6px; font-size:12px; font-weight:bold;">مكتمل ✅</span>`;
+                    let scoreColor = needsGrading ? "#d97706" : "#059669";
+
+                    tbody.innerHTML += `<tr>
+                        <td><strong>${st.code}</strong></td><td>${st.name}</td><td>${st.group}</td>
+                        <td><strong style="color:${scoreColor}; font-size: 16px;">${subData.score} / ${exam.totalScore}</strong></td>
+                        <td>${statusBadge}</td>
+                        <td><button class="save-btn" style="background: #3b82f6; width: auto; padding: 6px 12px; margin: 0; font-size: 12px; border:none; border-radius:6px; cursor:pointer;" onclick="openGradeSubmission('${exam.id}', '${st.phone}')">التقييم 📝</button></td>
+                    </tr>`;
+                });
+
+            } else {
+                let missingArray = window.currentExamMissingList;
+                if(missingArray.length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; font-weight:bold; color:var(--success-color); padding: 20px;">ممتاز! جميع الطلاب المستهدفين قاموا بتسليم الامتحان 🎉</td></tr>`;
+
+                missingArray.forEach(st => {
+                    let msg = encodeURIComponent(`🚨 *تحذير من الإدارة*\nولي الأمر المحترم، نحيطكم علماً بأن الطالب/ة: *${st.name}*\nلم يقم بتسليم الامتحان الإلكتروني (${exam.title}).\n\n⚠️ *برجاء التنبيه بالدخول للمنصة وإتمام الامتحان فوراً لتجنب إيقافه عن دخول حصة السنتر القادمة.*`);
+                    let targetPhone = st.parentPhone ? st.parentPhone : st.phone;
+                    let waLink = `https://wa.me/20${targetPhone.replace(/^0+/, '')}?text=${msg}`;
+
+                    tbody.innerHTML += `<tr style="background: rgba(239, 68, 68, 0.05);">
+                        <td><strong>${st.code}</strong></td><td>${st.name}</td><td>${st.group}</td>
+                        <td><strong style="color:var(--danger-color); font-size: 16px;">0 / ${exam.totalScore}</strong></td>
+                        <td><span style="background:#fee2e2; color:#ef4444; padding: 4px 8px; border-radius: 6px; font-size:12px; font-weight:bold;">لم يمتحن ❌</span></td>
+                        <td><button class="save-btn" style="background: #25D366; width: auto; padding: 6px 12px; margin: 0; font-size: 13px; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="window.open('${waLink}', '_blank')">إنذار ولي الأمر 💬</button></td>
+                    </tr>`;
+                });
+            }
+        };
+
+// ==========================================
+        // 📝 1. فتح نافذة التقييم وعرض جميع إجابات الطالب (النسخة الفخمة والشاملة)
+        // ==========================================
+        window.openGradeSubmission = function(examId, phone) {
+            try {
+                window.currentGradingExamId = examId;
+                window.currentGradingStudentPhone = phone;
+
+                let exam = window.currentExamObj || window.fetchedOnlineExams.find(e => e.id === examId);
+                
+                if(!exam || !exam.submissions || !exam.submissions[phone]) {
+                    alert("خطأ: تعذر العثور على إجابات هذا الطالب!");
+                    return;
+                }
+                
+                let sub = exam.submissions[phone];
+
+                let container = document.getElementById("studentAnswersContainer");
+                if(!container) {
+                    alert("خطأ: نافذة عرض الأسئلة غير موجودة!");
+                    return; 
+                }
+
+                // تحديث اسم ودرجة الطالب في عنوان النافذة
+                let st = typeof students !== 'undefined' ? students.find(s => s.phone === phone) : null;
+                let stName = st ? st.name : phone;
+                
+                let nameEl = document.getElementById("gradeStudentName");
+                if(nameEl) nameEl.innerHTML = `👤 الطالب: <strong style="color:var(--primary-color);">${stName}</strong>`;
+                
+                let scoreEl = document.getElementById("gradeStudentScore");
+                if(scoreEl) scoreEl.innerHTML = `🎯 النتيجة الحالية: <strong style="color:var(--success-color); font-size:18px;">${sub.score} / ${exam.totalScore}</strong>`;
+
+                let html = "";
+
+                // لفة على كل الأسئلة (مقالي واختياري وغيره)
+                (exam.questions || []).forEach((q, index) => {
+                    let studentAns = sub.answers ? sub.answers[q.id] : undefined;
+                    
+                    let qHtml = `<div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">`;
+                    qHtml += `<h4 style="margin: 0 0 15px 0; color: var(--secondary-color); font-size: 16px; line-height: 1.5;">${index + 1}. ${q.text} <span style="color:var(--text-muted); font-size:13px; font-weight:normal;">(${q.points} درجات)</span></h4>`;
+
+                    if (q.type === 'essay') {
+                        // 📝 قسم السؤال المقالي (اللي محتاج تقييم المدرس)
+                        let ansText = studentAns || "لم يُجب الطالب ⚠️";
+                        let currentGrade = (sub.manualGrades && sub.manualGrades[q.id] !== undefined) ? sub.manualGrades[q.id] : "";
+                        
+                        qHtml += `
+                            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; margin-bottom: 15px; font-weight: bold; line-height: 1.6;">
+                                <span style="color:var(--text-muted); font-size:13px; display:block; margin-bottom:5px;">إجابة الطالب:</span>
+                                <span style="color: var(--primary-color); font-size:15px;">${ansText}</span>
+                            </div>
+                            <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                <label style="font-weight: bold; font-size: 14px; color: #1e3a8a;">الدرجة المستحقة لهذا السؤال (من ${q.points}):</label>
+                                <input type="number" id="manual_grade_${q.id}" class="input-field" style="width: 120px; border: 2px solid #3b82f6; font-size:16px; font-weight:bold; text-align:center; margin:0;" min="0" max="${q.points}" value="${currentGrade}" placeholder="الدرجة">
+                            </div>`;
+                    } else {
+                        // 🤖 قسم الأسئلة التلقائية (تتعرض للقراءة فقط بأسلوب شيك)
+                        let isCorrect = false;
+                        let earnedPoints = 0;
+                        let correctStr = "";
+                        let studentStr = "";
+
+                        if (q.type === 'mcq') {
+                            isCorrect = (studentAns === q.correctAnswerIndex);
+                            earnedPoints = isCorrect ? q.points : 0;
+                            correctStr = q.options[q.correctAnswerIndex] || "غير محدد";
+                            studentStr = studentAns !== undefined ? q.options[studentAns] : "لم يُجب";
+                        } else if (q.type === 'tf') {
+                            let correctTF = String(q.correctAnswerTF || q.correctAnswer);
+                            isCorrect = (String(studentAns) === correctTF);
+                            earnedPoints = isCorrect ? q.points : 0;
+                            correctStr = correctTF === "true" ? "صح" : "خطأ";
+                            studentStr = studentAns === "true" ? "صح" : (studentAns === "false" ? "خطأ" : "لم يُجب");
+                        } else if (q.type === 'blank') {
+                            isCorrect = (studentAns === q.correctAnswerText);
+                            earnedPoints = isCorrect ? q.points : 0;
+                            correctStr = q.correctAnswerText || "غير محدد";
+                            studentStr = studentAns || "لم يُجب";
+                        }
+
+                        let badgeColor = isCorrect ? '#10b981' : '#ef4444';
+                        let badgeBg = isCorrect ? '#d1fae5' : '#fee2e2';
+                        let icon = isCorrect ? '✅' : '❌';
+
+                        qHtml += `
+                            <div style="display:flex; gap: 15px; flex-wrap: wrap;">
+                                <div style="flex:1; min-width:200px; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                    <span style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">إجابة الطالب:</span>
+                                    <strong style="color: ${badgeColor}; font-size:15px;">${studentStr} ${icon}</strong>
+                                </div>
+                                <div style="flex:1; min-width:200px; background: white; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                    <span style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">الإجابة الصحيحة النموذجية:</span>
+                                    <strong style="color: #10b981; font-size:15px;">${correctStr}</strong>
+                                </div>
+                                <div style="background: ${badgeBg}; color: ${badgeColor}; padding: 12px 20px; border-radius: 8px; border: 1px solid ${badgeColor}; font-weight: bold; display:flex; align-items:center; justify-content:center; font-size:15px;">
+                                    أخذ: ${earnedPoints} / ${q.points}
+                                </div>
+                            </div>`;
+                    }
+
+                    qHtml += `</div>`;
+                    html += qHtml;
+                });
+
+                container.innerHTML = html;
+                
+                let modal = document.getElementById('gradeOnlineExamModal');
+                if(modal) modal.style.display = 'flex';
+
+            } catch (error) {
+                console.error("Crash prevented in openGradeSubmission:", error);
+                alert("حدث خطأ أثناء فتح التقييم، يرجى المحاولة مرة أخرى.");
+            }
+        };
+
+        // ==========================================
+        // 💾 2. حفظ التقييم اليدوي (النسخة الآمنة الوحيدة)
+        // ==========================================
+        window.saveManualGrades = async function() {
+            try {
+                let examId = window.currentGradingExamId;
+                let phone = window.currentGradingStudentPhone;
+
+                let exam = window.currentExamObj || window.fetchedOnlineExams.find(e => e.id === examId);
+                if(!exam) return alert("خطأ: بيانات الامتحان غير متوفرة!");
+                
+                let sub = exam.submissions[phone];
+                if(!sub) return alert("خطأ: بيانات إجابة الطالب غير متوفرة!");
+
+                if(!sub.manualGrades) sub.manualGrades = {};
+
+                let btn = document.querySelector("button[onclick='saveManualGrades()']");
+                if(btn) { btn.innerHTML = "جاري الحفظ والاعتماد... ⏳"; btn.disabled = true; }
+
+                (exam.questions || []).forEach(q => {
+                    if (q.type === 'essay') {
+                        let input = document.getElementById(`manual_grade_${q.id}`);
+                        if (input) {
+                            let val = parseFloat(input.value);
+                            if (isNaN(val)) val = 0;
+
+                            let oldVal = sub.manualGrades[q.id] || 0;
+                            sub.score = (sub.score - oldVal) + val;
+                            sub.manualGrades[q.id] = val; 
+                        }
+                    }
+                });
+
+                sub.isGraded = true; 
+
+                // حفظ الداتا في السيرفر
+                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/onlineSubmissions/${examId}/${phone}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sub)
+                });
+
+                // إرسال الإشعار للطالب
+                if (typeof window.sendPlatformNotification === "function") {
+                    await window.sendPlatformNotification(phone, "تم تصحيح امتحانك! 📝", `تم الانتهاء من مراجعة امتحان (${exam.title}). نتيجتك النهائية هي ${sub.score} من ${exam.totalScore}.`);
+                }
+
+                // 🔴 تسجيل الحركة في سجل النظام
+                if (typeof window.addSystemLog === "function") {
+                    let st = typeof students !== 'undefined' ? students.find(s => s.phone === phone) : null;
+                    let stName = st ? st.name : phone;
+                    window.addSystemLog("تعديل تقييم 📝", `تم حفظ التقييم اليدوي لامتحان (${exam.title}) للطالب: ${stName}`);
+                }
+
+                // إغلاق المودال
+                if(typeof closeModal === "function") {
+                    closeModal('gradeOnlineExamModal');
+                } else {
+                    document.getElementById('gradeOnlineExamModal').style.display = 'none';
+                }
+
+                // تحديث الجدول
+                if (typeof window.openOnlineExamDetails === "function") {
+                    window.openOnlineExamDetails(examId);
+                }
+
+                if(typeof showToast === "function") showToast("تم الحفظ بنجاح وأصبح مكتمل! ✅");
+
+            } catch(e) {
+                console.error("Crash prevented in saveManualGrades:", e);
+                alert("حدث خطأ أثناء حفظ التقييم! تأكد من اتصالك بالإنترنت.");
+            } finally {
+                let btn = document.querySelector("button[onclick='saveManualGrades()']");
+                if(btn) { btn.innerHTML = "💾 حفظ الدرجات والتعديلات"; btn.disabled = false; }
+            }
+        };
+
+
 
 window.toggleExamStatus = async function(index, currentStatus) {
     let newStatus = currentStatus === 'open' ? 'closed' : 'open';
@@ -3561,4 +3976,666 @@ window.deleteOnlineExam = async function(index) {
         await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/data/onlineExams.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(exams) });
         renderOnlineExams();
     } catch(e) {}
+};
+
+
+// ==========================================
+// 🔔 إرسال إشعارات للطلاب على المنصة
+// ==========================================
+window.sendPlatformNotification = async function(target, title, message) {
+    let notif = {
+        id: "notif_" + Date.now(),
+        target: target, // يقدر يكون 'all' أو اسم الجروب أو رقم تليفون الطالب
+        title: title,
+        message: message,
+        date: new Date().toLocaleDateString('ar-EG')
+    };
+    try {
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/notifications/${notif.id}.json`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notif)
+        });
+    } catch(e) { console.error("Notification Error", e); }
+};
+
+
+
+
+
+// ==========================================
+// 📋 تسجيل الحضور المطور (حاضر / غائب / متأخر) مع النقاط
+// ==========================================
+window.markAttendance = function(phone, status) {
+    const s = classSessions.find(s => s.id === currentActiveSessionId);
+    if(s && s.status==='open') {
+        const student = students.find(st => st.phone === phone);
+        
+        // تصفير النقاط القديمة المسجلة للحصة دي قبل التعديل الجديد منعاً للتكرار
+        if (student && s.attendance[phone]) {
+            let oldStatus = s.attendance[phone];
+            if (oldStatus === 'present') student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 5);
+            if (oldStatus === 'late') student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 2);
+        }
+        
+        // إضافة النقاط الجديدة: حاضر (5) | متأخر (2) | غائب (0)
+        if (student && status === 'present') student.behaviorPoints = (student.behaviorPoints || 0) + 5;
+        if (student && status === 'late') student.behaviorPoints = (student.behaviorPoints || 0) + 2;
+
+        s.attendance[phone] = status;
+        localStorage.setItem("classSessions", JSON.stringify(classSessions));
+        localStorage.setItem("students", JSON.stringify(students));
+        renderAttendanceTable(s);
+    }
+};
+
+// تحديث جدول الحضور عشان يعرض زرار "متأخر" الشيك بألوان ثابتة
+window.renderAttendanceTable = function(session) { 
+    const tbody = document.getElementById("attendance-list"); const gStudents = students.filter(s => s.group === session.group); 
+    if(gStudents.length===0) return tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;">لا يوجد طلاب</td></tr>`; tbody.innerHTML = ""; 
+    const groupS = classSessions.filter(s => s.group === session.group).sort((a,b)=>new Date(a.date)-new Date(b.date)); 
+    const prevSession = groupS[groupS.findIndex(s => s.id === session.id) - 1]; 
+    
+    gStudents.forEach(st => { 
+        const stat = session.attendance[st.phone]; 
+        const statHtml = stat === 'present' ? '<span style="color:#10b981; font-weight:bold;">حاضر ✓</span>' : stat === 'late' ? '<span style="color:#f59e0b; font-weight:bold;">متأخر ⏳</span>' : stat === 'absent' ? '<span style="color:#ef4444; font-weight:bold;">غائب ✗</span>' : '<span style="color:#64748b;">لم يسجل</span>'; 
+        let pHT = '--'; if(prevSession) { const p = prevSession.attendance[st.phone]; pHT = p==='present'?'حاضر':p==='late'?'متأخر':p==='absent'?'غائب':'--'; } 
+        
+        tbody.innerHTML += `<tr>
+            <td><strong>${st.code}</strong></td>
+            <td>${st.name}</td>
+            <td>${st.phone}</td>
+            <td>${pHT}</td>
+            <td>${statHtml}</td>
+            <td style="display:flex; gap:5px; justify-content:center;">
+                <button style="background-color:#10b981; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.phone}','present')">حاضر</button>
+                <button style="background-color:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.phone}','late')">متأخر</button>
+                <button style="background-color:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.phone}','absent')">غائب</button>
+            </td>
+        </tr>`; 
+    }); 
+};
+
+
+
+// ==========================================
+// 💬 منتدى اسأل المستر - لوحة تحكم المدرس
+// ==========================================
+window.loadPlatformForumQuestions = async function() {
+    let tbody = document.getElementById("forum-questions-tbody");
+    if(!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">جاري جلب الأسئلة... ⏳</td></tr>`;
+    try {
+        let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/forum.json`);
+        let data = await res.json() || {};
+        tbody.innerHTML = "";
+        let keys = Object.keys(data).reverse();
+        if(keys.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">لا توجد أسئلة معلقة حالياً 🎉</td></tr>`;
+            return;
+        }
+        keys.forEach(id => {
+            let q = data[id];
+            let ansBtn = `<button class="save-btn" style="background:#3b82f6; width:auto; padding:5px 12px; margin:0;" onclick="answerForumQuestion('${id}')">💬 الرد</button>`;
+            tbody.innerHTML += `<tr><td><strong>${q.studentName}</strong> (${q.studentGroup})</td><td>${q.questionText}</td><td>${q.replyText ? `<span style="color:var(--success-color)">${q.replyText}</span>` : '<span style="color:var(--danger-color)">بانتظار ردك ⏳</span>'}</td><td>${ansBtn}</td></tr>`;
+        });
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">خطأ بالاتصال</td></tr>`; }
+};
+window.answerForumQuestion = async function(id) {
+    let reply = prompt("اكتب الرد النموذجي للسؤال:");
+    if(!reply) return;
+    try {
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/forum/${id}.json`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ replyText: reply })
+        });
+        showToast("تم إرسال الرد وتحديث المنصة لجميع زملائه! ✅");
+        loadPlatformForumQuestions();
+    } catch(e) { alert("خطأ في الحفظ"); }
+};
+
+
+
+// ==========================================
+// 🛒 نظام إدارة المتجر الشامل (إضافة، تعديل، حذف، سجل)
+// ==========================================
+window.currentStoreItems = [];
+window.currentStoreLogs = [];
+
+window.loadStoreData = async function() {
+    let grid = document.getElementById("store-items-grid");
+    if(grid) grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center;">جاري تحميل المتجر... ⏳</div>`;
+    
+    try {
+        let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/store.json`);
+        let data = await res.json() || { items: {}, logs: {} };
+        
+        window.currentStoreItems = data.items ? Object.values(data.items) : [];
+        window.currentStoreLogs = data.logs ? Object.values(data.logs).reverse() : [];
+
+        renderStoreItems();
+        renderStoreLogs();
+    } catch (e) {
+        console.error(e);
+        if(grid) grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color: red;">حدث خطأ في جلب بيانات المتجر!</div>`;
+    }
+};
+
+window.renderStoreItems = function() {
+    let grid = document.getElementById("store-items-grid");
+    if(!grid) return;
+    grid.innerHTML = "";
+
+    document.getElementById("store-total-items").innerText = window.currentStoreItems.length;
+
+    if (window.currentStoreItems.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:30px; background:white; border-radius:12px; color:var(--text-muted);">لا توجد عناصر معروضة بالمتجر حالياً. 📭</div>`;
+        return;
+    }
+
+    window.currentStoreItems.reverse().forEach(item => {
+        let priceBadge = item.currency === 'cash' 
+            ? `<span style="background:#d1fae5; color:#059669; padding:4px 8px; border-radius:6px; font-weight:bold;">${item.price} ج.م</span>`
+            : `<span style="background:#fef3c7; color:#d97706; padding:4px 8px; border-radius:6px; font-weight:bold;">${item.price} نقطة</span>`;
+
+        let defaultImg = 'https://images.unsplash.com/photo-1544716131-18cdce85c47b?q=80&w=400&auto=format&fit=crop';
+        
+        grid.innerHTML += `
+        <div style="background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+            <img src="${item.image || defaultImg}" style="width: 100%; height: 140px; object-fit: cover; border-bottom: 3px solid #10b981;">
+            <div style="padding: 15px; display: flex; flex-direction: column; flex-grow: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <h4 style="margin:0; color:var(--secondary-color); font-size: 16px;">${item.name}</h4>
+                    ${priceBadge}
+                </div>
+                <p style="margin:0 0 15px 0; font-size:12px; color:var(--text-muted); line-height: 1.5;">${item.desc || 'لا يوجد وصف'}</p>
+                <div style="display: flex; gap: 8px; margin-top: auto;">
+                    <button onclick="editStoreItem('${item.id}')" style="flex:1; background:#3b82f6; color:white; border:none; border-radius:6px; padding:8px; cursor:pointer; font-weight: bold;">تعديل ✏️</button>
+                    <button onclick="deleteStoreItem('${item.id}', '${item.name}')" style="background:#ef4444; color:white; border:none; border-radius:6px; padding:8px; cursor:pointer; font-weight: bold;">حذف 🗑️</button>
+                </div>
+            </div>
+        </div>`;
+    });
+};
+
+window.saveStoreItem = async function() {
+    let id = document.getElementById("storeItemId").value;
+    let name = document.getElementById("storeItemName").value.trim();
+    let price = document.getElementById("storeItemPrice").value;
+    let currency = document.getElementById("storeItemCurrency").value;
+    let desc = document.getElementById("storeItemDesc").value.trim();
+    
+    if(!name || !price) return showToast("⚠️ يرجى إدخال اسم وسعر العنصر!", "error");
+
+    let btn = document.getElementById("saveStoreItemBtn");
+    btn.innerHTML = "جاري الحفظ... ⏳"; btn.disabled = true;
+
+    try {
+        let imageBase64 = await window.readFileAsBase64("storeItemImage");
+        let oldImage = document.getElementById("storeItemImageBase64").value;
+        let finalImage = imageBase64 || oldImage;
+
+        let isEdit = id !== "";
+        if(!isEdit) id = "item_" + Date.now();
+
+        let itemData = {
+            id: id, name: name, price: parseFloat(price), currency: currency, desc: desc, image: finalImage
+        };
+
+        // حفظ العنصر
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/store/items/${id}.json`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(itemData)
+        });
+
+        showToast(isEdit ? "تم تعديل العنصر بنجاح! ✏️" : "تمت إضافة العنصر للمتجر! 🛒");
+        resetStoreForm();
+        loadStoreData(); // ريفريش الداتا
+
+    } catch (e) {
+        showToast("حدث خطأ أثناء الحفظ", "error");
+    } finally {
+        btn.innerHTML = "حفظ ونشر في المتجر 🛒"; btn.disabled = false;
+    }
+};
+
+window.editStoreItem = function(id) {
+    let item = window.currentStoreItems.find(i => i.id === id);
+    if(!item) return;
+
+    document.getElementById("storeItemId").value = item.id;
+    document.getElementById("storeItemName").value = item.name;
+    document.getElementById("storeItemPrice").value = item.price;
+    document.getElementById("storeItemCurrency").value = item.currency || 'cash';
+    document.getElementById("storeItemDesc").value = item.desc || '';
+    document.getElementById("storeItemImageBase64").value = item.image || '';
+    
+    document.getElementById("saveStoreItemBtn").innerHTML = "تحديث العنصر 💾";
+    document.getElementById("saveStoreItemBtn").style.backgroundColor = "#3b82f6";
+    document.getElementById("cancelEditStoreBtn").style.display = "block";
+    
+    // سكرول لفوق عشان المدرس يشوف الفورم
+    document.getElementById("platform-store").scrollIntoView({ behavior: 'smooth' });
+};
+
+window.resetStoreForm = function() {
+    document.getElementById("storeItemId").value = "";
+    document.getElementById("storeItemName").value = "";
+    document.getElementById("storeItemPrice").value = "";
+    document.getElementById("storeItemDesc").value = "";
+    document.getElementById("storeItemImage").value = "";
+    document.getElementById("storeItemImageBase64").value = "";
+    
+    document.getElementById("saveStoreItemBtn").innerHTML = "حفظ ونشر في المتجر 🛒";
+    document.getElementById("saveStoreItemBtn").style.backgroundColor = "#10b981";
+    document.getElementById("cancelEditStoreBtn").style.display = "none";
+};
+
+window.deleteStoreItem = async function(id, name) {
+    if(!confirm(`هل أنت متأكد من حذف (${name}) من المتجر نهائياً؟`)) return;
+    try {
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${getSafeUid()}/store/items/${id}.json`, { method: 'DELETE' });
+        showToast("تم الحذف بنجاح! 🗑️");
+        loadStoreData();
+    } catch(e) { showToast("حدث خطأ أثناء الحذف", "error"); }
+};
+window.renderStoreLogs = function() {
+    let tbody = document.getElementById("store-logs-tbody");
+    if(!tbody) return;
+    
+    if (window.currentStoreLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">لا توجد طلبات شراء أو استبدال من الطلاب حتى الآن.</td></tr>`;
+        document.getElementById("store-most-edited").innerText = "لا توجد بيانات";
+        return;
+    }
+
+    let itemCounts = {};
+    let mostEditedName = "لا يوجد";
+    let maxCount = 0;
+
+    tbody.innerHTML = window.currentStoreLogs.map(log => {
+        // حساب أكثر عنصر تم طلبه من الطلاب
+        if(log.itemName) {
+            itemCounts[log.itemName] = (itemCounts[log.itemName] || 0) + 1;
+            if(itemCounts[log.itemName] > maxCount) {
+                maxCount = itemCounts[log.itemName];
+                mostEditedName = log.itemName;
+            }
+        }
+
+        // تحديد بيانات الطالب
+        let stName = log.studentName ? `👤 ${log.studentName} (${log.studentCode})` : `👤 ${log.user || 'غير معروف'}`;
+        
+        // تحديد طريقة الدفع وتلوينها
+        let payMethod = "";
+        let methodColor = "";
+        if (log.currency === 'points') { payMethod = "نقاط سلوك ⭐"; methodColor = "#f59e0b"; }
+        else if (log.currency === 'cash') { payMethod = "محفظة 💰"; methodColor = "#10b981"; }
+        else { payMethod = log.action; methodColor = "#3b82f6"; } // دعم للسجل القديم
+
+        return `
+        <tr>
+            <td style="font-size:12px; color:var(--text-muted);">${log.date}</td>
+            <td style="font-weight:bold; color:var(--secondary-color);">${stName}</td>
+            <td style="font-weight:bold;">${log.itemName}</td>
+            <td><span style="background:${methodColor}20; color:${methodColor}; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">${payMethod}</span></td>
+        </tr>`;
+    }).join('');
+
+    // تحديث بطاقة أكثر عنصر استبدالاً
+    if (maxCount > 0) {
+        document.getElementById("store-most-edited").innerHTML = `${mostEditedName} <br><span style="font-size:14px; color:var(--text-muted); display:inline-block; margin-top:5px;">(تم طلبه ${maxCount} مرات)</span>`;
+    }
+};
+
+
+
+
+
+// ==========================================
+// 💾 حفظ درجات الامتحانات (بالباركود واليدوي) مع تطبيق شروط النقاط
+// التقفيل أو النقصان بدرجة واحدة يعطي (+10 نقاط)
+// ==========================================
+window.submitExamBarcodeGrade = function() {
+    let c = document.getElementById('examBarcodeCode').value.trim(); 
+    let g = document.getElementById('examBarcodeGrade').value.trim();
+    const ex = exams.find(e => e.id === currentActiveExamId);
+    
+    if(c !== "" && g !== "") {
+        let student = findStudentByCodeOrName(c);
+        if(student && ex && ex.status === 'open') {
+            let gradeVal = parseFloat(g);
+            let maxScore = parseFloat(ex.maxScore);
+            if(gradeVal > maxScore || gradeVal < 0) return showToast(`الدرجة غير منطقية!`, 'error');
+            
+            // 1. التراجع عن النقاط القديمة لو المدرس بيعدل الدرجة
+            let oldGrade = ex.grades[student.phone] !== undefined ? parseFloat(ex.grades[student.phone]) : null;
+            if (oldGrade !== null) {
+                if (oldGrade >= maxScore - 1) {
+                    student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 10);
+                }
+            }
+            
+            // 2. إضافة النقاط الجديدة حسب الشروط
+            if (gradeVal >= maxScore - 1) {
+                student.behaviorPoints = (student.behaviorPoints || 0) + 10;
+            }
+            
+            ex.grades[student.phone] = g; 
+            localStorage.setItem("exams", JSON.stringify(exams)); 
+            localStorage.setItem("students", JSON.stringify(students));
+            renderGradesTable(ex, "grades-list", saveExamGrade, currentActiveExamId, 'exam'); 
+            showToast(`تم رصد ${g} لـ ${student.name}`);
+            document.getElementById('examBarcodeCode').value = ''; 
+            document.getElementById('examBarcodeGrade').value = ''; 
+            document.getElementById('examBarcodeCode').focus();
+        }
+    }
+};
+
+window.saveExamGrade = function(phone) {
+    const e = exams.find(ex => ex.id === currentActiveExamId);
+    const v = document.getElementById(`grade_${phone}`).value;
+    
+    if(v !== "") {
+        const student = students.find(s => s.phone === phone);
+        let gradeVal = parseFloat(v);
+        let maxScore = parseFloat(e.maxScore);
+
+        if(gradeVal > maxScore || gradeVal < 0) return showToast(`الدرجة غير منطقية!`, 'error');
+
+        if (student) {
+            // التراجع عن النقاط القديمة
+            let oldGrade = e.grades[phone] !== undefined ? parseFloat(e.grades[phone]) : null;
+            if (oldGrade !== null) {
+                if (oldGrade >= maxScore - 1) {
+                    student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 10);
+                }
+            }
+            
+            // إضافة النقاط الجديدة
+            if (gradeVal >= maxScore - 1) {
+                student.behaviorPoints = (student.behaviorPoints || 0) + 10;
+            }
+        }
+        
+        e.grades[phone] = v;
+        localStorage.setItem("exams", JSON.stringify(exams));
+        localStorage.setItem("students", JSON.stringify(students)); 
+        renderGradesTable(e, "grades-list", saveExamGrade, currentActiveExamId, 'exam');
+        showToast("تم حفظ الدرجة بنجاح ✅");
+    }
+};
+
+// ==========================================
+// 💾 حفظ درجات الواجبات (بالباركود واليدوي) مع تطبيق شروط النقاط
+// النقصان حتى 3 درجات يعطي (+10)، ومن النصف يعطي (+5)
+// ==========================================
+window.submitHwBarcodeGrade = function() {
+    let c = document.getElementById('hwBarcodeCode').value.trim(); 
+    let g = document.getElementById('hwBarcodeGrade').value.trim();
+    const hw = homeworks.find(h => h.id === currentActiveHwId);
+    
+    if(c !== "" && g !== "") {
+        let student = findStudentByCodeOrName(c);
+        if(student && hw && hw.status === 'open') {
+            let gradeVal = parseFloat(g);
+            let maxScore = parseFloat(hw.maxScore);
+            let halfScore = maxScore / 2;
+            if(gradeVal > maxScore || gradeVal < 0) return showToast(`الدرجة غير منطقية!`, 'error');
+
+            // 1. التراجع عن النقاط القديمة لو المدرس بيعدل الدرجة
+            let oldGrade = hw.grades[student.phone] !== undefined ? parseFloat(hw.grades[student.phone]) : null;
+            if (oldGrade !== null) {
+                if (oldGrade >= maxScore - 3) {
+                    student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 10);
+                } else if (oldGrade >= halfScore) {
+                    student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 5);
+                }
+            }
+            
+            // 2. إضافة النقاط الجديدة حسب الشروط
+            if (gradeVal >= maxScore - 3) {
+                student.behaviorPoints = (student.behaviorPoints || 0) + 10;
+            } else if (gradeVal >= halfScore) {
+                student.behaviorPoints = (student.behaviorPoints || 0) + 5;
+            }
+            
+            hw.grades[student.phone] = g; 
+            localStorage.setItem("homeworks", JSON.stringify(homeworks)); 
+            localStorage.setItem("students", JSON.stringify(students));
+            renderGradesTable(hw, "hw-grades-list", saveHwGrade, currentActiveHwId, 'hw'); 
+            showToast(`تم رصد ${g} لـ ${student.name}`);
+            document.getElementById('hwBarcodeCode').value = ''; 
+            document.getElementById('hwBarcodeGrade').value = ''; 
+            document.getElementById('hwBarcodeCode').focus();
+        }
+    }
+};
+
+window.saveHwGrade = function(phone) {
+    const hw = homeworks.find(h => h.id === currentActiveHwId);
+    const v = document.getElementById(`grade_${phone}`).value;
+    
+    if(v !== "") {
+        const student = students.find(s => s.phone === phone);
+        let gradeVal = parseFloat(v);
+        let maxScore = parseFloat(hw.maxScore);
+        let halfScore = maxScore / 2;
+
+        if(gradeVal > maxScore || gradeVal < 0) return showToast(`الدرجة غير منطقية!`, 'error');
+
+        if (student) {
+            // التراجع عن النقاط القديمة
+            let oldGrade = hw.grades[phone] !== undefined ? parseFloat(hw.grades[phone]) : null;
+            if (oldGrade !== null) {
+                if (oldGrade >= maxScore - 3) {
+                    student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 10);
+                } else if (oldGrade >= halfScore) {
+                    student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 5);
+                }
+            }
+            
+            // إضافة النقاط الجديدة
+            if (gradeVal >= maxScore - 3) {
+                student.behaviorPoints = (student.behaviorPoints || 0) + 10;
+            } else if (gradeVal >= halfScore) {
+                student.behaviorPoints = (student.behaviorPoints || 0) + 5;
+            }
+        }
+        
+        hw.grades[phone] = v;
+        localStorage.setItem("homeworks", JSON.stringify(homeworks));
+        localStorage.setItem("students", JSON.stringify(students)); 
+        renderGradesTable(hw, "hw-grades-list", saveHwGrade, currentActiveHwId, 'hw');
+        showToast("تم حفظ درجة الواجب بنجاح ✅");
+    }
+};
+
+
+
+
+// ==========================================
+// 🚀 إغلاق الحصة، وإرسال التقارير، وإدارة كارت الإرسال
+// ==========================================
+window.confirmCloseSession = async function(sendMessages) {
+    const session = classSessions.find(s => s.id === document.getElementById('closeSessionId').value); 
+    if(!session) return;
+    
+    // تسجيل الغياب للباقين
+    students.filter(s => s.group === session.group).forEach(st => {
+        if (!session.attendance[st.phone]) session.attendance[st.phone] = 'absent';
+    });
+
+    session.status = 'closed'; 
+    closeModal('closeSessionModal'); // نقفل النافذة فوراً عشان تكمل شغلك
+    
+    if(!sendMessages) {
+        localStorage.setItem("classSessions", JSON.stringify(classSessions)); 
+        renderSessionCards(); 
+        return showToast("تم الإغلاق وتسجيل الغياب للباقين (بدون رسائل).");
+    }
+
+    let targetStudents = students.filter(s => s.group === session.group);
+    if(targetStudents.length === 0) return showToast("لا يوجد طلاب في هذه المجموعة!", "error");
+
+    // 🌟 تهيئة بيانات التقرير للحصة دي (عشان تفضل محفوظة في الكارت دايماً)
+    session.isSending = true;
+    session.sentProgress = 0;
+    session.sentTotal = targetStudents.length;
+    session.reportData = { success: [], failed: [] };
+    
+    localStorage.setItem("classSessions", JSON.stringify(classSessions)); 
+    renderSessionCards(); // ده هيرسم الكارت وفيه شريط التحميل
+
+    const sessionExam = exams.find(e => e.group === session.group && e.date === session.date);
+    const sessionHw = homeworks.find(h => h.group === session.group && h.date === session.date);
+
+    // 🚀 بدء الإرسال في الخلفية (عشان متتعطلش)
+    (async () => {
+        for (let st of targetStudents) {
+            let reportData = ``;
+            if(document.getElementById('sendAttCheck').checked) reportData += `📋 *الحضور:* ${session.attendance[st.phone] === 'present' ? 'حاضر ✅' : (session.attendance[st.phone] === 'late' ? 'متأخر ⏳' : 'غائب ❌')}\n`;
+            if(document.getElementById('sendExamCheck').checked && sessionExam) reportData += `📝 *الامتحان:* ${sessionExam.grades[st.phone] !== undefined ? sessionExam.grades[st.phone] + ' / ' + sessionExam.maxScore + ' ⭐' : 'لم يمتحن ⚠️'}\n`;
+            if(document.getElementById('sendHwCheck').checked && sessionHw) reportData += `📚 *الواجب:* ${sessionHw.grades[st.phone] !== undefined ? sessionHw.grades[st.phone] + ' / ' + sessionHw.maxScore + ' 📚' : 'لم يسلم ⚠️'}\n`;
+            
+            let currentTeacherName = localStorage.getItem("teacherName");
+            let sig = (currentTeacherName && currentTeacherName !== "null" && currentTeacherName.trim() !== "") ? `إدارة مستر ${currentTeacherName}` : "الإدارة";
+            
+            let parentMsg = `📢 *تقرير حصة:* ${session.topic}\n${typeof getRandomGreeting === 'function' ? getRandomGreeting() : 'أهلاً بك'} ولي الأمر المحترم،\nنحيط سيادتكم علماً بتقرير الطالب: *${st.name}*\n\n${reportData}\n${sig}`;
+            let studentMsg = `🎯 *تقرير حصة:* ${session.topic}\nأهلاً بيك يا بطل *${st.name}* 👑\nعاش جداً، ده تقرير حصتك النهاردة:\n\n${reportData}\nبالتوفيق يا بطل! 💪\n${sig}`;
+
+            // ولي الأمر
+            if (st.parentPhone) {
+                let isOk = await sendAutoWhatsApp(st.parentPhone, parentMsg);
+                if (isOk) session.reportData.success.push({ name: st.name, code: st.code, target: 'ولي الأمر', phone: st.parentPhone });
+                else session.reportData.failed.push({ name: st.name, code: st.code, target: 'ولي الأمر', phone: st.parentPhone });
+            }
+            
+            // الطالب
+            if (st.phone && st.phone !== st.parentPhone) {
+                let isOk = await sendAutoWhatsApp(st.phone, studentMsg);
+                if (isOk) session.reportData.success.push({ name: st.name, code: st.code, target: 'الطالب', phone: st.phone });
+                else session.reportData.failed.push({ name: st.name, code: st.code, target: 'الطالب', phone: st.phone });
+            }
+
+            session.sentProgress++;
+            
+            // تحديث شريط التحميل جوه الكارت مباشرةً (بدون ما يرسم الصفحة كلها تاني)
+            let pText = document.getElementById(`prog-text-${session.id}`);
+            let pBar = document.getElementById(`prog-bar-${session.id}`);
+            if(pText) pText.innerText = `${session.sentProgress}/${session.sentTotal}`;
+            if(pBar) pBar.style.width = `${(session.sentProgress/session.sentTotal)*100}%`;
+        }
+
+        // أول ما يخلص الإرسال
+        session.isSending = false;
+        localStorage.setItem("classSessions", JSON.stringify(classSessions));
+        renderSessionCards(); // هيرسم الكارت وفيه زرار "عرض التقرير"
+        showToast(`✅ اكتمل إرسال تقارير حصة: ${session.topic}`);
+    })();
+};
+
+// ==========================================
+// 🎨 دمج شريط التحميل وزرار الإحصائيات جوه الكارت بشياكة واحترافية
+// ==========================================
+const originalRenderSessionCards = window.renderSessionCards;
+window.renderSessionCards = function() {
+    if(originalRenderSessionCards) originalRenderSessionCards();
+    
+    // التعديل السحري على الكروت بعد رسمها
+    classSessions.forEach(session => {
+        let delBtn = document.querySelector(`button[onclick*="deleteSession('${session.id}')"]`);
+        if(delBtn) {
+            let cardActionsDiv = delBtn.parentElement;
+            
+            if (session.isSending) {
+                // شكل شريط التحميل وهو شغال (تصميم فخم)
+                cardActionsDiv.innerHTML = `
+                    <div style="width: 100%; text-align: center; background: rgba(59, 130, 246, 0.05); padding: 12px; border-radius: 10px; border: 1px dashed rgba(59, 130, 246, 0.3); margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 13px; color: #3b82f6; font-weight: 800;">⏳ جاري إرسال التقارير...</span>
+                            <span id="prog-text-${session.id}" style="font-size: 12px; font-weight: bold; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 20px;">${session.sentProgress}/${session.sentTotal}</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                            <div id="prog-bar-${session.id}" style="width: ${(session.sentProgress/session.sentTotal)*100}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); transition: 0.3s; border-radius: 10px;"></div>
+                        </div>
+                    </div>
+                `;
+            } else if (session.reportData) {
+                // زرار التقرير بعد ما يخلص (تصميم Premium بـ Hover Effect)
+                let reportBtn = document.createElement('button');
+                reportBtn.style.cssText = `
+                    width: 100%;
+                    background: linear-gradient(45deg, #10b981, #059669);
+                    color: white;
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 800;
+                    font-family: 'Cairo', sans-serif;
+                    cursor: pointer;
+                    margin-bottom: 12px;
+                    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+                    transition: all 0.3s ease;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 8px;
+                `;
+                
+                // تأثير الأنيميشن لما الماوس ييجي عليه
+                reportBtn.onmouseover = function() {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 6px 15px rgba(16, 185, 129, 0.4)';
+                };
+                reportBtn.onmouseout = function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.2)';
+                };
+                
+                reportBtn.innerHTML = "<span style='font-size: 18px;'>📊</span> تقرير إرسال الواتساب";
+                reportBtn.onclick = () => showReportModal(session.id);
+                cardActionsDiv.insertBefore(reportBtn, cardActionsDiv.firstChild);
+            }
+        }
+    });
+};
+// ==========================================
+// 📊 دوال فتح نافذة الإحصائيات وتنزيل الإكسيل
+// ==========================================
+window.showReportModal = function(sessionId) {
+    const session = classSessions.find(s => s.id === sessionId);
+    if(!session || !session.reportData) return;
+    
+    document.getElementById("reportSuccessCount").innerText = session.reportData.success.length;
+    document.getElementById("reportFailedCount").innerText = session.reportData.failed.length;
+    
+    document.getElementById('reportResultsModal').setAttribute('data-session-id', sessionId);
+    openModal('reportResultsModal');
+};
+
+window.downloadReportExcel = function(type) {
+    let sessionId = document.getElementById('reportResultsModal').getAttribute('data-session-id');
+    const session = classSessions.find(s => s.id === sessionId);
+    if(!session || !session.reportData) return;
+
+    let dataList = type === 'success' ? session.reportData.success : session.reportData.failed;
+    if(dataList.length === 0) return showToast("لا توجد بيانات للتحميل!", "error");
+
+    let excelData = dataList.map(item => ({
+        "كود الطالب": item.code,
+        "اسم الطالب": item.name,
+        "جهة الإرسال": item.target,
+        "الرقم المستخدم": item.phone,
+        "حالة الإرسال": type === 'success' ? 'نجح ✅' : 'فشل ❌ (تأكد من رقم الواتساب)'
+    }));
+
+    let ws = XLSX.utils.json_to_sheet(excelData);
+    ws['!cols'] = [{wch: 15}, {wch: 25}, {wch: 15}, {wch: 20}, {wch: 35}]; // تظبيط العواميد
+    
+    let wb = XLSX.utils.book_new();
+    let sheetName = type === 'success' ? "تقارير_ناجحة" : "تقارير_فاشلة";
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    
+    let dateStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `${sheetName}_${session.topic}_${dateStr}.xlsx`);
+    showToast("تم تحميل ملف الإكسيل بنجاح! 📥");
 };
