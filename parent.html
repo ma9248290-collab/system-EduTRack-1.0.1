@@ -1134,10 +1134,39 @@ async function fetchStudentData(isAutoLogin = false) {
             window.removeEventListener('focus', removeBlackout);
         };
 
+        // 1. منع كليك يمين
         function blockContext(e) { e.preventDefault(); }
-        function blockKeys(e) { if(e.keyCode == 123 || e.keyCode == 44) { e.preventDefault(); return false; } }
-        function applyBlackout() { if (document.activeElement !== document.getElementById("video-iframe") && document.getElementById("protected-course-screen").style.display === "flex") { document.getElementById("video-iframe").style.filter = "blur(30px)"; document.getElementById("blackout-screen").style.display = "flex"; } }
-        function removeBlackout() { if(document.getElementById("protected-course-screen").style.display === "flex") { document.getElementById("video-iframe").style.filter = "none"; document.getElementById("blackout-screen").style.display = "none"; window.focus(); } }
+        
+        // 2. منع اختصارات الكيبورد (تصوير الشاشة F12, PrintScreen)
+        function blockKeys(e) { 
+            if(e.keyCode == 123 || e.keyCode == 44) { 
+                e.preventDefault(); 
+                return false; 
+            } 
+        }
+        
+        // 3. دوال الشاشة السوداء (تم إصلاحها)
+        function applyBlackout() { 
+            let courseScreen = document.getElementById("protected-course-screen");
+            if (courseScreen && courseScreen.style.display === "flex") { 
+                document.getElementById("video-iframe").style.filter = "blur(30px)"; 
+                document.getElementById("blackout-screen").style.display = "flex"; 
+            } 
+        }
+        
+        function removeBlackout() { 
+            let courseScreen = document.getElementById("protected-course-screen");
+            if(courseScreen && courseScreen.style.display === "flex") { 
+                document.getElementById("video-iframe").style.filter = "none"; 
+                document.getElementById("blackout-screen").style.display = "none"; 
+            } 
+        }
+
+        // 4. تشغيل الحماية تلقائياً بمجرد خروج الطالب من المتصفح
+        window.addEventListener('blur', applyBlackout);
+        window.addEventListener('focus', removeBlackout);
+
+
 
         window.purchaseCourse = async function(courseId, price) {
             if(!confirm(`تأكيد شراء الكورس بـ ${price} ج.م؟`)) return;
@@ -1205,13 +1234,19 @@ async function fetchStudentData(isAutoLogin = false) {
         <div style="display: flex; flex: 1; overflow: hidden; position: relative;" id="anti-record-container">
             <div id="player-playlist" style="width: 320px; background: #0f172a; overflow-y: auto; padding: 20px; border-left: 1px solid #1e293b;"></div>
             <div style="flex: 1; position: relative; background: #000; display: flex; justify-content: center; align-items: center;" id="video-wrapper">
+                
                 <iframe id="video-iframe" sandbox="allow-scripts allow-same-origin allow-presentation" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
+                
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 70px; z-index: 5; background: transparent;"></div>
+                
+                <div style="position: absolute; bottom: 0; right: 0; width: 180px; height: 60px; z-index: 5; background: transparent;"></div>
+
                 <div id="video-watermark" style="position: absolute; color: rgba(255,255,255,0.25); font-size: 24px; font-weight: 900; pointer-events: none; z-index: 10; transform: rotate(-30deg); animation: floatWatermark 20s infinite linear;"></div>
+                
                 <div id="blackout-screen" style="position: absolute; top:0; left:0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column;">
                     <span style="font-size: 60px; margin-bottom: 20px;">⚠️</span>
                     <h2 style="color: #ef4444; text-align: center; margin: 0;">تم إخفاء المحتوى للحماية!</h2>
                 </div>
-                <button onclick="toggleCustomFullscreen()" id="custom-fs-btn" style="position: absolute; bottom: 20px; right: 20px; z-index: 15; background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">⛶ تكبير الشاشة</button>
             </div>
         </div>
     </div>
