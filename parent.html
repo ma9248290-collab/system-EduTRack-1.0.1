@@ -1145,24 +1145,50 @@ async function fetchStudentData(isAutoLogin = false) {
             } 
         }
         
-        // 3. دوال الشاشة السوداء (تم إصلاحها)
+        // 3. دوال الشاشة السوداء (تمت معالجة مشكلة الدوسة على الفيديو!)
         function applyBlackout() { 
             let courseScreen = document.getElementById("protected-course-screen");
+            let iframe = document.getElementById("video-iframe");
+
+            // 🛑 السر هنا: لو الطالب دايس بالماوس جوه الفيديو نفسه عشان يشغله، متعملش الشاشة السودا!
+            if (document.activeElement === iframe) {
+                return; 
+            }
+
             if (courseScreen && courseScreen.style.display === "flex") { 
-                document.getElementById("video-iframe").style.filter = "blur(30px)"; 
-                document.getElementById("blackout-screen").style.display = "flex"; 
+                if(iframe) iframe.style.filter = "blur(30px)"; 
+                let blackout = document.getElementById("blackout-screen");
+                if(blackout) blackout.style.display = "flex"; 
             } 
         }
         
         function removeBlackout() { 
             let courseScreen = document.getElementById("protected-course-screen");
             if(courseScreen && courseScreen.style.display === "flex") { 
-                document.getElementById("video-iframe").style.filter = "none"; 
-                document.getElementById("blackout-screen").style.display = "none"; 
+                let iframe = document.getElementById("video-iframe");
+                if(iframe) iframe.style.filter = "none"; 
+                let blackout = document.getElementById("blackout-screen");
+                if(blackout) blackout.style.display = "none"; 
+                
+                // بنعمل فوكس للصفحة الرئيسية عشان الحماية تفضل شغالة صح لو حاول يخرج تاني
+                window.focus(); 
             } 
         }
 
-        // 4. تشغيل الحماية تلقائياً بمجرد خروج الطالب من المتصفح
+        // 4. الحماية الجبارة: لو غير التاب (Tab) في المتصفح أو نزله لتحت، سود الشاشة إجباري!
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                let courseScreen = document.getElementById("protected-course-screen");
+                if (courseScreen && courseScreen.style.display === "flex") {
+                    let iframe = document.getElementById("video-iframe");
+                    if(iframe) iframe.style.filter = "blur(30px)";
+                    let blackout = document.getElementById("blackout-screen");
+                    if(blackout) blackout.style.display = "flex";
+                }
+            }
+        });
+
+        // تشغيل مستمعات الأحداث
         window.addEventListener('blur', applyBlackout);
         window.addEventListener('focus', removeBlackout);
 
@@ -1237,16 +1263,22 @@ async function fetchStudentData(isAutoLogin = false) {
                 
                 <iframe id="video-iframe" sandbox="allow-scripts allow-same-origin allow-presentation" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
                 
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 70px; z-index: 5; background: transparent;"></div>
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 80px; z-index: 5; background: transparent;"></div>
                 
-                <div style="position: absolute; bottom: 0; right: 0; width: 180px; height: 60px; z-index: 5; background: transparent;"></div>
+                <div style="position: absolute; bottom: 0; right: 0; width: 200px; height: 70px; z-index: 5; background: transparent;"></div>
+
+                <div style="position: absolute; bottom: 0; left: 0; width: 250px; height: 70px; z-index: 5; background: transparent;"></div>
 
                 <div id="video-watermark" style="position: absolute; color: rgba(255,255,255,0.25); font-size: 24px; font-weight: 900; pointer-events: none; z-index: 10; transform: rotate(-30deg); animation: floatWatermark 20s infinite linear;"></div>
                 
-                <div id="blackout-screen" style="position: absolute; top:0; left:0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column;">
+                <div id="blackout-screen" onclick="removeBlackout()" style="position: absolute; top:0; left:0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; cursor: pointer;">
                     <span style="font-size: 60px; margin-bottom: 20px;">⚠️</span>
                     <h2 style="color: #ef4444; text-align: center; margin: 0;">تم إخفاء المحتوى للحماية!</h2>
+                    <p style="color: #94a3b8; margin-top: 15px; font-weight: bold;">اضغط هنا للعودة للمشاهدة</p>
                 </div>
+
+                <button onclick="toggleCustomFullscreen()" id="custom-fs-btn" style="position: absolute; bottom: 20px; right: 20px; z-index: 15; background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">⛶ تكبير الشاشة</button>
+                
             </div>
         </div>
     </div>
