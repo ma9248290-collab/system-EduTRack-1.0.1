@@ -443,22 +443,111 @@
             </div>
 
            <div id="finance-view" class="view-section admin-only" style="display: none;">
-                <section class="students-section">
-                    <div class="section-header"><div class="section-header" style="display: flex; align-items: center; justify-content: space-between;">
-    <h2>الماليات (حساب الحصة) 💰</h2>
-    <!-- أخطبوط الفلوس -->
-    <div class="octo-mascot octo-finance" style="width: 80px; height: 80px;"></div>
-</div></div>
-                    <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; background: var(--hover-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
-                        <select id="financeLevelSelect" class="custom-input" style="flex: 1; min-width: 150px;" onchange="filterGroupsByLevel('financeLevelSelect', 'financeGroupSelect'); document.getElementById('financeSessionSelect').innerHTML='<option value=\'\'>اختر الحصة...</option>'; renderFinanceTable();"><option value="">1. اختر الصف...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select>
-                        <select id="financeGroupSelect" class="custom-input" style="flex: 1; min-width: 150px;" onchange="filterSessionsForFinance(); renderFinanceTable();"><option value="">2. اختر المجموعة...</option></select>
-                        <select id="financeSessionSelect" class="custom-input" style="flex: 1; min-width: 150px;" onchange="renderFinanceTable()"><option value="">3. اختر الحصة...</option></select>
-                        <div style="flex: 1; display: flex; gap: 10px; min-width: 250px;"><input type="number" id="financeStudentFee" class="custom-input" placeholder="دفع الطالب" value="50" onchange="renderFinanceTable()"><input type="number" id="financeCenterFee" class="custom-input" placeholder="خصم السنتر" value="10" onchange="renderFinanceTable()"></div>
-                    </div>
-                    <div class="stats-grid" style="margin-bottom: 30px;"><div class="stat-card" style="border-top: 4px solid var(--success-color);"><h3>إجمالي التحصيل</h3><p class="stat-number" id="total-income" style="color: var(--success-color);">0 ج.م</p></div><div class="stat-card" style="border-top: 4px solid var(--danger-color);"><h3>السنتر + المصروفات</h3><p class="stat-number" id="total-expenses" style="color: var(--danger-color);">0 ج.م</p></div><div class="stat-card" style="border-top: 4px solid var(--primary-color); background: rgba(59, 130, 246, 0.05);"><h3>صافي ربح الحصة</h3><p class="stat-number" id="net-profit" style="color: var(--primary-color);">0 ج.م</p></div></div>
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap;"><div class="table-container" style="flex: 2; min-width: 400px;"><h3 style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-color);">تحصيل الطلاب</h3><table class="students-table"><thead><tr><th>الكود</th><th>الطالب</th><th>الحضور</th><th>حالة الدفع</th><th>إجراء</th></tr></thead><tbody id="finance-list"><tr><td colspan="5" style="text-align:center;">اختر الحصة لعرض الحسابات</td></tr></tbody></table></div><div class="table-container" style="flex: 1; min-width: 300px; display: flex; flex-direction: column;"><h3 style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-color);">مصروفات الحصة</h3><div style="padding: 15px; border-bottom: 1px solid var(--border-color);"><form id="addExpenseForm" style="display: flex; gap: 10px; flex-direction: column;"><input type="text" id="expDesc" placeholder="بند المصروفات..." required class="custom-input"><div style="display: flex; gap: 10px;"><input type="number" id="expAmount" placeholder="المبلغ" required class="custom-input"><button type="submit" class="save-btn" style="margin: 0; background-color: var(--danger-color);">إضافة</button></div></form></div><table class="students-table"><thead><tr><th>البند</th><th>المبلغ</th><th>حذف</th></tr></thead><tbody id="expenses-list"></tbody></table></div></div>
-                </section>
+    <section class="students-section">
+        <div class="section-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 25px;">
+            <div>
+                <h2 style="color: var(--primary-color); margin-bottom: 5px;">الماليات وإدارة الخزنة 💰</h2>
+                <p style="color: var(--text-muted); font-size: 14px;">إدارة إيرادات ومصروفات الحصة (دعم الدفع بالحصة والشهر)</p>
             </div>
+            <div class="octo-mascot octo-finance" style="width: 70px; height: 70px;"></div>
+        </div>
+
+        <!-- 1. فلاتر اختيار الحصة -->
+        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+            <select id="financeLevelSelect" class="custom-input" style="flex: 1; min-width: 150px; font-weight: bold;" onchange="filterGroupsByLevel('financeLevelSelect', 'financeGroupSelect'); document.getElementById('financeSessionSelect').innerHTML='<option value=\'\'>اختر الحصة...</option>'; renderFinanceTable();">
+                <option value="">1. اختر المرحلة...</option>
+                <option value="الأول الثانوي">الأول الثانوي</option>
+                <option value="الثاني الثانوي">الثاني الثانوي</option>
+                <option value="الثالث الثانوي">الثالث الثانوي</option>
+            </select>
+            <select id="financeGroupSelect" class="custom-input" style="flex: 1; min-width: 150px; font-weight: bold;" onchange="filterSessionsForFinance(); renderFinanceTable();">
+                <option value="">2. اختر المجموعة...</option>
+            </select>
+            <select id="financeSessionSelect" class="custom-input" style="flex: 2; min-width: 200px; font-weight: bold; border-color: var(--success-color);" onchange="renderFinanceTable()">
+                <option value="">3. اختر الحصة المراد جردها...</option>
+            </select>
+        </div>
+
+        <!-- 2. إعدادات التسعير للحصة الحالية -->
+        <div style="background: var(--hover-bg); padding: 20px; border-radius: 12px; border: 1px dashed var(--primary-color); margin-bottom: 25px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+            <h4 style="width: 100%; margin-bottom: 10px; color: var(--primary-color);">⚙️ إعدادات التسعير (للحصة المحددة)</h4>
+            <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
+                <label>سعر الحصة (ج.م)</label>
+                <input type="number" id="financeStudentFee" class="custom-input" value="50" oninput="renderFinanceTable()">
+            </div>
+            <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
+                <label>سعر الشهر (ج.م)</label>
+                <input type="number" id="financeMonthlyFee" class="custom-input" value="200" oninput="renderFinanceTable()">
+            </div>
+            <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
+                <label>نسبة السنتر (عن كل حاضر)</label>
+                <input type="number" id="financeCenterFee" class="custom-input" value="10" oninput="renderFinanceTable()">
+            </div>
+        </div>
+
+        <!-- 3. كروت الإحصائيات (مفصلة ودقيقة) -->
+        <div class="stats-grid" style="margin-bottom: 30px;">
+            <div class="stat-card" style="border-top: 4px solid var(--success-color);">
+                <h3>إجمالي التحصيل 📥</h3>
+                <p class="stat-number" id="total-income" style="color: var(--success-color);">0 ج.م</p>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px;" id="income-details">حصة: 0 | شهر: 0</p>
+            </div>
+            <div class="stat-card" style="border-top: 4px solid #f59e0b;">
+                <h3>خصم السنتر 🏢</h3>
+                <p class="stat-number" id="total-center-cut" style="color: #f59e0b;">0 ج.م</p>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px;" id="attendance-details">يُحسب على إجمالي الحضور</p>
+            </div>
+            <div class="stat-card" style="border-top: 4px solid var(--danger-color);">
+                <h3>مصروفات إضافية 📤</h3>
+                <p class="stat-number" id="total-expenses" style="color: var(--danger-color);">0 ج.م</p>
+            </div>
+            <div class="stat-card" style="border-top: 4px solid var(--primary-color); background: rgba(59, 130, 246, 0.05);">
+                <h3>صافي ربح الحصة 💎</h3>
+                <p class="stat-number" id="net-profit" style="color: var(--primary-color);">0 ج.م</p>
+            </div>
+        </div>
+
+        <!-- 4. الجداول (المصروفات والتحصيل) -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap-reverse;">
+            <!-- جدول التحصيل -->
+            <div class="table-container" style="flex: 2; min-width: 400px; max-height: 600px; overflow-y: auto;">
+                <h3 style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-color); position: sticky; top: 0; z-index: 1;">تحصيل الطلاب</h3>
+                <table class="students-table">
+                    <thead>
+                        <tr>
+                            <th>الكود</th>
+                            <th>الطالب</th>
+                            <th>الحضور</th>
+                            <th>نظام الدفع</th>
+                            <th>حالة الدفع</th>
+                        </tr>
+                    </thead>
+                    <tbody id="finance-list">
+                        <tr><td colspan="5" style="text-align:center; padding: 30px;">اختر الحصة لعرض الحسابات</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- المصروفات الإضافية -->
+            <div class="table-container" style="flex: 1; min-width: 300px; display: flex; flex-direction: column;">
+                <h3 style="padding: 15px; border-bottom: 1px solid var(--border-color); background: var(--bg-color);">مصروفات إضافية (مذكرات، ضيافة..)</h3>
+                <div style="padding: 15px; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; gap: 10px; flex-direction: column;">
+                        <input type="text" id="expDesc" placeholder="بند المصروف..." class="custom-input">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="expAmount" placeholder="المبلغ (ج.م)" class="custom-input">
+                            <button onclick="addSessionExpense()" class="save-btn" style="margin: 0; background-color: var(--danger-color); width: 80px;">إضافة</button>
+                        </div>
+                    </div>
+                </div>
+                <table class="students-table">
+                    <thead><tr><th>البند</th><th>المبلغ</th><th>حذف</th></tr></thead>
+                    <tbody id="expenses-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
 
             <div id="leaderboard-view" class="view-section" style="display: none;">
                 <section class="students-section"><div class="section-header"><div style="display: flex; align-items: center; gap: 15px;">
