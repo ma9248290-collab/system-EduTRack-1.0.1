@@ -448,6 +448,10 @@ body.assistant-mode .delete-btn { display: none !important; }
         margin: 10% auto;
         padding: 20px;
     }
+    @keyframes pulse-red {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    50% { opacity: 0.85; box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}
     .form-grid { display: flex; flex-direction: column; gap: 0; }
     
     /* نافذة الشات العائمة (ميرا) */
@@ -489,3 +493,5 @@ body.assistant-mode .delete-btn { display: none !important; }
 .octo-search   { background-position: 33.33% 100%; } /* ماسك عدسة بيبحث */
 .octo-loading  { background-position: 66.66% 100%; } /* بيلعب بالكتب (تحميل) */
 .octo-finance  { background-position: 100% 100%; }   /* مبسوط وماسك فلوس ذهب */
+
+
