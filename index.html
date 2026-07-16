@@ -470,20 +470,24 @@
 
         <!-- 2. إعدادات التسعير للحصة الحالية -->
         <div style="background: var(--hover-bg); padding: 20px; border-radius: 12px; border: 1px dashed var(--primary-color); margin-bottom: 25px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-            <h4 style="width: 100%; margin-bottom: 10px; color: var(--primary-color);">⚙️ إعدادات التسعير (للحصة المحددة)</h4>
-            <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
-                <label>سعر الحصة (ج.م)</label>
-                <input type="number" id="financeStudentFee" class="custom-input" value="50" oninput="renderFinanceTable()">
-            </div>
-            <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
-                <label>سعر الشهر (ج.م)</label>
-                <input type="number" id="financeMonthlyFee" class="custom-input" value="200" oninput="renderFinanceTable()">
-            </div>
-            <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
-                <label>نسبة السنتر (عن كل حاضر)</label>
-                <input type="number" id="financeCenterFee" class="custom-input" value="10" oninput="renderFinanceTable()">
-            </div>
-        </div>
+    <h4 style="width: 100%; margin-bottom: 10px; color: var(--primary-color);">⚙️ إعدادات التسعير (للحصة المحددة)</h4>
+    <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
+        <label>سعر الحصة (ج.م)</label>
+        <input type="number" id="financeStudentFee" class="custom-input" value="50" oninput="renderFinanceTable()">
+    </div>
+    <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
+        <label>سعر الشهر (ج.م)</label>
+        <input type="number" id="financeMonthlyFee" class="custom-input" value="200" oninput="renderFinanceTable()">
+    </div>
+    <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
+        <label>عدد حصص الشهر</label>
+        <input type="number" id="financeMonthlyLimit" class="custom-input" value="8" oninput="renderFinanceTable()">
+    </div>
+    <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
+        <label>نسبة السنتر</label>
+        <input type="number" id="financeCenterFee" class="custom-input" value="10" oninput="renderFinanceTable()">
+    </div>
+</div>
 
         <!-- 3. كروت الإحصائيات (مفصلة ودقيقة) -->
         <div class="stats-grid" style="margin-bottom: 30px;">
