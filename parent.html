@@ -860,16 +860,22 @@ async function fetchStudentData(isAutoLogin = false) {
 
                 let canWatch = isFree || hasAccess;
                 
+                let maxViews = parseInt(lec.maxViews) || 0;
+                let viewsInfo = maxViews > 0 ? ` 👁️ ${maxViews} مشاهدة` : ` 👁️ غير محدود`;
+
                 let badgeHtml = "";
                 if (isFree) {
-                    badgeHtml = `<span style="background: rgba(16, 185, 129, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">🎁 مجاني</span>`;
+                    badgeHtml = `<span style="background: rgba(16, 185, 129, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: inline-block;">🎁 مجاني</span>`;
                 } else if (attendedSession) {
-                    badgeHtml = `<span style="background: rgba(59, 130, 246, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">✅ مجاني لحضورك الحصة</span>`;
+                    badgeHtml = `<span style="background: rgba(59, 130, 246, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: inline-block;">✅ مجاني لحضورك</span>`;
                 } else if (hasAccess) {
-                    badgeHtml = `<span style="background: rgba(139, 92, 246, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">🔓 تم الشراء</span>`;
+                    badgeHtml = `<span style="background: rgba(139, 92, 246, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: inline-block;">🔓 تم الشراء</span>`;
                 } else {
-                    badgeHtml = `<span style="background: rgba(239, 68, 68, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; backdrop-filter: blur(4px);">💰 ${lec.price} ج.م</span>`;
+                    badgeHtml = `<span style="background: rgba(239, 68, 68, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: inline-block;">💰 ${lec.price} ج.م</span>`;
                 }
+                
+                // إضافة بادج المشاهدات
+                badgeHtml += `<span style="background: rgba(245, 158, 11, 0.9); color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: inline-block; margin-right: 5px;">${viewsInfo}</span>`;
 
                 let actionBtn = canWatch 
                     ? `<button class="btn" style="width: 100%; background: #3b82f6; color: white; font-weight: bold; padding: 12px; border-radius: 8px; transition: 0.3s; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onclick="openStudentCourseDetails('${lec.id}')">▶️ عرض محتوى الكورس</button>`
@@ -1090,25 +1096,29 @@ async function fetchStudentData(isAutoLogin = false) {
 
         window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex, element = null) {
     let course = window.allLectures.find(l => l.id === courseId);
-    let maxViews = course.maxViews || 0;
+    if (!course) return;
+
+    let maxViews = parseInt(course.maxViews) || 0; // القيمة اللي المدرس حددها
 
     // جلب المشاهدات الحالية من الفايربيز
     let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
     let res = await fetch(trackingUrl);
     let data = await res.json() || { views: 0 };
 
-    // فحص الحد المسموح (لو أكبر من 0 يعني فيه حد)
+    // 🔥 الشرط السحري: لو المدرس محدد عدد (أكبر من 0) والطلاب وصل للعدد ده
     if (maxViews > 0 && data.views >= maxViews) {
-        alert("⚠️ لقد استخدمت العدد المحدد لمشاهدة هذا الفيديو!");
-        return; // بيمنع تنفيذ الكود اللي بيشغل الفيديو
+        alert("🚫 لقد استخدمت العدد المحدد لمشاهدة الكورس (انتهت مرات المشاهدة).");
+        return; // بيوقف تشغيل الفيديو
     }
 
-    // لو مسموح، كمل تشغيل الفيديو عادي
+    // لو مسموح، كمل كود التشغيل عادي
     let embedUrl = url;
-    // ... (باقي الكود بتاع تحويل الرابط للـ embed زي ما هو في كودك) ...
+    if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
+    else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
+    
     document.getElementById("video-iframe").src = embedUrl;
 
-    // تحديث المشاهدات في الفايربيز بعد التأكد إنها مسموح بها
+    // تحديث المشاهدات في الفايربيز
     let now = new Date();
     let dateStr = now.toLocaleDateString('ar-EG') + " | " + now.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
     await fetch(trackingUrl, {
