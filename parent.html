@@ -561,10 +561,18 @@ async function fetchStudentData(isAutoLogin = false) {
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await res.json();
                 // بعد ما تحمل data.settings
+// بعد ما تحمل data.settings
 const contactBox = document.getElementById("teacher-contact-box");
-if (contactBox && data.settings && data.settings.phoneNumbers) {
-    let phones = data.settings.phoneNumbers.split(',');
-    contactBox.innerHTML = `تواصل معنا: ` + phones.map(p => `<a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" style="margin: 0 5px; color: var(--primary);">${p.trim()}</a>`).join(' | ');
+if (contactBox && data.settings) {
+    let teacherName = data.settings.teacherName || data.teacherName || "الإدارة";
+    let phonesHtml = "";
+    
+    if (data.settings.phoneNumbers && data.settings.phoneNumbers.trim() !== "") {
+        let phones = data.settings.phoneNumbers.split(',');
+        phonesHtml = `<br><span style="color: var(--text-muted); font-size: 13px;">تواصل معنا:</span> ` + phones.map(p => `<a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" style="margin: 0 5px; color: var(--primary); text-decoration: none;">${p.trim()}</a>`).join(' | ');
+    }
+    
+    contactBox.innerHTML = `👨‍🏫 مع تحيات مستر: ${teacherName} ${phonesHtml}`;
 }
                 window.allClassSessions = data.classSessions || []; 
                 
