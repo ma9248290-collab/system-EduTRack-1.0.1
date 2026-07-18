@@ -567,33 +567,31 @@ async function fetchStudentData(isAutoLogin = false) {
                 // 👇 لو الباقة سليمة، كمل تحميل داتا الطالب 👇
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await res.json();
-                // بعد ما تحمل data.settings
-// استبدل الجزء القديم بالكامل بالكود ده:
-
+// بعد ما تحمل data.settings
 const contactBoxHeader = document.getElementById("teacher-contact-box-header");
 const contactBoxOld = document.getElementById("teacher-contact-box");
 
 if (data.settings) {
     let teacherName = data.settings.teacherName || "الإدارة";
     
-    // 1. التعامل مع الأرقام (تجهيز الرابط لكل رقم)
+    // 1. التعامل مع الأرقام
     let phones = (data.settings.phoneNumbers && data.settings.phoneNumbers.trim() !== "") 
                  ? data.settings.phoneNumbers.split(',') 
                  : [];
 
-    // 2. تحديث المكان الجديد "الشيك" (لو موجود في الصفحة)
+    // 2. تحديث المكان الجديد (داخل المنصة - بيظهر اسم المستر + الأزرار الخضراء)
     if (contactBoxHeader) {
-        if (phones.length > 0) {
-            contactBoxHeader.innerHTML = phones.map(p => `
-                <a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" 
-                   style="background: #25D366; color: white; padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.3s;"
-                   onmouseover="this.style.background='#128C7E'" onmouseout="this.style.background='#25D366'">
-                   💬 ${p.trim()}
-                </a>`).join('');
-        }
+        // ضفنا هنا سطر عشان يظهر الاسم فوق الأرقام بشكل شيك
+        contactBoxHeader.innerHTML = `<h3 style="margin:0 0 10px 0; width:100%; color: var(--secondary);">👨‍🏫 مستر: ${teacherName}</h3>` + 
+        phones.map(p => `
+            <a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" 
+               style="background: #25D366; color: white; padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.3s;"
+               onmouseover="this.style.background='#128C7E'" onmouseout="this.style.background='#25D366'">
+               💬 ${p.trim()}
+            </a>`).join('');
     }
 
-    // 3. تحديث المكان القديم (لو موجود في صفحة الدخول)
+    // 3. تحديث المكان القديم (شاشة الدخول - بتظهر فيها بس تواصل معنا)
     if (contactBoxOld) {
         let phonesHtml = phones.length > 0 
             ? `<br><span style="color: var(--text-muted); font-size: 13px;">تواصل معنا:</span> ` + 
