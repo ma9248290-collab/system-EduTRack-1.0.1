@@ -210,6 +210,13 @@
             <main class="content-area">
                 
                 <div id="tab-home" class="tab-content active">
+                    <!-- 🌟 إضافة الجزء الجديد للشياكة -->
+    <div style="background: white; padding: 15px 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+        <h3 style="margin:0; color: var(--secondary); font-size: 18px;">👨‍🏫 منصة مستر: <span style="color: var(--primary);">${teacherName}</span></h3>
+        <div id="teacher-contact-box-header" style="display: flex; gap: 10px;">
+            <!-- الأرقام هتظهر هنا أوتوماتيك -->
+        </div>
+    </div>
                     <div class="page-header">
                         <h2>نظرة عامة</h2>
                         <p>ملخص نشاطك في السنتر</p>
@@ -561,18 +568,39 @@ async function fetchStudentData(isAutoLogin = false) {
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await res.json();
                 // بعد ما تحمل data.settings
-// بعد ما تحمل data.settings
-const contactBox = document.getElementById("teacher-contact-box");
-if (contactBox && data.settings) {
-    let teacherName = data.settings.teacherName || data.teacherName || "الإدارة";
-    let phonesHtml = "";
+// استبدل الجزء القديم بالكامل بالكود ده:
+
+const contactBoxHeader = document.getElementById("teacher-contact-box-header");
+const contactBoxOld = document.getElementById("teacher-contact-box");
+
+if (data.settings) {
+    let teacherName = data.settings.teacherName || "الإدارة";
     
-    if (data.settings.phoneNumbers && data.settings.phoneNumbers.trim() !== "") {
-        let phones = data.settings.phoneNumbers.split(',');
-        phonesHtml = `<br><span style="color: var(--text-muted); font-size: 13px;">تواصل معنا:</span> ` + phones.map(p => `<a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" style="margin: 0 5px; color: var(--primary); text-decoration: none;">${p.trim()}</a>`).join(' | ');
+    // 1. التعامل مع الأرقام (تجهيز الرابط لكل رقم)
+    let phones = (data.settings.phoneNumbers && data.settings.phoneNumbers.trim() !== "") 
+                 ? data.settings.phoneNumbers.split(',') 
+                 : [];
+
+    // 2. تحديث المكان الجديد "الشيك" (لو موجود في الصفحة)
+    if (contactBoxHeader) {
+        if (phones.length > 0) {
+            contactBoxHeader.innerHTML = phones.map(p => `
+                <a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" 
+                   style="background: #25D366; color: white; padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.3s;"
+                   onmouseover="this.style.background='#128C7E'" onmouseout="this.style.background='#25D366'">
+                   💬 ${p.trim()}
+                </a>`).join('');
+        }
     }
-    
-    contactBox.innerHTML = `👨‍🏫 مع تحيات مستر: ${teacherName} ${phonesHtml}`;
+
+    // 3. تحديث المكان القديم (لو موجود في صفحة الدخول)
+    if (contactBoxOld) {
+        let phonesHtml = phones.length > 0 
+            ? `<br><span style="color: var(--text-muted); font-size: 13px;">تواصل معنا:</span> ` + 
+              phones.map(p => `<a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" style="margin: 0 5px; color: var(--primary); text-decoration: none;">${p.trim()}</a>`).join(' | ')
+            : "";
+        contactBoxOld.innerHTML = `👨‍🏫 مع تحيات مستر: ${teacherName} ${phonesHtml}`;
+    }
 }
                 window.allClassSessions = data.classSessions || []; 
                 
