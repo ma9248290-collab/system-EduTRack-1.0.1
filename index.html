@@ -388,8 +388,22 @@
                 <section id="sessions-overview" class="students-section"><div class="section-header"><h2>إدارة الحصص</h2><button class="add-btn" onclick="openModal('addSessionModal')">+ فتح حصة</button></div><div class="stats-grid" id="sessions-grid"></div></section>
                 <section id="session-details-view" class="students-section" style="display: none;">
                     <div class="section-header"><div><button class="theme-btn" onclick="backToSessions()">🔙 عودة</button><h2 id="current-session-title"></h2></div><div id="session-status-badge"></div></div>
-                    <div class="barcode-scanner-box"><h4 style="color: var(--success-color); margin-bottom: 10px;">📠 رصد سريع (بالكود أو الاسم)</h4><div style="display: flex; gap: 10px;"><input type="text" id="attendanceBarcode" class="custom-input" style="flex: 1; font-weight: bold;" placeholder="كود الطالب أو اسمه..."><button class="icon-btn" onclick="startCameraScanner('attendanceBarcode')" style="margin: 0; background-color: var(--primary-color); color: white; border: none;">📷 كاميرا</button><button class="icon-btn voice-btn" id="voiceBtn_attendance" onclick="toggleVoiceRecognition('attendance', 'attendanceBarcode')">🎙️ رصد بالصوت</button></div></div>
-                    <div class="table-container"><table class="students-table"><thead><tr><th>الكود</th><th>الطالب</th><th>الهاتف</th><th>السابق</th><th>الحالة</th><th>تسجيل يدوي</th></tr></thead><tbody id="attendance-list"></tbody></table></div>
+                    <div class="barcode-scanner-box">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h4 style="color: var(--success-color); margin: 0;">📠 رصد سريع (بالكود أو الاسم)</h4>
+        <!-- زرار تحديد التأخير الجديد -->
+        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: bold; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 6px 12px; border-radius: 8px; border: 1px solid #f59e0b;">
+            <input type="checkbox" id="markAsLateCheckbox" style="accent-color: #f59e0b; width: 18px; height: 18px; cursor: pointer;">
+            تسجيل كمتأخر ⏳
+        </label>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="attendanceBarcode" class="custom-input" style="flex: 1; font-weight: bold; font-size: 16px;" placeholder="كود الطالب أو اسمه...">
+        <button class="icon-btn" onclick="startCameraScanner('attendanceBarcode')" style="margin: 0; background-color: var(--primary-color); color: white; border: none;">📷 كاميرا</button>
+        <button class="icon-btn voice-btn" id="voiceBtn_attendance" onclick="toggleVoiceRecognition('attendance', 'attendanceBarcode')">🎙️ رصد بالصوت</button>
+    </div>
+</div>
+<div class="table-container"><table class="students-table"><thead><tr><th>الكود</th><th>الطالب</th><th>الهاتف</th><th>السابق</th><th>الحالة</th><th>تسجيل يدوي</th></tr></thead><tbody id="attendance-list"></tbody></table></div>
                 </section>
             </div>
 
@@ -2086,6 +2100,40 @@
             </div>
         </div>
     </div>
+
+
+    <!-- نافذة الدفع السريع بعد الباركود -->
+<div id="quickPaymentModal" class="modal" style="z-index: 100000;">
+    <div class="modal-content" style="width: 400px; border-top: 5px solid var(--success-color);">
+        <span class="close-btn" onclick="skipQuickPayment()">&times;</span>
+        <h2 style="color: var(--success-color); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">💰</span> الدفع والخزنة
+        </h2>
+        
+        <div style="background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; border: 1px dashed var(--border-color);">
+            <h3 id="qpStudentName" style="margin: 0 0 5px 0; color: var(--secondary-color);">اسم الطالب</h3>
+            <span id="qpStudentStatus" style="font-size: 13px; font-weight: bold;"></span>
+        </div>
+        <input type="hidden" id="qpStudentCode">
+        
+        <div class="input-group">
+            <label>نوع الدفع:</label>
+            <select id="qpPayType" class="custom-input" onchange="updateQpAmount()" style="font-weight: bold;">
+                <option value="session">دفع حصة</option>
+                <option value="month">اشتراك شهري</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>المبلغ (ج.م):</label>
+            <input type="number" id="qpAmount" class="custom-input" style="font-weight: bold; font-size: 20px; color: var(--success-color); text-align: center;">
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="save-btn" style="flex: 2; margin: 0; background: var(--success-color); font-size: 16px;" onclick="confirmQuickPayment()">تأكيد التحصيل ✅</button>
+            <button class="theme-btn" style="flex: 1; margin: 0; border-color: var(--danger-color); color: var(--danger-color); font-weight: bold;" onclick="skipQuickPayment()">تخطي ❌</button>
+        </div>
+    </div>
+</div>
 
     
 
