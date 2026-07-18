@@ -850,6 +850,11 @@
                 </div>
 
                 <div class="input-group">
+    <label>عدد المشاهدات المسموح بها (اتركها 0 لعدد غير محدود)</label>
+    <input type="number" id="lecMaxViews" class="custom-input" placeholder="0 = لا نهائي" min="0">
+</div>
+
+                <div class="input-group">
                     <label>نوع الكورس (التسعير)</label>
                     <select id="lecType" class="custom-input" onchange="document.getElementById('priceContainer').style.display = this.value === 'paid' ? 'block' : 'none'">
                         <option value="free">محتوى مجاني</option>
@@ -1887,6 +1892,11 @@
                         <div id="editLecSessionsContainer" style="display: flex; gap: 10px; flex-wrap: wrap; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px dashed var(--success-color); max-height: 120px; overflow-y: auto;">
                         </div>
                     </div>
+
+                    <div class="input-group">
+    <label>عدد المشاهدات المسموح بها (اتركها 0 لعدد غير محدود)</label>
+    <input type="number" id="lecMaxViews" class="custom-input" placeholder="0 = لا نهائي" min="0">
+</div>
 
                     <div class="input-group">
                         <label>نوع الكورس</label>

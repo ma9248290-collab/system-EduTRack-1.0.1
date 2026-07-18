@@ -1089,39 +1089,34 @@ async function fetchStudentData(isAutoLogin = false) {
         };
 
         window.playCourseVideo = async function(url, videoTitle, courseId, videoIndex, element = null) {
-            let embedUrl = url;
-            if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
-            else if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "youtube.com/embed/");
-            
-            if(embedUrl.includes("youtube.com/embed/")) {
-                let sep = embedUrl.includes("?") ? "&" : "?";
-                embedUrl += sep + "modestbranding=1&rel=0&showinfo=0&fs=0"; 
-            }
-            
-            document.getElementById("video-iframe").src = embedUrl;
+    let course = window.allLectures.find(l => l.id === courseId);
+    let maxViews = course.maxViews || 0;
 
-            if(element) {
-                let allItems = document.getElementById("player-playlist").querySelectorAll("div");
-                allItems.forEach(el => { el.style.background = "transparent"; el.style.borderRight = "4px solid transparent"; el.style.color = "#94a3b8"; });
-                element.style.background = "rgba(59, 130, 246, 0.15)"; element.style.borderRight = "4px solid #3b82f6"; element.style.color = "#3b82f6";
-            }
+    // جلب المشاهدات الحالية من الفايربيز
+    let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
+    let res = await fetch(trackingUrl);
+    let data = await res.json() || { views: 0 };
 
-            if(courseId && currentStudent) {
-                try {
-                    let trackingUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/course_tracking/${courseId}/${currentStudent.phone}/${videoIndex}.json`;
-                    let res = await fetch(trackingUrl);
-                    let oldData = await res.json();
-                    let currentViews = (oldData && oldData.views) ? oldData.views : 0;
-                    
-                    let now = new Date();
-                    let dateStr = now.toLocaleDateString('ar-EG') + " | " + now.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
+    // فحص الحد المسموح (لو أكبر من 0 يعني فيه حد)
+    if (maxViews > 0 && data.views >= maxViews) {
+        alert("⚠️ لقد استخدمت العدد المحدد لمشاهدة هذا الفيديو!");
+        return; // بيمنع تنفيذ الكود اللي بيشغل الفيديو
+    }
 
-                    let newData = { videoTitle: videoTitle || "المحاضرة", views: currentViews + 1, lastSeen: dateStr };
-                    await fetch(trackingUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newData) });
-                } catch(e) { console.error("Tracking Error:", e); }
-            }
-        };
+    // لو مسموح، كمل تشغيل الفيديو عادي
+    let embedUrl = url;
+    // ... (باقي الكود بتاع تحويل الرابط للـ embed زي ما هو في كودك) ...
+    document.getElementById("video-iframe").src = embedUrl;
 
+    // تحديث المشاهدات في الفايربيز بعد التأكد إنها مسموح بها
+    let now = new Date();
+    let dateStr = now.toLocaleDateString('ar-EG') + " | " + now.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: 'numeric', hour12: true });
+    await fetch(trackingUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoTitle: videoTitle, views: data.views + 1, lastSeen: dateStr })
+    });
+};
         window.closeCoursePlayer = function() {
             document.getElementById("video-iframe").src = ""; 
             document.body.classList.remove("no-select");
