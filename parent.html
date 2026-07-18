@@ -151,7 +151,9 @@
         <div class="login-box">
             <div style="margin-top: -80px; margin-bottom: 15px;"><div class="octo-mascot octo-loading"></div></div>
             <h2 style="color: var(--secondary); margin-bottom: 5px; font-weight: 800;">EduTrack <span style="color: var(--primary)">.</span></h2>
-            <p style="color: var(--text-muted); margin-bottom: 25px;">منصة الطالب الذكية</p>
+<p style="color: var(--text-muted); margin-bottom: 5px;">منصة الطالب الذكية</p>
+<!-- مكان الأرقام -->
+<div id="teacher-contact-box" style="margin-bottom: 20px; font-size: 14px; color: var(--primary); font-weight: bold;"></div>
             
             <div class="input-group">
                 <label>كود الطالب</label>
@@ -558,6 +560,12 @@ async function fetchStudentData(isAutoLogin = false) {
                 // 👇 لو الباقة سليمة، كمل تحميل داتا الطالب 👇
                 let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data.json`);
                 let data = await res.json();
+                // بعد ما تحمل data.settings
+const contactBox = document.getElementById("teacher-contact-box");
+if (contactBox && data.settings && data.settings.phoneNumbers) {
+    let phones = data.settings.phoneNumbers.split(',');
+    contactBox.innerHTML = `تواصل معنا: ` + phones.map(p => `<a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" style="margin: 0 5px; color: var(--primary);">${p.trim()}</a>`).join(' | ');
+}
                 window.allClassSessions = data.classSessions || []; 
                 
                 let lecRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/lectures.json`);
@@ -1235,6 +1243,9 @@ async function fetchStudentData(isAutoLogin = false) {
                 }
             } catch (e) { alert("حدث خطأ!"); }
         }
+
+
+        
     </script>
 
     <!-- نافذة تفاصيل الكورس -->
