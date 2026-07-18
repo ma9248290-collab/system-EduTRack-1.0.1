@@ -210,13 +210,21 @@
             <main class="content-area">
                 
                 <div id="tab-home" class="tab-content active">
-                    <!-- 🌟 إضافة الجزء الجديد للشياكة -->
-    <div style="background: white; padding: 15px 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-        <h3 style="margin:0; color: var(--secondary); font-size: 18px;">👨‍🏫 منصة مستر: <span style="color: var(--primary);">${teacherName}</span></h3>
-        <div id="teacher-contact-box-header" style="display: flex; gap: 10px;">
-            <!-- الأرقام هتظهر هنا أوتوماتيك -->
-        </div>
-    </div>
+               <!-- 🌟 كارت بيانات المستر والتواصل الشيك -->
+                    <div style="background: linear-gradient(135deg, #ffffff, #f8fafc); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="background: rgba(249, 115, 22, 0.1); padding: 10px; border-radius: 12px;">
+                                <span style="font-size: 24px;">👨‍🏫</span>
+                            </div>
+                            <div>
+                                <p style="margin: 0; font-size: 13px; color: var(--text-muted); font-weight: bold;">منصة الطالب الذكية تحت إشراف</p>
+                                <h3 style="margin: 0; color: var(--secondary); font-size: 20px; font-weight: 900;" id="teacher-name-header">جاري التحميل...</h3>
+                            </div>
+                        </div>
+                        <div id="teacher-contact-box-header" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <!-- أزرار الواتساب هتظهر هنا أوتوماتيك -->
+                        </div>
+                    </div>
                     <div class="page-header">
                         <h2>نظرة عامة</h2>
                         <p>ملخص نشاطك في السنتر</p>
@@ -569,10 +577,45 @@ async function fetchStudentData(isAutoLogin = false) {
                 let data = await res.json();
                 // بعد ما تحمل data.settings
 // استبدل الجزء القديم بالكامل بالكود ده:
+// ==========================================
+                // 🌟 تحديث بيانات المستر وأرقام التواصل
+                // ==========================================
+                if (data && data.settings) {
+                    let tName = data.settings.teacherName || data.teacherName || "الإدارة";
+                    
+                    // 1. تحديث الاسم في الكارت الجديد جوه المنصة
+                    let headerName = document.getElementById("teacher-name-header");
+                    if(headerName) headerName.innerText = `مستر ${tName}`;
 
-const contactBoxHeader = document.getElementById("teacher-contact-box-header");
-const contactBoxOld = document.getElementById("teacher-contact-box");
+                    // 2. تحديث الاسم والأرقام في شاشة الدخول (القديمة)
+                    const contactBoxOld = document.getElementById("teacher-contact-box");
+                    let phonesHtmlOld = "";
+                    
+                    // 3. تجهيز أزرار الواتساب الخضراء الشيك للكارت الجديد
+                    const contactBoxHeader = document.getElementById("teacher-contact-box-header");
+                    let phonesHtmlNew = "";
 
+                    if (data.settings.phoneNumbers && data.settings.phoneNumbers.trim() !== "") {
+                        let phones = data.settings.phoneNumbers.split(',');
+                        
+                        // تجهيز شكل الأرقام لشاشة الدخول
+                        phonesHtmlOld = `<br><span style="color: var(--text-muted); font-size: 13px;">تواصل معنا:</span> ` + 
+                                        phones.map(p => `<a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" style="margin: 0 5px; color: var(--primary); text-decoration: none; font-weight: bold;">${p.trim()}</a>`).join(' | ');
+                        
+                        // تجهيز شكل الأزرار الخضراء للمنصة من جوه
+                        phonesHtmlNew = phones.map(p => `
+                            <a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" 
+                               style="background: linear-gradient(45deg, #25D366, #128C7E); color: white; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); transition: transform 0.3s;"
+                               onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                               <span style="font-size: 16px;">💬</span> ${p.trim()}
+                            </a>
+                        `).join('');
+                    }
+
+                    if (contactBoxOld) contactBoxOld.innerHTML = `👨‍🏫 مع تحيات مستر: ${tName} ${phonesHtmlOld}`;
+                    if (contactBoxHeader) contactBoxHeader.innerHTML = phonesHtmlNew;
+                }
+                // ==========================================
 if (data.settings) {
     let teacherName = data.settings.teacherName || "الإدارة";
     
