@@ -154,6 +154,36 @@
             /* تظبيط الجداول */
             .full-table th, .full-table td { white-space: nowrap; padding: 10px; font-size: 13px; }
             .table-container { overflow-x: auto; }
+
+            /* ========================================== */
+            /* 📱 إصلاح شاشة عرض الفيديو (DRM) للموبايل */
+            /* ========================================== */
+            #anti-record-container {
+                flex-direction: column-reverse !important; /* لرفع الفيديو للأعلى والقائمة للأسفل */
+            }
+            #player-playlist {
+                width: 100% !important;
+                height: 40% !important; /* القائمة تأخذ 40% من الشاشة السفلية */
+                border-left: none !important;
+                border-top: 1px solid #1e293b !important;
+                padding: 15px !important;
+            }
+            #video-wrapper {
+                width: 100% !important;
+                height: 60% !important; /* الفيديو يأخذ 60% من الشاشة العلوية */
+            }
+            /* تظبيط الهيدر العلوي ليتناسب مع شاشات الموبايل الصغيرة */
+            #protected-course-screen > div:first-child {
+                padding: 10px 15px !important;
+            }
+            #protected-course-screen > div:first-child > div {
+                gap: 10px !important;
+            }
+            #player-course-title {
+                font-size: 14px !important;
+                padding-right: 10px !important;
+                border-right-width: 1px !important;
+            }
         }
         
         @keyframes floatWatermark {
