@@ -124,14 +124,36 @@
         .octo-loading { background-position: 66.66% 100%; animation: bounceBot 2s infinite; }
         @keyframes bounceBot { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-10px);} }
 
+        /* ========================================== */
+        /* 📱 تحسينات الموبايل (شكل التطبيق) للمنصة */
+        /* ========================================== */
         @media (max-width: 768px) {
             .main-container { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; gap: 10px; }
-            .nav-item { padding: 10px 15px; border-right: none; border-bottom: 3px solid transparent; white-space: nowrap; }
-            .nav-item:hover, .nav-item.active { border-right: none; border-bottom-color: var(--primary); background: transparent; }
+            .sidebar { 
+                width: 100%; height: auto; flex-direction: row; overflow-x: auto; 
+                padding: 15px 10px; gap: 10px; background: var(--card-bg); 
+                border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+                /* إخفاء السكرول بار مع الحفاظ على السكرول */
+                scrollbar-width: none; 
+            }
+            .sidebar::-webkit-scrollbar { display: none; }
+            .nav-item { 
+                padding: 8px 16px; border: 1px solid var(--border); border-radius: 25px; 
+                white-space: nowrap; font-size: 14px; background: var(--bg-color); color: var(--secondary);
+                box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-left: 0;
+            }
+            .nav-item:hover, .nav-item.active { 
+                background: var(--primary); color: white; border-color: var(--primary); 
+                transform: scale(1.05);
+            }
             .content-area { padding: 15px; }
-            .topbar { padding: 0 15px; }
+            .topbar { padding: 0 15px; height: 60px; }
+            .wallet-hero { padding: 20px; }
+            .wallet-balance { font-size: 36px; }
             .exam-card { flex-direction: column; text-align: center; gap: 15px; }
+            /* تظبيط الجداول */
+            .full-table th, .full-table td { white-space: nowrap; padding: 10px; font-size: 13px; }
+            .table-container { overflow-x: auto; }
         }
         
         @keyframes floatWatermark {

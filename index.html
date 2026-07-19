@@ -241,23 +241,24 @@
         </aside>
 
         <main class="main-content">
- <header class="top-header no-print">
+ <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+        
+        <header class="top-header no-print">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <button class="menu-toggle-btn" style="display: none;" onclick="toggleMobileMenu()">☰</button>
                 <div>
                     <h1 id="page-title">أهلاً بك يا شيفو 👋</h1>
                     <p id="page-desc">إليك نظرة عامة على نشاط اليوم</p>
                 </div>
-                <!-- ضفنا align-items: center عشان الزراير كلها تبقى على خط واحد -->
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    
-                    <!-- زرار الإحالة الجديد (صغير وشيك) -->
-                    <button class="theme-btn" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; border: none; font-weight: bold; transition: transform 0.3s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);" onclick="switchPage('affiliate')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                        🎁 اربح 20,000 ج/شهرياً
-                    </button>
-
-                   
-                    <button id="theme-btn" class="theme-btn" onclick="toggleTheme()">☀️ الوضع الفاتح</button>
-                </div>
-            </header>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button class="theme-btn" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; border: none; font-weight: bold; transition: transform 0.3s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);" onclick="switchPage('affiliate')">
+                    🎁 اربح 20,000 ج/شهرياً
+                </button>
+                <button id="theme-btn" class="theme-btn" onclick="toggleTheme()">☀️ الوضع الفاتح</button>
+            </div>
+        </header>
 
             <div id="dashboard-view" class="view-section">
                 <div class="stats-grid">

@@ -385,81 +385,50 @@ body.assistant-mode .delete-btn { display: none !important; }
 
 
 /* ========================================== */
-/* 📱 شاشات الموبايل والتابلت (لوحة التحكم) */
+/* 📱 تحسينات الموبايل الجبارة للوحة المعلم */
 /* ========================================== */
 @media (max-width: 768px) {
-    .dashboard-container {
-        flex-direction: column;
-        overflow-y: auto;
-    }
+    .dashboard-container { flex-direction: column; }
     
-    /* تحويل القائمة الجانبية لشريط علوي (App Style) */
+    /* القائمة الجانبية (Hamburger Menu) */
     .sidebar {
-        width: 100%;
-        min-width: 100%;
-        height: auto;
-        padding: 15px 10px;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        flex-direction: column;
-        z-index: 100;
+        position: fixed; top: 0; right: -300px; width: 280px; height: 100vh;
+        z-index: 100001; transition: right 0.3s ease-in-out;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.1); background: var(--card-bg);
+        display: flex; flex-direction: column;
+    }
+    .sidebar.active-mobile { right: 0; }
+    
+    /* الغشاوة السودا لما القائمة تفتح */
+    .mobile-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.5); z-index: 100000; backdrop-filter: blur(3px);
+    }
+    .mobile-overlay.active { display: block; }
+    
+    /* الهيدر العلوي */
+    .top-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .top-header > div:first-child { display: flex; align-items: center; gap: 15px; width: 100%; }
+    .menu-toggle-btn { 
+        display: block !important; font-size: 28px; background: none; border: none; 
+        color: var(--primary-color); cursor: pointer; padding: 5px;
     }
     
-    .logo { margin-bottom: 15px; font-size: 24px; text-align: right; padding-right: 10px;}
+    /* تظبيط الجداول عشان متضربش */
+    .students-table th, .students-table td { white-space: nowrap; font-size: 13px; padding: 10px; }
+    .table-container { overflow-x: auto; width: 100%; }
     
-    .nav-links {
-        display: flex;
-        overflow-x: auto; /* سكرول بالعرض */
-        white-space: nowrap;
-        gap: 10px;
-        padding-bottom: 5px;
-    }
-    .nav-links::-webkit-scrollbar { height: 4px; }
-    .nav-links::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 10px; }
+    /* النوافذ (Modals) */
+    .modal-content { width: 95%; margin: 5% auto; padding: 20px; }
+    .form-grid { grid-template-columns: 1fr; gap: 10px; }
     
-    .nav-links li { margin-bottom: 0; }
-    .nav-links a { padding: 8px 12px; font-size: 14px; }
-    
-    /* تظبيط المحتوى الداخلي */
-    .main-content { padding: 15px; }
-    .top-header { flex-direction: column; gap: 15px; align-items: flex-start; }
-    .top-header h1 { font-size: 24px; }
-    
-    /* الكروت والجداول */
-    .stats-grid, .charts-container {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .stat-card, .table-container { width: 100% !important; min-width: 100% !important; }
-    
-    /* فلاتر البحث والزراير */
-    .section-header { flex-direction: column; align-items: stretch; gap: 15px; }
-    .header-actions { display: flex; flex-direction: column; width: 100%; }
-    .header-actions input, .header-actions select, .header-actions button {
-        width: 100% !important; margin: 0 !important;
-    }
-    
-    /* النوافذ المنبثقة (Modals) */
-    .modal-content {
-        width: 95%;
-        margin: 10% auto;
-        padding: 20px;
-    }
-    @keyframes pulse-red {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-    50% { opacity: 0.85; box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    /* زراير الإجراءات في الكروت */
+    .session-actions { flex-direction: column; }
+    .session-actions button { width: 100%; }
+    .header-actions { flex-direction: column; align-items: stretch; width: 100%; }
+    .header-actions > * { width: 100% !important; margin-bottom: 5px; }
 }
-    .form-grid { display: flex; flex-direction: column; gap: 0; }
-    
-    /* نافذة الشات العائمة (ميرا) */
-    .shefo-chat-box { width: 95%; height: 80vh; bottom: 80px; }
-    
-    /* شاشة الدخول */
-    .login-card { padding: 25px 20px; width: 95%; }
-}
+@media (min-width: 769px) { .menu-toggle-btn, .mobile-overlay { display: none !important; } }
 
 
 /* ========================================== */
