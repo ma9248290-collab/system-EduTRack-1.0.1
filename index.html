@@ -243,17 +243,23 @@
         <main class="main-content">
  <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
         
-        <header class="top-header no-print">
-            <div style="display: flex; align-items: center; gap: 15px;">
+        <header class="top-header no-print" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 15px; flex: 1; min-width: 250px;">
                 <button class="menu-toggle-btn" style="display: none;" onclick="toggleMobileMenu()">☰</button>
                 <div>
-                    <h1 id="page-title">أهلاً بك يا شيفو 👋</h1>
+                    <h1 id="page-title">أهلاً بك 👋</h1>
                     <p id="page-desc">إليك نظرة عامة على نشاط اليوم</p>
                 </div>
             </div>
+
+            <!-- 🔍 مربع البحث السريع الشامل (الجديد) -->
+            <div class="global-search-wrapper" style="flex: 2; max-width: 500px; min-width: 280px; position: relative;">
+                <input type="text" id="globalStudentSearch" class="custom-input" placeholder="🔍 بحث سريع عن طالب (بالكود أو الاسم)..." onkeypress="handleGlobalSearch(event)" style="width: 100%; border-radius: 30px; border: 2px solid var(--primary-color); padding: 12px 45px 12px 15px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; background: var(--card-bg);">
+                <button onclick="executeGlobalSearch()" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; cursor: pointer; transition: 0.3s;" onmouseover="this.style.transform='translateY(-50%) scale(1.2)'" onmouseout="this.style.transform='translateY(-50%) scale(1)'">🔍</button>
+            </div>
             
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <button class="theme-btn" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; border: none; font-weight: bold; transition: transform 0.3s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);" onclick="switchPage('affiliate')">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                <button class="theme-btn" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; border: none; font-weight: bold; transition: transform 0.3s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);" onclick="switchPage('affiliate')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                     🎁 اربح 20,000 ج/شهرياً
                 </button>
                 <button id="theme-btn" class="theme-btn" onclick="toggleTheme()">☀️ الوضع الفاتح</button>
@@ -267,10 +273,10 @@
                 </div>
 
                 <div class="stat-card no-print" style="margin-top: 20px; margin-bottom: 30px; border-right: 5px solid #10b981; background: rgba(16, 185, 129, 0.05);">
-                    <h3 style="margin-bottom: 10px; color: #10b981;">👨‍👩‍👦 بوابة أولياء الأمور (الرابط الخاص بك)</h3>
+                    <h3 style="margin-bottom: 10px; color: #10b981;">لينك المنصة الخاصة بك</h3>
                    
 
-                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">انسخ هذا الرابط وشاركه مع أولياء الأمور والطلاب على جروبات الواتساب لمتابعة غيابهم ودرجاتهم مباشرة.</p>
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">انسخ هذا الرابط وشاركه مع الطلاب حتى يتمكنوا من الوصول الى المنصة.</p>
                     <div style="display: flex; gap: 10px;">
                         <input type="text" id="parentPortalLink" class="custom-input" readonly style="direction: ltr; text-align: left; font-weight: bold; color: var(--primary-color); background: var(--card-bg); flex: 1;">
                         <button class="save-btn" style="width: 150px; margin: 0; background-color: #10b981;" onclick="copyParentLink()">📋 نسخ الرابط</button>
