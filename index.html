@@ -707,6 +707,42 @@
     </div>
 
 
+    <!-- كارت تخصيص رسائل الواتساب التلقائية -->
+    <div class="admin-panel-card" style="border-top: 5px solid #0ea5e9;">
+        <h2 style="color: #0ea5e9; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">💬</span> تخصيص رسائل الواتساب التلقائية
+        </h2>
+        
+        <div style="background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #0ea5e9;">
+            <p style="font-weight: bold; margin-bottom: 10px; color: var(--text-main);">💡 المتغيرات المتاحة (انسخ الكلمة بأقواسها وضعها في النص):</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; margin-bottom: 15px;">
+                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{اسم_الطالب}</span>
+                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{المجموعة}</span>
+                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{الموضوع}</span>
+                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{تفاصيل_التقرير}</span>
+                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{اسم_السنتر}</span>
+                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{اسم_المدير}</span>
+                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{وقت_الرسالة}</span>
+            </div>
+            <p style="margin-top: 10px; font-size: 13px; color: var(--danger-color); line-height: 1.6;">
+                🛡️ <strong>حماية من الحظر (Spintax):</strong> لتجنب حظر الواتساب، استخدم الصيغة <code>{كلمة1|كلمة2|كلمة3}</code> ليقوم النظام باختيار كلمة عشوائية في كل رسالة، مما يجعل الرسائل تبدو وكأن بشراً يكتبها.
+            </p>
+        </div>
+
+        <div class="input-group">
+            <label style="font-weight: bold;">قالب رسالة ولي الأمر</label>
+            <textarea id="settingParentMsg" class="custom-input" rows="5" placeholder="مثال: {أهلاً|مرحباً} ولي أمر الطالب {اسم_الطالب}..."></textarea>
+        </div>
+        
+        <div class="input-group">
+            <label style="font-weight: bold;">قالب رسالة الطالب</label>
+            <textarea id="settingStudentMsg" class="custom-input" rows="5" placeholder="مثال: {عاش يا بطل|أخبار المذاكرة إيه} يا {اسم_الطالب}..."></textarea>
+        </div>
+        
+        <button class="save-btn" style="width: 100%; font-size: 16px; background-color: #0ea5e9;" onclick="saveAccountSettings()">💾 حفظ قوالب الرسائل والإعدادات</button>
+    </div>
+
+
     <div class="admin-panel-card" style="border-top: 5px solid #10b981;">
         <h2 style="color: #10b981; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 24px;">👥</span> إدارة حسابات المساعدين (السكرتارية)
