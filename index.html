@@ -2187,12 +2187,44 @@
     </div>
 </div>
 
-    
+    <!-- نافذة الطالب في مجموعة مختلفة (تعويض أو نقل) -->
+    <div id="wrongGroupModal" class="modal" style="z-index: 100000;">
+        <div class="modal-content" style="width: 450px; border-top: 5px solid #f59e0b;">
+            <span class="close-btn" onclick="skipWrongGroup()">&times;</span>
+            <h2 style="color: #f59e0b; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">⚠️</span> طالب في مجموعة أخرى
+            </h2>
+            
+            <div style="background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed var(--border-color); text-align: right;">
+                <h3 id="wgStudentName" style="margin: 0 0 10px 0; color: var(--primary-color);">اسم الطالب</h3>
+                <p style="margin: 0 0 5px 0; font-size: 14px; font-weight: bold;">مجموعته الأصلية: <span id="wgOldGroup" style="color: var(--danger-color);">---</span></p>
+                <p style="margin: 0; font-size: 14px; font-weight: bold;">المجموعة الحالية: <span id="wgCurrentGroup" style="color: var(--success-color);">---</span></p>
+            </div>
+
+            <!-- خيار 1: يحضر كتعويض في مجموعته الأصلية -->
+            <div id="wgAttendanceDiv" style="background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 8px; border: 1px solid #10b981; margin-bottom: 15px;">
+                <label style="font-weight: bold; color: #10b981; margin-bottom: 10px; display: block;">1. حضور كتعويض (تسجيل في حصة مجموعته)</label>
+                <div style="display: flex; gap: 10px;">
+                    <select id="wgActualGroupSessions" class="custom-input" style="flex: 2; margin: 0; font-weight: bold;"></select>
+                    <button class="save-btn" style="flex: 1; margin: 0; background: #10b981;" onclick="markAttendanceInActualGroup()">تحضير تعويض ✅</button>
+                </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px dashed var(--border-color); margin: 15px 0;">
+
+            <!-- خيار 2: النقل النهائي + التخطي -->
+            <label style="font-weight: bold; color: var(--primary-color); margin-bottom: 10px; display: block; text-align: right;">2. إجراءات أخرى</label>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="save-btn" style="flex: 2; margin: 0; background: #3b82f6; font-size: 14px;" onclick="moveStudentAndAttend()">🔄 نقل الطالب للمجموعة الحالية وتحضيره</button>
+                <button class="theme-btn" style="flex: 1; margin: 0; border-color: var(--text-muted); color: var(--text-muted); font-weight: bold;" onclick="skipWrongGroup()">تخطي ❌</button>
+            </div>
+        </div>
+    </div>
 
 
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <script src="assistant-enc.js?v=100"></script>
-<script src="script-enc.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
