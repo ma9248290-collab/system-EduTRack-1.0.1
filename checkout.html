@@ -6,52 +6,71 @@
     <title>إتمام الشراء | EduTrack</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #4f46e5; --bg: #f4f7f6; --card: #ffffff; --text: #1e293b; --success: #10b981; --danger: #ef4444; }
+        /* 🎨 توحيد الألوان مع الهوية الجديدة */
+        :root { 
+            --primary-color: #f97316; 
+            --primary-hover: #ea580c;
+            --secondary-color: #1e293b; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --text: #0f172a; 
+            --text-muted: #64748b;
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --border: #e2e8f0;
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
         
-        .checkout-header { background: linear-gradient(135deg, #3730a3 0%, #4f46e5 100%); color: white; padding: 50px 20px; text-align: center; margin-bottom: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .checkout-header h1 { font-size: 32px; font-weight: 900; margin-bottom: 10px; }
-        .checkout-header p { opacity: 0.9; font-size: 15px; }
+        /* شخصية أوكتو */
+        .octo-mascot { width: 80px; height: 80px; display: inline-block; background-image: url('octo-sprite.png'); background-size: 400% 200%; background-repeat: no-repeat; filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.2)); }
+        .octo-finance { background-position: 100% 100%; animation: bounce 2s infinite; }
+        .octo-success { background-position: 0% 100%; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .checkout-header { background: linear-gradient(135deg, var(--secondary-color) 0%, #0f172a 100%); color: white; padding: 40px 20px; text-align: center; margin-bottom: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-bottom: 5px solid var(--primary-color); display: flex; flex-direction: column; align-items: center; justify-content: center;}
+        .checkout-header h1 { font-size: 32px; font-weight: 900; margin-top: 15px; margin-bottom: 10px; }
+        .checkout-header p { color: #cbd5e1; font-size: 16px; font-weight: bold;}
 
         .container { max-width: 1000px; margin: 0 auto; padding: 0 20px; display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap-reverse; }
         
         /* قسم الفورم */
-        .form-section { flex: 2; min-width: 300px; background: var(--card); padding: 35px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; }
-        .section-title { font-size: 18px; font-weight: 900; margin-bottom: 25px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .form-section { flex: 2; min-width: 300px; background: var(--card); padding: 35px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid var(--border); }
+        .section-title { font-size: 20px; font-weight: 900; margin-bottom: 25px; color: var(--secondary-color); display: flex; align-items: center; gap: 10px; }
         
         .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #475569; font-size: 14px; }
-        .custom-input { width: 100%; padding: 14px 15px; border-radius: 10px; border: 2px solid #e2e8f0; background: #f8fafc; font-size: 15px; outline: none; transition: 0.3s; font-weight: bold; color: var(--text); }
-        .custom-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); font-size: 15px; }
+        .custom-input { width: 100%; padding: 14px 15px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg); font-size: 15px; outline: none; transition: 0.3s; font-weight: bold; color: var(--text); }
+        .custom-input:focus { border-color: var(--primary-color); background: #fff; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1); }
         
         .payment-methods { display: flex; gap: 15px; margin-bottom: 25px; }
-        .pay-method { flex: 1; border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; font-weight: bold; color: #64748b; background: #f8fafc; }
+        .pay-method { flex: 1; border: 2px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; font-weight: bold; color: var(--text-muted); background: var(--bg); }
         .pay-method input { display: none; }
-        .pay-method.active { border-color: var(--primary); background: rgba(79, 70, 229, 0.05); color: var(--primary); }
+        .pay-method.active { border-color: var(--primary-color); background: rgba(249, 115, 22, 0.05); color: var(--primary-color); }
         
-        .submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2); }
-        .submit-btn:hover { background: #4338ca; transform: translateY(-2px); }
+        .submit-btn { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(249, 115, 22, 0.3); }
+        .submit-btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
 
-        /* ملخص الطلب (تصميم الفاتورة الشيك) */
+        /* ملخص الطلب */
         .summary-section { flex: 1; min-width: 320px; position: sticky; top: 20px; }
-        .receipt-card { background: var(--card); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #e2e8f0; }
-        .receipt-header { background: var(--bg); padding: 25px 20px; text-align: center; border-bottom: 2px dashed #cbd5e1; }
-        .receipt-header h2 { font-size: 22px; color: var(--primary); font-weight: 900; margin-bottom: 5px; }
-        .receipt-header p { font-size: 13px; color: #64748b; }
+        .receipt-card { background: var(--card); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid var(--border); }
+        .receipt-header { background: var(--secondary-color); padding: 25px 20px; text-align: center; color: white; border-bottom: 4px solid var(--primary-color); }
+        .receipt-header h2 { font-size: 22px; font-weight: 900; margin-bottom: 5px; }
+        .receipt-header p { font-size: 13px; color: #cbd5e1; font-weight: bold;}
         
         .receipt-body { padding: 25px 20px; }
-        .receipt-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 15px; color: #475569; font-weight: bold; }
+        .receipt-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 16px; color: var(--text-muted); font-weight: bold; }
         .receipt-row.discount { color: var(--success); display: none; background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px; margin: 15px 0; }
-        .receipt-row.total { font-size: 22px; color: var(--primary); padding-top: 20px; margin-top: 10px; border-top: 2px solid #e2e8f0; font-weight: 900; }
+        .receipt-row.total { font-size: 24px; color: var(--primary-color); padding-top: 20px; margin-top: 10px; border-top: 2px dashed var(--border); font-weight: 900; }
         
-        .promo-box { background: var(--card); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); padding: 20px; margin-top: 20px; border: 1px solid #e2e8f0; }
-        .promo-btn { width: 100%; padding: 12px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .promo-btn:hover { background: var(--primary); color: white; }
+        .promo-box { background: var(--card); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); padding: 20px; margin-top: 20px; border: 1px solid var(--border); }
+        .promo-btn { width: 100%; padding: 12px; background: rgba(249, 115, 22, 0.1); color: var(--primary-color); border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .promo-btn:hover { background: var(--primary-color); color: white; }
 
         /* نافذة النجاح */
-        .success-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .success-content { background: white; padding: 40px; border-radius: 20px; text-align: center; width: 90%; max-width: 450px; animation: popIn 0.4s ease-out; }
+        .success-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.85); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .success-content { background: white; padding: 40px; border-radius: 20px; text-align: center; width: 90%; max-width: 450px; animation: popIn 0.4s ease-out; border-top: 5px solid var(--success); }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         @media (max-width: 768px) { .container { flex-direction: column-reverse; } .summary-section, .form-section { width: 100%; } }
@@ -60,6 +79,7 @@
 <body>
 
     <header class="checkout-header">
+        <div class="octo-mascot octo-finance"></div>
         <h1>إتمام عملية الشراء 🛒</h1>
         <p>اكمل بياناتك أدناه لإنشاء حسابك وتأكيد طلبك</p>
     </header>
@@ -114,7 +134,7 @@
             </div>
             
             <div class="promo-box">
-                <label style="display: block; font-weight: 900; color: #1e293b; margin-bottom: 10px;">🏷️ كود الإحالة (اختياري)</label>
+                <label style="display: block; font-weight: 900; color: var(--secondary-color); margin-bottom: 10px;">🏷️ كود الإحالة (اختياري)</label>
                 <input type="text" id="promoCodeInput" class="custom-input" placeholder="أدخل كود الخصم..." style="text-align: center; letter-spacing: 2px;">
                 <button type="button" class="promo-btn" onclick="applyPromoCode()">تطبيق الخصم</button>
                 <div id="promoMsg" style="margin-top: 10px; font-size: 13px; font-weight: bold; text-align: center; display: none;"></div>
@@ -124,10 +144,10 @@
 
     <div class="success-modal" id="successModal">
         <div class="success-content">
-            <div style="font-size: 70px; margin-bottom: 10px;">🎉</div>
-            <h2 style="color: var(--primary); margin-bottom: 15px;">تم تسجيل طلبك بنجاح!</h2>
-            <p style="color: #64748b; margin-bottom: 25px; line-height: 1.6;">تم إرسال طلبك للإدارة. سنتواصل معك فوراً على الواتساب لإتمام الدفع وتفعيل حسابك.</p>
-            <button class="submit-btn" style="width: auto; padding: 10px 30px;" onclick="window.location.href='landing.html'">العودة للرئيسية</button>
+            <div class="octo-mascot octo-success" style="margin-bottom: 15px;"></div>
+            <h2 style="color: var(--success); margin-bottom: 15px; font-weight: 900;">تم تسجيل طلبك بنجاح! 🎉</h2>
+            <p style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.6; font-weight: bold;">تم إرسال طلبك للإدارة، وسيقوم فريق الدعم بالتواصل معك فوراً على الواتساب لإتمام الدفع وتفعيل حسابك.</p>
+            <button class="submit-btn" style="width: auto; padding: 12px 30px; font-size: 16px;" onclick="window.location.href='landing.html'">العودة للرئيسية 🔙</button>
         </div>
     </div>
 
@@ -181,7 +201,7 @@
             if (code.startsWith("REF-") && code.length >= 8) {
                 appliedPromoCode = code;
                 appliedDiscount = plan === 'lifetime' ? 500 : 100;
-                affiliateCommission = plan === 'lifetime' ? 800 : 150; // عمولة المدرس اللي جابه
+                affiliateCommission = plan === 'lifetime' ? 800 : 150; 
                 
                 msgBox.style.color = 'var(--success)';
                 msgBox.innerText = `✅ تم تفعيل الكود! خصم ${appliedDiscount} ج.م`;
@@ -195,7 +215,6 @@
 
         initPricing();
 
-        // إرسال الطلب مباشرة لقاعدة البيانات (بدون واتساب)
         document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('payBtn');
@@ -209,13 +228,12 @@
                 plan: currentPlan.name,
                 finalPrice: currentPlan.price - appliedDiscount,
                 promoCodeUsed: appliedPromoCode || "بدون كود",
-                commissionForAffiliate: affiliateCommission, // هنحتاجها في الداشبورد
+                commissionForAffiliate: affiliateCommission,
                 status: "قيد الانتظار ⏳",
                 timestamp: new Date().toISOString()
             };
 
             try {
-                // رمي الداتا في جدول جديد اسمه orders
                 await fetch(`${DB_URL}/orders.json`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
