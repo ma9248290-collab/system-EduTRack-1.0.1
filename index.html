@@ -497,30 +497,6 @@
                 <option value="">3. اختر الحصة المراد جردها...</option>
             </select>
         </div>
-
-        <!-- 2. إعدادات التسعير للحصة الحالية -->
-   <div style="background: var(--hover-bg); padding: 20px; border-radius: 12px; border: 1px dashed var(--primary-color); margin-bottom: 25px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-    <h4 style="width: 100%; margin-bottom: 10px; color: var(--primary-color);">⚙️ إعدادات التسعير (للحصة المحددة)</h4>
-    
-    <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
-        <label>سعر الحصة (ج.م)</label>
-        <input type="number" id="financeStudentFee" class="custom-input" value="50" oninput="renderFinanceTable()">
-    </div>
-    
-    <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
-        <label>سعر الشهر (ج.م)</label>
-        <input type="number" id="financeMonthlyFee" class="custom-input" value="200" oninput="renderFinanceTable()">
-    </div>
-    
-    <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
-        <label>عدد الحصص في الشهر</label>
-        <input type="number" id="financeSessionsPerMonth" value="4" min="1" class="custom-input" onchange="renderFinanceTable()">
-    </div>
-    
-    <div class="input-group" style="flex: 1; min-width: 150px; margin: 0;">
-        <label>نسبة السنتر (ج.م)</label>
-        <input type="number" id="financeCenterFee" class="custom-input" value="10" oninput="renderFinanceTable()">
-    </div>
 </div>
 
         <!-- 3. كروت الإحصائيات (مفصلة ودقيقة) -->
@@ -1730,9 +1706,78 @@
         </div>
     </div>
 
-    <div id="addGroupModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('addGroupModal')">&times;</span><h2>إضافة مجموعة جديدة</h2><form id="addGroupFormModal"><div class="input-group"><label>اسم المجموعة</label><input type="text" id="newGroupName" required class="custom-input" placeholder="مثال: المنوات - سبت و تلات"></div><div class="input-group"><label>الصف الدراسي</label><select id="newGroupLevel" required class="custom-input"><option value="">اختر...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><button type="submit" class="save-btn">حفظ المجموعة</button></form></div></div>
-    <div id="editGroupModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('editGroupModal')">&times;</span><h2>تعديل مجموعة ✏️</h2><form id="editGroupFormModal"><input type="hidden" id="editGroupOriginalName"><div class="input-group"><label>اسم المجموعة الجديد</label><input type="text" id="editGroupName" required class="custom-input"></div><div class="input-group"><label>الصف الدراسي</label><select id="editGroupLevel" required class="custom-input"><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><button type="submit" class="save-btn">حفظ التعديلات</button></form></div></div>
-    
+    <!-- نافذة إضافة مجموعة جديدة -->
+    <div id="addGroupModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('addGroupModal')">&times;</span>
+            <h2>إضافة مجموعة جديدة</h2>
+            <form id="addGroupFormModal">
+                <div class="input-group">
+                    <label>اسم المجموعة</label>
+                    <input type="text" id="newGroupName" required class="custom-input" placeholder="مثال: المنوات - سبت وتلات">
+                </div>
+                <div class="input-group">
+                    <label>الصف الدراسي</label>
+                    <select id="newGroupLevel" required class="custom-input">
+                        <option value="">اختر...</option>
+                    </select>
+                </div>
+                <!-- الخانات الجديدة 👇 -->
+                <div class="form-grid" style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary-color); margin-bottom: 20px;">
+                    <div class="input-group full-width" style="margin-bottom: 5px;">
+                        <label style="color: var(--primary-color); font-weight: bold;">نظام الدفع لهذه المجموعة 💰</label>
+                        <select id="newGroupPayType" class="custom-input">
+                            <option value="session">بالحصة</option>
+                            <option value="month">بالشهر (تجديد تلقائي بداية كل شهر)</option>
+                        </select>
+                    </div>
+                    <div class="input-group full-width" style="margin-bottom: 5px;">
+                        <label>سعر الحصة / الشهر (ج.م)</label>
+                        <input type="number" id="newGroupPrice" class="custom-input" placeholder="مثال: 50" min="0">
+                    </div>
+                    <small style="color: var(--text-muted); font-weight: bold; grid-column: span 2;">* ملاحظة: لو مش بتتابع الحسابات على السيستم، سيب الخانات دي زي ما هي.</small>
+                </div>
+                
+                <button type="submit" class="save-btn">حفظ المجموعة</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل مجموعة -->
+    <div id="editGroupModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('editGroupModal')">&times;</span>
+            <h2>تعديل مجموعة ✏️</h2>
+            <form id="editGroupFormModal">
+                <input type="hidden" id="editGroupOriginalName">
+                <div class="input-group">
+                    <label>اسم المجموعة الجديد</label>
+                    <input type="text" id="editGroupName" required class="custom-input">
+                </div>
+                <div class="input-group">
+                    <label>الصف الدراسي</label>
+                    <select id="editGroupLevel" required class="custom-input"></select>
+                </div>
+                <!-- الخانات الجديدة 👇 -->
+                <div class="form-grid" style="background: rgba(245, 158, 11, 0.05); padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b; margin-bottom: 20px;">
+                    <div class="input-group full-width" style="margin-bottom: 5px;">
+                        <label style="color: #f59e0b; font-weight: bold;">نظام الدفع 💰</label>
+                        <select id="editGroupPayType" class="custom-input">
+                            <option value="session">بالحصة</option>
+                            <option value="month">بالشهر</option>
+                        </select>
+                    </div>
+                    <div class="input-group full-width" style="margin-bottom: 5px;">
+                        <label>السعر (ج.م)</label>
+                        <input type="number" id="editGroupPrice" class="custom-input" min="0">
+                    </div>
+                </div>
+                
+                <button type="submit" class="save-btn" style="background: #f59e0b;">حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+
     <div id="addStudentModal" class="modal"><div class="modal-content student-modal"><span class="close-btn" onclick="closeModal('addStudentModal')">&times;</span><h2>تسجيل طالب جديد</h2><form id="addStudentForm" class="form-grid"><div class="input-group"><label>كود الطالب</label><input type="text" id="studentCode" required class="custom-input" style="font-weight: bold; color: var(--primary-color);"></div><div class="input-group"><label>الاسم</label><input type="text" id="studentName" required class="custom-input"></div><div class="input-group"><label>الصف</label><select id="studentLevel" required class="custom-input" onchange="filterGroupsByLevel('studentLevel', 'studentGroup')"><option value="">اختر...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><label>المجموعة</label><select id="studentGroup" required class="custom-input"><option value="">اختر الصف أولاً...</option></select></div><!-- في ملف index.html ابحث عن خانة studentPhone -->
 <div class="input-group">
     <label>هاتف الطالب <span style="color:var(--text-muted); font-size: 11px;">(أو اكتب 0 إذا لم يوجد)</span></label>
