@@ -1010,118 +1010,139 @@ async function fetchStudentData(isAutoLogin = false) {
             });
         }
 
-        // ==========================================
-        // 💻 الامتحانات وشكل الامتحان الأنيق
-        // ==========================================
-        window.showOnlineExams = async function(isRenderOnly = false) {
-            if(!isRenderOnly) {
-                document.getElementById("app-layout").style.display = "none";
-                document.getElementById("online-exams-list-screen").style.display = "block";
-            }
-            const container = document.getElementById("available-exams-container");
-            container.innerHTML = `جاري جلب الامتحانات...`;
-            try {
-                let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
-                let allSubs = await subRes.json() || {};
-                window.studentSubmissions = allSubs;
-                let myExams = allOnlineExams.filter(e => {
-                    if(!e || (e.status !== "open" && e.status !== "closed")) return false;
-                    let groupArray = Array.isArray(e.group) ? e.group : [e.group];
-                    return groupArray.includes(currentStudent.group) || groupArray.includes("all");
-                });
-                container.innerHTML = "";
-                if (myExams.length === 0) { container.innerHTML = `<div style="text-align:center;">لا توجد امتحانات إلكترونية حالياً.</div>`; return; }
-                myExams.forEach(exam => {
-                    let isSubmitted = allSubs[exam.id] && allSubs[exam.id][currentStudent.phone];
-                    let actionBtn = "";
-                    if (isSubmitted) {
-                        let canViewResult = exam.autoShowResult || isSubmitted.isGraded;
-                        let viewBtn = canViewResult ? `<button class="btn" style="width: auto;" onclick="reviewExam('${exam.id}')">عرض الإجابات</button>` : `<button class="btn" style="width: auto;" disabled>مخفية للتقييم</button>`;
-                        actionBtn = `<div>النتيجة: ${canViewResult ? `${isSubmitted.score}/${exam.totalScore}` : "قيد المراجعة"} ${viewBtn}</div>`;
-                    } else {
-                        actionBtn = exam.status === "closed" ? `<div>انتهى وقت الامتحان</div>` : `<button class="btn" style="background:#10b981; width:auto; padding:12px 25px;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
-                    }
-                    container.innerHTML += `<div class="exam-card"><h3>${exam.title} (${exam.duration} دقيقة)</h3>${actionBtn}</div>`;
-                });
-            } catch(e) {}
-        };
-
-        window.reviewExam = function(examId) {
-            let exam = allOnlineExams.find(e => e.id === examId); let sub = window.studentSubmissions[examId][currentStudent.phone];
-            if(!exam || !sub) return;
-            document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("review-exam-screen").style.display = "block";
-            document.getElementById("review-exam-title").innerText = exam.title; document.getElementById("review-exam-score").innerText = sub.score; document.getElementById("review-exam-total").innerText = exam.totalScore;
-            let container = document.getElementById("review-questions-render"); container.innerHTML = "";
-            exam.questions.forEach((q, index) => {
-                let studentAns = sub.answers[q.id]; let qScore = 0; let isCorrect = false; let ansHtml = "";
-                if (q.type === 'mcq') {
-                    isCorrect = (studentAns === q.correctAnswerIndex); qScore = isCorrect ? q.points : 0;
-                    ansHtml = `<div class="q-options">`;
-                    q.options.forEach((opt, optIndex) => {
-                        let bg = "var(--bg-color)"; let border = "var(--border)"; let icon = "";
-                        if (optIndex === q.correctAnswerIndex) { bg = "#d1fae5"; border = "#10b981"; icon = "✅"; }
-                        else if (optIndex === studentAns && !isCorrect) { bg = "#fee2e2"; border = "#ef4444"; icon = "❌"; }
-                        ansHtml += `<div class="q-option-label" style="background:${bg}; border-color:${border};">${opt} ${icon}</div>`;
-                    });
-                    ansHtml += `</div>`;
-                } else if (q.type === 'tf') {
-                    isCorrect = (String(studentAns) === String(q.correctAnswerTF || q.correctAnswer)); qScore = isCorrect ? q.points : 0;
-                    ansHtml = `<div style="background: ${isCorrect?'#d1fae5':'#fee2e2'}; padding:15px; border-radius:12px; font-weight:bold; border:2px solid ${isCorrect?'#10b981':'#ef4444'};">إجابتك: ${studentAns} | الصحيحة: ${q.correctAnswerTF || q.correctAnswer}</div>`;
-                } else {
-                    qScore = (sub.manualGrades && sub.manualGrades[q.id] !== undefined) ? sub.manualGrades[q.id] : (studentAns === q.correctAnswerText ? q.points : 0);
-                    ansHtml = `<div style="background:var(--bg-color); padding:15px; border-radius:12px; border:1px solid var(--border);">إجابتك: ${studentAns || 'لم يُجب'}</div>`;
-                }
-                container.innerHTML += `<div class="q-box" style="border-right: 5px solid ${qScore > 0 ? '#10b981' : '#ef4444'};"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary);">(${qScore}/${q.points})</span></div>${ansHtml}</div>`;
-            });
-        };
-
-        window.closeReviewScreen = function() { document.getElementById("review-exam-screen").style.display = "none"; document.getElementById("online-exams-list-screen").style.display = "block"; };
-        function backToDashboard() { document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("app-layout").style.display = "block"; }
-
-        function startExam(examId) {
-            currentExam = allOnlineExams.find(e => e.id === examId); if(!currentExam) return;
-            if(!confirm(`هل أنت مستعد؟ المدة: ${currentExam.duration} دقيقة.`)) return;
-            document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("active-exam-screen").style.display = "block";
-            document.getElementById("active-exam-title").innerText = currentExam.title;
-            const container = document.getElementById("exam-questions-render"); container.innerHTML = "";
+       // ==========================================
+// 💻 الامتحانات وشكل الامتحان الأنيق
+// ==========================================
+window.showOnlineExams = async function(isRenderOnly = false) {
+    if(!isRenderOnly) {
+        document.getElementById("app-layout").style.display = "none";
+        document.getElementById("online-exams-list-screen").style.display = "block";
+    }
+    const container = document.getElementById("available-exams-container");
+    container.innerHTML = `جاري جلب الامتحانات...`;
+    try {
+        let subRes = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions.json`);
+        let allSubs = await subRes.json() || {};
+        window.studentSubmissions = allSubs;
+        let myExams = allOnlineExams.filter(e => {
+            if(!e || (e.status !== "open" && e.status !== "closed")) return false;
+            let groupArray = Array.isArray(e.group) ? e.group : [e.group];
+            return groupArray.includes(currentStudent.group) || groupArray.includes("all");
+        });
+        container.innerHTML = "";
+        if (myExams.length === 0) { container.innerHTML = `<div style="text-align:center;">لا توجد امتحانات إلكترونية حالياً.</div>`; return; }
+        
+        myExams.forEach(exam => {
+            let examSubs = allSubs[exam.id] || {};
             
-            // 🔥 عودة شياكة الأسئلة (الكلاسات الأصلية)
-            currentExam.questions.forEach((q, index) => {
-                let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary); font-size:14px;">(${q.points} درجات)</span></div>`;
-                if (q.type === 'mcq') { 
-                    qHtml += `<div class="q-options">`; 
-                    q.options.forEach((opt, optIndex) => { 
-                        qHtml += `<label class="q-option-label"><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label>`; 
-                    }); 
-                    qHtml += `</div>`; 
-                } 
-                else if (q.type === 'tf') { 
-                    qHtml += `<div class="q-options"><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="true"> ✔️ صح</label><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="false"> ❌ خطأ</label></div>`; 
-                } 
-                else if (q.type === 'blank') { qHtml += `<input type="text" id="ans_${q.id}" class="custom-input" placeholder="اكتب إجابتك...">`; } 
-                else if (q.type === 'essay') { qHtml += `<textarea id="ans_${q.id}" class="custom-input" rows="4" placeholder="اكتب التفاصيل..."></textarea>`; }
-                container.innerHTML += qHtml + `</div>`;
-            });
-            let timeInSeconds = currentExam.duration * 60; const timerDisplay = document.getElementById('exam-timer');
-            examTimerInterval = setInterval(() => { let m = Math.floor(timeInSeconds / 60), s = timeInSeconds % 60; timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`; if (timeInSeconds <= 0) { clearInterval(examTimerInterval); submitOnlineExam(true); } timeInSeconds--; }, 1000);
-        }
+            // 🔥 التعديل هنا: البحث بالكود الأول، ولو ملقاش يدور بالرقم (بشرط ميكونش 0)
+            let isSubmitted = examSubs[currentStudent.code];
+            if (!isSubmitted && currentStudent.phone && String(currentStudent.phone).trim() !== "0") {
+                isSubmitted = examSubs[currentStudent.phone];
+            }
 
-        async function submitOnlineExam(isTimeOut = false) {
-            if (!isTimeOut && !confirm("تأكيد التسليم؟")) return; clearInterval(examTimerInterval);
-            let totalScore = 0; let studentAnswers = {};
-            currentExam.questions.forEach(q => {
-                let qScore = 0;
-                if (q.type === 'mcq') { let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`); let ansVal = selected ? parseInt(selected.value) : -1; studentAnswers[q.id] = ansVal; if (ansVal === q.correctAnswerIndex) qScore = q.points; } 
-                else if (q.type === 'tf') { let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`); let ansVal = selected ? selected.value : ""; studentAnswers[q.id] = ansVal; if (ansVal === String(q.correctAnswerTF || q.correctAnswer)) qScore = q.points; } 
-                else if (q.type === 'blank') { let ansVal = document.getElementById(`ans_${q.id}`).value.trim(); studentAnswers[q.id] = ansVal; if (ansVal.toLowerCase() === (q.correctAnswerText || "").toLowerCase()) qScore = q.points; } 
-                else if (q.type === 'essay') { studentAnswers[q.id] = document.getElementById(`ans_${q.id}`).value.trim(); }
-                totalScore += qScore;
+            let actionBtn = "";
+            if (isSubmitted) {
+                let canViewResult = exam.autoShowResult || isSubmitted.isGraded;
+                let viewBtn = canViewResult ? `<button class="btn" style="width: auto;" onclick="reviewExam('${exam.id}')">عرض الإجابات</button>` : `<button class="btn" style="width: auto;" disabled>مخفية للتقييم</button>`;
+                actionBtn = `<div>النتيجة: ${canViewResult ? `${isSubmitted.score}/${exam.totalScore}` : "قيد المراجعة"} ${viewBtn}</div>`;
+            } else {
+                actionBtn = exam.status === "closed" ? `<div>انتهى وقت الامتحان</div>` : `<button class="btn" style="background:#10b981; width:auto; padding:12px 25px;" onclick="startExam('${exam.id}')">بدء الامتحان 🚀</button>`;
+            }
+            container.innerHTML += `<div class="exam-card"><h3>${exam.title} (${exam.duration} دقيقة)</h3>${actionBtn}</div>`;
+        });
+    } catch(e) {}
+};
+
+window.reviewExam = function(examId) {
+    let exam = allOnlineExams.find(e => e.id === examId); 
+    let examSubs = window.studentSubmissions[examId] || {};
+    
+    // 🔥 التعديل هنا: جلب الإجابة بالكود
+    let sub = examSubs[currentStudent.code];
+    if (!sub && currentStudent.phone && String(currentStudent.phone).trim() !== "0") {
+        sub = examSubs[currentStudent.phone];
+    }
+
+    if(!exam || !sub) return;
+    document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("review-exam-screen").style.display = "block";
+    document.getElementById("review-exam-title").innerText = exam.title; document.getElementById("review-exam-score").innerText = sub.score; document.getElementById("review-exam-total").innerText = exam.totalScore;
+    let container = document.getElementById("review-questions-render"); container.innerHTML = "";
+    
+    exam.questions.forEach((q, index) => {
+        let studentAns = sub.answers[q.id]; let qScore = 0; let isCorrect = false; let ansHtml = "";
+        if (q.type === 'mcq') {
+            isCorrect = (studentAns === q.correctAnswerIndex); qScore = isCorrect ? q.points : 0;
+            ansHtml = `<div class="q-options">`;
+            q.options.forEach((opt, optIndex) => {
+                let bg = "var(--bg-color)"; let border = "var(--border)"; let icon = "";
+                if (optIndex === q.correctAnswerIndex) { bg = "#d1fae5"; border = "#10b981"; icon = "✅"; }
+                else if (optIndex === studentAns && !isCorrect) { bg = "#fee2e2"; border = "#ef4444"; icon = "❌"; }
+                ansHtml += `<div class="q-option-label" style="background:${bg}; border-color:${border};">${opt} ${icon}</div>`;
             });
-            try {
-                await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions/${currentExam.id}/${currentStudent.phone}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ score: totalScore, maxScore: currentExam.totalScore, answers: studentAnswers, timestamp: new Date().toISOString() }) });
-                alert("تم التسليم بنجاح!"); document.getElementById("active-exam-screen").style.display = "none"; showOnlineExams(); 
-            } catch (e) { alert("خطأ بالاتصال!"); }
+            ansHtml += `</div>`;
+        } else if (q.type === 'tf') {
+            isCorrect = (String(studentAns) === String(q.correctAnswerTF || q.correctAnswer)); qScore = isCorrect ? q.points : 0;
+            ansHtml = `<div style="background: ${isCorrect?'#d1fae5':'#fee2e2'}; padding:15px; border-radius:12px; font-weight:bold; border:2px solid ${isCorrect?'#10b981':'#ef4444'};">إجابتك: ${studentAns} | الصحيحة: ${q.correctAnswerTF || q.correctAnswer}</div>`;
+        } else {
+            qScore = (sub.manualGrades && sub.manualGrades[q.id] !== undefined) ? sub.manualGrades[q.id] : (studentAns === q.correctAnswerText ? q.points : 0);
+            ansHtml = `<div style="background:var(--bg-color); padding:15px; border-radius:12px; border:1px solid var(--border);">إجابتك: ${studentAns || 'لم يُجب'}</div>`;
         }
+        container.innerHTML += `<div class="q-box" style="border-right: 5px solid ${qScore > 0 ? '#10b981' : '#ef4444'};"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary);">(${qScore}/${q.points})</span></div>${ansHtml}</div>`;
+    });
+};
+
+window.closeReviewScreen = function() { document.getElementById("review-exam-screen").style.display = "none"; document.getElementById("online-exams-list-screen").style.display = "block"; };
+function backToDashboard() { document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("app-layout").style.display = "block"; }
+
+function startExam(examId) {
+    currentExam = allOnlineExams.find(e => e.id === examId); if(!currentExam) return;
+    if(!confirm(`هل أنت مستعد؟ المدة: ${currentExam.duration} دقيقة.`)) return;
+    document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("active-exam-screen").style.display = "block";
+    document.getElementById("active-exam-title").innerText = currentExam.title;
+    const container = document.getElementById("exam-questions-render"); container.innerHTML = "";
+    
+    currentExam.questions.forEach((q, index) => {
+        let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary); font-size:14px;">(${q.points} درجات)</span></div>`;
+        if (q.type === 'mcq') { 
+            qHtml += `<div class="q-options">`; 
+            q.options.forEach((opt, optIndex) => { 
+                qHtml += `<label class="q-option-label"><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label>`; 
+            }); 
+            qHtml += `</div>`; 
+        } 
+        else if (q.type === 'tf') { 
+            qHtml += `<div class="q-options"><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="true"> ✔️ صح</label><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="false"> ❌ خطأ</label></div>`; 
+        } 
+        else if (q.type === 'blank') { qHtml += `<input type="text" id="ans_${q.id}" class="custom-input" placeholder="اكتب إجابتك...">`; } 
+        else if (q.type === 'essay') { qHtml += `<textarea id="ans_${q.id}" class="custom-input" rows="4" placeholder="اكتب التفاصيل..."></textarea>`; }
+        container.innerHTML += qHtml + `</div>`;
+    });
+    let timeInSeconds = currentExam.duration * 60; const timerDisplay = document.getElementById('exam-timer');
+    examTimerInterval = setInterval(() => { let m = Math.floor(timeInSeconds / 60), s = timeInSeconds % 60; timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`; if (timeInSeconds <= 0) { clearInterval(examTimerInterval); submitOnlineExam(true); } timeInSeconds--; }, 1000);
+}
+
+async function submitOnlineExam(isTimeOut = false) {
+    if (!isTimeOut && !confirm("تأكيد التسليم؟")) return; clearInterval(examTimerInterval);
+    let totalScore = 0; let studentAnswers = {};
+    currentExam.questions.forEach(q => {
+        let qScore = 0;
+        if (q.type === 'mcq') { let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`); let ansVal = selected ? parseInt(selected.value) : -1; studentAnswers[q.id] = ansVal; if (ansVal === q.correctAnswerIndex) qScore = q.points; } 
+        else if (q.type === 'tf') { let selected = document.querySelector(`input[name="ans_${q.id}"]:checked`); let ansVal = selected ? selected.value : ""; studentAnswers[q.id] = ansVal; if (ansVal === String(q.correctAnswerTF || q.correctAnswer)) qScore = q.points; } 
+        else if (q.type === 'blank') { let ansVal = document.getElementById(`ans_${q.id}`).value.trim(); studentAnswers[q.id] = ansVal; if (ansVal.toLowerCase() === (q.correctAnswerText || "").toLowerCase()) qScore = q.points; } 
+        else if (q.type === 'essay') { studentAnswers[q.id] = document.getElementById(`ans_${q.id}`).value.trim(); }
+        totalScore += qScore;
+    });
+    try {
+        // 🔥 التعديل الأهم: الحفظ في الفايربيز باستخدام كود الطالب (currentStudent.code) بدل رقم التليفون
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/onlineSubmissions/${currentExam.id}/${currentStudent.code}.json`, { 
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ score: totalScore, maxScore: currentExam.totalScore, answers: studentAnswers, timestamp: new Date().toISOString() }) 
+        });
+        alert("تم التسليم بنجاح!"); document.getElementById("active-exam-screen").style.display = "none"; showOnlineExams(); 
+    } catch (e) { alert("خطأ بالاتصال!"); }
+}
 
         // ==========================================
         // 📜 عرض تفاصيل الكورس في نافذة منبثقة
