@@ -216,9 +216,74 @@
                 <input type="text" id="parentPhone" class="custom-input" placeholder="للتأكيد الأمني">
             </div>
             <button class="btn" onclick="fetchStudentData()">دخول للمنصة 🚀</button>
+            <button class="btn btn-secondary" style="margin-top: 10px;" onclick="document.getElementById('registrationModal').style.display='flex'">📝 إنشاء حساب جديد</button>
             <div id="error-msg" style="color: var(--danger); font-weight: bold; margin-top: 15px; display: none;">البيانات غير صحيحة!</div>
         </div>
     </div>
+    <!-- نافذة إنشاء حساب جديد -->
+<div id="registrationModal" class="login-wrapper" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); z-index: 999999;">
+    <div class="login-box" style="max-height: 90vh; overflow-y: auto;">
+        <span onclick="document.getElementById('registrationModal').style.display='none'" style="float: left; font-size: 24px; cursor: pointer; color: var(--danger);">&times;</span>
+        <h2 style="color: var(--primary); margin-bottom: 20px;">حساب جديد 🎓</h2>
+        
+        <div class="input-group">
+            <label>نوع الحساب</label>
+            <select id="regType" class="custom-input" onchange="toggleRegFields()">
+                <option value="center">طالب سنتر (يحتاج موافقة)</option>
+                <option value="online">طالب أونلاين (تفعيل فوري)</option>
+            </select>
+        </div>
+
+        <!-- الحقول المشتركة -->
+        <div class="input-group"><label>الاسم ثلاثي</label><input type="text" id="regName" class="custom-input" placeholder="اسمك ثلاثي"></div>
+        <div class="input-group"><label>رقم التليفون</label><input type="text" id="regPhone" class="custom-input" placeholder="01XXXXXXXXX"></div>
+        <div class="input-group"><label>رقم ولي الأمر</label><input type="text" id="regParentPhone" class="custom-input" placeholder="01XXXXXXXXX"></div>
+        
+        <div class="input-group">
+            <label>الصف الدراسي</label>
+            <select id="regLevel" class="custom-input">
+                <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label>النوع</label>
+            <select id="regGender" class="custom-input">
+                <option value="ذكر">ذكر</option>
+                <option value="أنثى">أنثى</option>
+            </select>
+        </div>
+
+        <!-- حقول السنتر فقط -->
+        <div id="centerFields">
+            <div class="input-group"><label>السنتر / المكان</label><input type="text" id="regCenterName" class="custom-input" placeholder="اسم السنتر"></div>
+            <div class="input-group"><label>المجموعة المفضلة</label><input type="text" id="regGroupPref" class="custom-input" placeholder="مثال: سبت وثلاثاء"></div>
+        </div>
+
+        <!-- حقول الأونلاين فقط -->
+        <div id="onlineFields" style="display: none;">
+            <div class="input-group"><label>المحافظة</label><input type="text" id="regGov" class="custom-input" placeholder="محافظتك"></div>
+            <div class="input-group"><label>المدينة</label><input type="text" id="regCity" class="custom-input" placeholder="المدينة / المركز"></div>
+            <div class="input-group"><label>المدرسة</label><input type="text" id="regSchool" class="custom-input" placeholder="اسم مدرستك"></div>
+        </div>
+
+        <button class="btn" id="submitRegBtn" onclick="submitRegistration()">إرسال الطلب 🚀</button>
+        <p id="regMsg" style="margin-top: 15px; font-weight: bold;"></p>
+    </div>
+</div>
+
+<!-- نافذة النجاح للأونلاين (الأنيميشن) -->
+<div id="successOnlineModal" class="login-wrapper" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 185, 129, 0.95); z-index: 1000000;">
+    <div style="text-align: center; color: white; animation: fadeIn 0.5s ease;">
+        <div style="font-size: 80px; margin-bottom: 20px;">🎉</div>
+        <h1 style="font-size: 35px; margin-bottom: 10px;">تم التسجيل بنجاح!</h1>
+        <p style="font-size: 20px; margin-bottom: 30px;">كود الدخول الخاص بك هو:</p>
+        <div id="newOnlineCodeDisplay" style="background: white; color: var(--primary); font-size: 40px; font-weight: 900; padding: 20px 40px; border-radius: 16px; letter-spacing: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);"></div>
+        <button class="btn" style="background: var(--secondary); margin-top: 30px; width: auto; padding: 15px 40px;" onclick="location.reload()">الذهاب لتسجيل الدخول ➡</button>
+    </div>
+</div>
 
     <div id="app-layout">
         <header class="topbar">
@@ -540,19 +605,71 @@
             } catch(err) { return false; }
         };
 
+        // ==========================================
+        // 🌟 جلب بيانات المستر عند فتح الرابط فوراً
+        // ==========================================
+        async function loadTeacherInfoInitial() {
+            if (!globalTeacherId) return;
+            try {
+                let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/settings.json`);
+                let settings = await res.json();
+                
+                if (settings) {
+                    let tName = settings.teacherName || "الإدارة";
+                    let headerName = document.getElementById("teacher-name-header");
+                    if(headerName) headerName.innerText = `مستر ${tName}`;
+
+                    const contactBoxHeader = document.getElementById("teacher-contact-box-header");
+                    const contactBoxOld = document.getElementById("teacher-contact-box");
+
+                    let phonesHtmlOld = "";
+                    let phonesHtmlNew = "";
+
+                    if (settings.phoneNumbers && settings.phoneNumbers.trim() !== "") {
+                        let phones = settings.phoneNumbers.split(',');
+                        
+                        phonesHtmlOld = `<br><span style="color: var(--text-muted); font-size: 13px;">تواصل معنا:</span> ` + 
+                                        phones.map(p => `<a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" style="margin: 0 5px; color: var(--primary); text-decoration: none; font-weight: bold;">${p.trim()}</a>`).join(' | ');
+                        
+                        phonesHtmlNew = phones.map(p => `
+                            <a href="https://wa.me/20${p.trim().replace(/^0+/, '')}" target="_blank" 
+                               style="background: linear-gradient(45deg, #25D366, #128C7E); color: white; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); transition: transform 0.3s;"
+                               onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                               <span style="font-size: 16px;">💬</span> ${p.trim()}
+                            </a>
+                        `).join('');
+                    }
+
+                    if (contactBoxOld) contactBoxOld.innerHTML = `👨‍🏫 مع تحيات مستر: ${tName} ${phonesHtmlOld}`;
+                    if (contactBoxHeader) contactBoxHeader.innerHTML = phonesHtmlNew;
+                }
+            } catch (e) {
+                console.log("Error loading teacher info", e);
+            }
+        }
+
+        // ==========================================
+        // تشغيل الوظائف عند تحميل الصفحة
+        // ==========================================
         window.onload = function() {
             const savedCode = localStorage.getItem("edu_student_code");
             const savedPhone = localStorage.getItem("edu_parent_phone");
             const urlParams = new URLSearchParams(window.location.search);
             globalTeacherId = urlParams.get('id') || localStorage.getItem("edu_teacher_id");
 
+            // جلب بيانات المدرس فوراً لو الـ ID موجود في الرابط
+            if (globalTeacherId) {
+                loadTeacherInfoInitial();
+            }
+
+            // الدخول التلقائي لو الطالب مسجل قبل كده
             if (savedCode && savedPhone && globalTeacherId) {
                 document.getElementById("studentCode").value = savedCode;
                 document.getElementById("parentPhone").value = savedPhone;
                 fetchStudentData(true); 
             }
         };
-
+        
         function logoutStudent() {
             localStorage.removeItem("edu_student_code");
             localStorage.removeItem("edu_parent_phone");
@@ -1370,7 +1487,95 @@ async function submitOnlineExam(isTimeOut = false) {
                 }
             } catch (e) { alert("حدث خطأ!"); }
         }
+        
+        // تبديل الخانات بين السنتر والأونلاين
+function toggleRegFields() {
+    let type = document.getElementById("regType").value;
+    document.getElementById("centerFields").style.display = type === 'center' ? 'block' : 'none';
+    document.getElementById("onlineFields").style.display = type === 'online' ? 'block' : 'none';
+    document.getElementById("submitRegBtn").innerText = type === 'center' ? 'إرسال طلب الانضمام 🚀' : 'إنشاء حساب أونلاين 🚀';
+}
 
+// إرسال البيانات للفايربيز
+async function submitRegistration() {
+    // التأكد من جلب كود المدرس من الرابط
+    if (!globalTeacherId) globalTeacherId = new URLSearchParams(window.location.search).get('id');
+    if (!globalTeacherId) return alert("خطأ: رابط المنصة غير مكتمل (رقم المدرس مفقود).");
+
+    let type = document.getElementById("regType").value;
+    let studentData = {
+        name: document.getElementById("regName").value.trim(),
+        phone: document.getElementById("regPhone").value.trim() || "0",
+        parentPhone: document.getElementById("regParentPhone").value.trim() || "0",
+        level: document.getElementById("regLevel").value,
+        gender: document.getElementById("regGender").value,
+        timestamp: new Date().toISOString(),
+        regType: type
+    };
+
+    if (!studentData.name || studentData.phone === "0" || studentData.parentPhone === "0") {
+        return alert("يرجى ملء الاسم وأرقام الهواتف!");
+    }
+
+    let btn = document.getElementById("submitRegBtn");
+    let msgEl = document.getElementById("regMsg");
+    btn.innerText = "جاري الإرسال... ⏳"; btn.disabled = true;
+
+    try {
+        if (type === 'center') {
+            // إضافة بيانات السنتر
+            studentData.centerName = document.getElementById("regCenterName").value.trim();
+            studentData.groupPref = document.getElementById("regGroupPref").value.trim();
+            studentData.status = "pending";
+
+            // إرسال لجدول الطلبات
+            await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/join_requests/${Date.now()}.json`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(studentData)
+            });
+
+            msgEl.style.color = "var(--success)";
+            msgEl.innerText = "✅ تم إرسال طلبك بنجاح! في انتظار موافقة الإدارة.";
+            setTimeout(() => { document.getElementById('registrationModal').style.display='none'; msgEl.innerText = ""; }, 3000);
+
+        } else {
+            // إضافة بيانات الأونلاين
+            studentData.gov = document.getElementById("regGov").value.trim();
+            studentData.city = document.getElementById("regCity").value.trim();
+            studentData.school = document.getElementById("regSchool").value.trim();
+            studentData.group = "أونلاين"; // مجموعة افتراضية
+            studentData.behaviorPoints = 0;
+
+            // جلب الداتا عشان نولد كود جديد (الرقم اللي بعد آخر كود)
+            let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students.json`);
+            let studentsArray = await res.json() || [];
+            studentsArray = Array.isArray(studentsArray) ? studentsArray : Object.values(studentsArray).filter(s => s !== null);
+            
+            let maxId = 0;
+            studentsArray.forEach(s => { let num = parseInt(s.code, 10); if (!isNaN(num) && num > maxId) maxId = num; });
+            studentData.code = (maxId + 1).toString();
+
+            // حفظ الطالب مباشرة في جدول الطلاب
+            studentsArray.push(studentData);
+            await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${globalTeacherId}/data/students.json`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(studentsArray)
+            });
+
+            // إظهار شاشة النجاح والأنيميشن
+            document.getElementById('registrationModal').style.display = 'none';
+            document.getElementById('newOnlineCodeDisplay').innerText = studentData.code;
+            document.getElementById('successOnlineModal').style.display = 'flex';
+            
+            // تعبئة خانات الدخول أوتوماتيك
+            document.getElementById("studentCode").value = studentData.code;
+            document.getElementById("parentPhone").value = studentData.parentPhone;
+        }
+    } catch(e) {
+        msgEl.style.color = "var(--danger)";
+        msgEl.innerText = "❌ حدث خطأ أثناء الاتصال بالإنترنت!";
+    }
+    
+    btn.innerText = type === 'center' ? 'إرسال طلب الانضمام 🚀' : 'إنشاء حساب أونلاين 🚀'; btn.disabled = false;
+}
 
         
     </script>
