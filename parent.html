@@ -879,7 +879,7 @@ async function fetchStudentData(isAutoLogin = false) {
         safeClassSessions.filter(s => s && s.group === currentStudent.group).reverse().forEach(s => {
             hasAtt = true;
             let stat = (s.attendance || {})[currentStudent.phone]; 
-            let badge = stat === 'present' ? `<span class="badge badge-present">حاضر ✓</span>` : (stat === 'absent' ? `<span class="badge badge-absent">غائب ✗</span>` : `<span style="color:var(--text-muted)">لم يسجل</span>`);
+            let badge = stat === 'present' ? `<span class="badge badge-present">حاضر ✓</span>` : stat === 'late' ? `<span class="badge" style="background:#fef3c7; color:#d97706;">متأخر ⏳</span>` : stat === 'absent' ? `<span class="badge badge-absent">غائب ✗</span>` : `<span style="color:var(--text-muted); font-weight:bold;">لم يسجل</span>`;
             attHtml += `<tr><td>${s.date}</td><td>${s.topic || 'حصة عادية'}</td><td>${badge}</td></tr>`;
         });
         if(!hasAtt) attHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد حصص مسجلة.</td></tr>`;
@@ -1576,6 +1576,128 @@ async function submitRegistration() {
     
     btn.innerText = type === 'center' ? 'إرسال طلب الانضمام 🚀' : 'إنشاء حساب أونلاين 🚀'; btn.disabled = false;
 }
+
+
+ // ==========================================
+// 🔙 نظام التنقل الذكي وزر الرجوع (History API) - خاص بمنصة الطالب
+// ==========================================
+
+window.isHistoryNavigating = false;
+
+// 1. تسجيل الرئيسية كأول نقطة عند فتح المنصة
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (document.getElementById("app-layout").style.display === "block") {
+            history.replaceState({ type: 'tab', id: 'tab-home' }, '', '#tab-home');
+        }
+    }, 1500);
+});
+
+// 2. تحديث دالة switchTab بالكامل عشان تشتغل مع زرار الرجوع بدون مشاكل
+window.switchTab = function(tabId, fromHistory = false) {
+    // إخفاء كل التابات
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    
+    // إظهار التاب المطلوب
+    let targetTab = document.getElementById(tabId);
+    if(targetTab) targetTab.classList.add('active');
+    
+    // تفعيل الزرار الجانبي (Sidebar) الخاص بيه
+    document.querySelectorAll('.nav-item').forEach(nav => {
+        if (nav.getAttribute('onclick') && nav.getAttribute('onclick').includes(tabId)) {
+            nav.classList.add('active');
+        }
+    });
+
+    // تسجيل في الهيستوري
+    if (!fromHistory && !window.isHistoryNavigating) {
+        history.pushState({ type: 'tab', id: tabId }, '', `#${tabId}`);
+    }
+};
+
+// 3. تتبع شاشة الامتحانات الإلكترونية المباشرة
+const originalShowOnlineExams = window.showOnlineExams;
+window.showOnlineExams = async function(isRenderOnly = false, fromHistory = false) {
+    if (originalShowOnlineExams) await originalShowOnlineExams(isRenderOnly);
+    if (!isRenderOnly && !fromHistory && !window.isHistoryNavigating) {
+        history.pushState({ type: 'screen', id: 'online-exams' }, '', '#online-exams');
+    }
+};
+
+const originalBackToDashboard = window.backToDashboard;
+window.backToDashboard = function(fromHistory = false) {
+    if (originalBackToDashboard) originalBackToDashboard();
+    if (!fromHistory && !window.isHistoryNavigating) {
+        history.pushState({ type: 'tab', id: 'tab-exams' }, '', '#tab-exams');
+    }
+};
+
+// 4. تتبع مشغل المحاضرات (الفيديو DRM)
+const originalOpenCoursePlayer = window.openCoursePlayer;
+window.openCoursePlayer = function(courseId, startVideoIndex = 0, fromHistory = false) {
+    if (originalOpenCoursePlayer) originalOpenCoursePlayer(courseId, startVideoIndex);
+    if (!fromHistory && !window.isHistoryNavigating) {
+        history.pushState({ type: 'player', id: courseId }, '', `#player-${courseId}`);
+    }
+};
+
+const originalCloseCoursePlayer = window.closeCoursePlayer;
+window.closeCoursePlayer = function(fromHistory = false) {
+    if (originalCloseCoursePlayer) originalCloseCoursePlayer();
+    if (!fromHistory && !window.isHistoryNavigating) {
+        history.pushState({ type: 'tab', id: 'tab-lectures' }, '', '#tab-lectures');
+    }
+};
+
+// 5. صائد زرار الرجوع 🔙 في الموبايل والمتصفح
+window.addEventListener('popstate', function(event) {
+    window.isHistoryNavigating = true;
+    const state = event.state;
+
+    // قفل أي Popups أو Modals مفتوحة
+    let detailsModal = document.getElementById('studentCourseDetailsModal');
+    if(detailsModal) detailsModal.style.display = 'none';
+
+    if (state) {
+        if (state.type === 'tab') {
+            // لو بيرجع لتاب عادي، نقفل أي شاشة كاملة كانت مفتوحة
+            let onlineExams = document.getElementById('online-exams-list-screen');
+            let activeExam = document.getElementById('active-exam-screen');
+            let reviewExam = document.getElementById('review-exam-screen');
+            let courseScreen = document.getElementById('protected-course-screen');
+            let appLayout = document.getElementById('app-layout');
+
+            if(onlineExams) onlineExams.style.display = 'none';
+            if(activeExam) activeExam.style.display = 'none';
+            if(reviewExam) reviewExam.style.display = 'none';
+            if(courseScreen) courseScreen.style.display = 'none';
+            if(appLayout) appLayout.style.display = 'block';
+
+            // استدعاء التاب المطلوب
+            window.switchTab(state.id, true);
+        } 
+        else if (state.type === 'screen' && state.id === 'online-exams') {
+            window.showOnlineExams(false, true);
+        }
+        else if (state.type === 'player') {
+            window.openCoursePlayer(state.id, 0, true);
+        }
+    } else {
+        // لو الهيستوري فاضي نرجعه للرئيسية كأمان
+        let onlineExams = document.getElementById('online-exams-list-screen');
+        let courseScreen = document.getElementById('protected-course-screen');
+        let appLayout = document.getElementById('app-layout');
+
+        if(onlineExams) onlineExams.style.display = 'none';
+        if(courseScreen) courseScreen.style.display = 'none';
+        if(appLayout) appLayout.style.display = 'block';
+
+        window.switchTab('tab-home', true);
+    }
+
+    setTimeout(() => { window.isHistoryNavigating = false; }, 100);
+});
 
         
     </script>
