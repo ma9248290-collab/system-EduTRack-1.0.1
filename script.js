@@ -1325,80 +1325,150 @@ window.updateQpAmount = function() {
     document.getElementById("qpAmount").value = type === 'session' ? sessionFee : monthFee;
 };
 
-// دوال شاشة الدفع السريع المحدثة
+// ==========================================
+// نافذة الدفع السريع المحدثة (تقرأ الشهور والإعفاء بدقة)
+// ==========================================
 window.openQuickPaymentModal = function(student) {
     const session = classSessions.find(s => s.id === currentActiveSessionId);
     if(!session) return;
 
     const groupObj = groups.find(g => g.name === session.group) || {};
-    const groupPayType = groupObj.payType || 'session';
     const groupPrice = groupObj.price || 0;
 
-    // لو المدرس مخلي السعر 0، مفيش داعي نطلع شاشة الدفع أصلاً
+    // لو المدرس مخلي السعر 0، مفيش داعي نطلع شاشة الدفع
     if(groupPrice === 0) return;
 
     document.getElementById("qpStudentName").innerText = student.name;
     document.getElementById("qpStudentCode").value = student.code;
     
-    // هنخفي الـ Select عشان نوع الدفع بقى ثابت من إعدادات المجموعة
-    document.getElementById("qpPayType").parentElement.style.display = "none";
-    document.getElementById("qpPayType").value = groupPayType;
+    // إخفاء الـ Select القديم لأننا استبدلناه بالأزرار الأربعة
+    const payTypeSelect = document.getElementById("qpPayType");
+    if(payTypeSelect && payTypeSelect.parentElement) {
+        payTypeSelect.parentElement.style.display = "none";
+    }
     document.getElementById("qpAmount").value = groupPrice;
     
     let statusEl = document.getElementById("qpStudentStatus");
     const recordKey = `fin_session_${currentActiveSessionId}`;
-    let alreadyPaid = financeRecords[recordKey] && financeRecords[recordKey][student.code] && financeRecords[recordKey][student.code].status === 'paid';
+    
+    // فحص حالة الدفع للحصة الحالية بالذات
+    let studentPayment = financeRecords[recordKey] && financeRecords[recordKey][student.code];
+    let payStatus = 'none';
+    if (typeof studentPayment === 'object' && studentPayment !== null) {
+        payStatus = studentPayment.status;
+    } else if (studentPayment === 'paid') {
+        payStatus = 'paid';
+    }
 
-    if (alreadyPaid) {
-        statusEl.innerText = "✅ تم الدفع مسبقاً لهذه الحصة/الشهر";
+    // فحص حالة الاشتراك الشهري (بناءً على تاريخ الحصة المفتوحة)
+    let monthlyStatus = getMonthlyStatus(student.code, session.date);
+
+    // --- التمييز الدقيق بين حالات الدفع ---
+    if (payStatus === 'exempt') {
+        statusEl.innerHTML = "🎁 <b>تم إعفاء الطالب مسبقاً من الدفع</b>";
+        statusEl.style.color = "#64748b"; 
+    } 
+    else if (payStatus === 'unpaid') {
+        statusEl.innerHTML = "❌ <b>مسجل كـ (لم يدفع) - عليه فلوس</b>";
+        statusEl.style.color = "var(--danger-color)";
+    } 
+    else if (monthlyStatus.isCovered || payStatus === 'month') {
+        // لو دافع بالشهر
+        statusEl.innerHTML = `✅ <b>تم الدفع مسبقاً (اشتراك ${monthlyStatus.monthName} ساري)</b>`;
         statusEl.style.color = "var(--success-color)";
-    } else if (groupPayType === 'month') {
-        let monthlyStatus = getMonthlyStatus(student.code, session.date);
-        if (monthlyStatus.isCovered) {
-            statusEl.innerText = `✅ اشتراك ${monthlyStatus.monthName} ساري`;
-            statusEl.style.color = "var(--success-color)";
-        } else {
-            statusEl.innerText = `🔴 محتاج يجدد اشتراك ${monthlyStatus.monthName}`;
-            statusEl.style.color = "var(--danger-color)";
-        }
-    } else {
-        statusEl.innerText = `⚠️ لم يدفع حق الحصة`;
+    }
+    else if (payStatus === 'paid') {
+        // لو دافع الحصة دي بس
+        statusEl.innerHTML = `✅ <b>تم دفع حق هذه الحصة مسبقاً</b>`;
+        statusEl.style.color = "var(--success-color)";
+    } 
+    else {
+        // الحالة الافتراضية لو لسه مدفعش
+        statusEl.innerHTML = `⚠️ <b>لم يتم التحصيل بعد</b>`;
         statusEl.style.color = "#f59e0b";
     }
 
     openModal("quickPaymentModal");
 };
 
-window.confirmQuickPayment = function() {
+// ==========================================
+// دالة معالجة الأزرار الأربعة وحفظها في الخزنة
+// ==========================================
+window.processQuickPayment = function(paymentStatus) {
     let code = document.getElementById("qpStudentCode").value;
     const session = classSessions.find(s => s.id === currentActiveSessionId);
     
     const groupObj = groups.find(g => g.name === session.group) || {};
-    const type = groupObj.payType || 'session';
-    const amount = groupObj.price || 0;
+    const groupPrice = parseFloat(document.getElementById("qpAmount").value) || groupObj.price || 0;
     
     const recordKey = `fin_session_${currentActiveSessionId}`;
     if (!financeRecords[recordKey]) financeRecords[recordKey] = {};
     
-    financeRecords[recordKey][code] = { status: 'paid', type: type, amount: amount, date: new Date().toISOString() };
-    
-    if (type === 'month') {
-        const monthKey = session.date.substring(0, 7);
+    let finalAmount = 0;
+    let type = 'session';
+    let toastMsg = "";
+
+    // 1. الدفع بالحصة
+    if (paymentStatus === 'paid') {
+        finalAmount = groupPrice;
+        type = 'session';
+        toastMsg = `تم تحصيل ${finalAmount} ج.م بنجاح! 💸`;
+    } 
+    // 2. الدفع بالشهر (يحفظ الشهر بناءً على تاريخ الحصة)
+    else if (paymentStatus === 'month') {
+        finalAmount = groupPrice; 
+        type = 'month';
+        const monthKey = session.date.substring(0, 7); // استخراج الشهر والسنة
         if(!monthlyPayments[code]) monthlyPayments[code] = {};
-        monthlyPayments[code][monthKey] = true;
+        monthlyPayments[code][monthKey] = true; // تسجيل أن هذا الشهر مدفوع
         localStorage.setItem("monthlyPayments", JSON.stringify(monthlyPayments));
+        toastMsg = `تم تجديد اشتراك ${getArabicMonthName(monthKey)} بنجاح! 📅`;
+    } 
+    // 3. الإعفاء المجاني
+    else if (paymentStatus === 'exempt') {
+        finalAmount = 0;
+        type = 'session';
+        toastMsg = "تم إعفاء الطالب من الدفع 🎁";
+    } 
+    // 4. لم يدفع
+    else if (paymentStatus === 'unpaid') {
+        finalAmount = 0;
+        type = 'session';
+        toastMsg = "تم تسجيل الطالب كـ (لم يدفع) ❌";
     }
+
+    // حفظ العملية في سجل الخزنة لهذه الحصة
+    financeRecords[recordKey][code] = { 
+        status: paymentStatus, 
+        type: type, 
+        amount: finalAmount, 
+        date: new Date().toISOString() 
+    };
     
+    // تحديث قاعدة البيانات
     localStorage.setItem("financeRecords", JSON.stringify(financeRecords));
     
+    // تحديث الجدول ليعكس الحالة الجديدة فوراً
     if (typeof renderFinanceTable === "function") renderFinanceTable();
-    showToast(`تم تحصيل ${amount} ج.م بنجاح! 💸`);
+    
+    showToast(toastMsg);
     closeModal("quickPaymentModal");
     
+    // إرجاع المؤشر لخانة الباركود تلقائياً لرصد الطالب التالي بسرعة
     setTimeout(() => document.getElementById('attendanceBarcode').focus(), 100);
 };
 
-// تخطي بدون دفع
+// إبقاء دالة التخطي القديمة تعمل لو ضغط على زر (X) للإغلاق
+window.skipQuickPayment = function() {
+    closeModal("quickPaymentModal");
+    setTimeout(() => document.getElementById('attendanceBarcode').focus(), 100);
+};
+
+
+
+
+
+// للإبقاء على دالة التخطي القديمة تعمل لو ضغط على زر (X) للإغلاق
 window.skipQuickPayment = function() {
     closeModal("quickPaymentModal");
     setTimeout(() => document.getElementById('attendanceBarcode').focus(), 100);
@@ -1590,7 +1660,7 @@ function getArabicMonthName(yyyy_mm) {
     return months[m - 1] + " " + yyyy_mm.split('-')[0];
 }
 
-// دالة عرض جدول الماليات
+// دالة عرض جدول الماليات (المحدثة بـ 4 حالات للدفع)
 window.renderFinanceTable = function() {
     const sessionId = document.getElementById("financeSessionSelect").value;
     const tbody = document.getElementById("finance-list");
@@ -1630,16 +1700,19 @@ window.renderFinanceTable = function() {
         const monthlyStatus = getMonthlyStatus(student.code, session.date);
         let studentPayment = financeRecords[recordKey][student.code];
         
+        let payStatus = 'none'; // الحالة الافتراضية
         let isSessionPaid = false, payAmount = 0;
+        
         if (typeof studentPayment === 'object' && studentPayment !== null) {
-            isSessionPaid = studentPayment.status === 'paid';
+            payStatus = studentPayment.status;
+            isSessionPaid = (payStatus === 'paid' || payStatus === 'month');
             payAmount = studentPayment.amount || 0;
         } else if (studentPayment === 'paid') { // دعم السجلات القديمة
-            isSessionPaid = true; payAmount = groupPrice;
+            isSessionPaid = true; payAmount = groupPrice; payStatus = 'paid';
         }
 
         let isCoveredByMonthly = groupPayType === 'month' && monthlyStatus.isCovered;
-        let subscriptionNeedsRenewal = groupPayType === 'month' && !monthlyStatus.isCovered && !isSessionPaid;
+        let subscriptionNeedsRenewal = groupPayType === 'month' && !monthlyStatus.isCovered && !isSessionPaid && payStatus !== 'exempt';
 
         if (subscriptionNeedsRenewal) studentsNeedPayment++;
         if (isCoveredByMonthly) studentsCovered++;
@@ -1658,16 +1731,27 @@ window.renderFinanceTable = function() {
             subBadge = `<div style="font-size: 11px; color: var(--danger-color); margin-top: 3px; font-weight: bold;">🔴 غير مسدد لاشتراك ${monthlyStatus.monthName}</div>`;
         }
 
+        // --- تحديد الأزرار والحالة في الجدول المالي ---
         let actionBtn = "";
-        if (isSessionPaid) {
+        if (payStatus === 'paid' || payStatus === 'month') {
             actionBtn = `<div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end;">
                 <span style="color: var(--success-color); font-weight: bold; font-size: 13px;">مُحصل (${payAmount} ج)</span>
                 <button class="icon-btn danger" style="padding: 5px 10px;" onclick="cancelPayment('${recordKey}', '${student.code}', '${session.date}')" title="إلغاء التحصيل">إلغاء ❌</button>
             </div>`;
+        } else if (payStatus === 'exempt') {
+            actionBtn = `<div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end;">
+                <span style="color: var(--text-muted); font-weight: bold; font-size: 13px;">معفى 🎁</span>
+                <button class="icon-btn danger" style="padding: 5px 10px;" onclick="cancelPayment('${recordKey}', '${student.code}', '${session.date}')" title="إلغاء الإعفاء">إلغاء ❌</button>
+            </div>`;
+        } else if (payStatus === 'unpaid') {
+            actionBtn = `<div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end;">
+                <span style="color: var(--danger-color); font-weight: bold; font-size: 13px;">لم يدفع ❌</span>
+                <button class="save-btn" style="background: var(--primary-color); padding: 5px 10px; width: auto; margin:0;" onclick="confirmPayment('${recordKey}', '${student.code}', '${session.date}', ${groupPrice}, '${groupPayType}')">تحصيل الآن 💰</button>
+            </div>`;
         } else if (isCoveredByMonthly) {
             actionBtn = `<span style="color: var(--success-color); font-weight: bold; font-size: 13px;">✅ مغطى بالشهر</span>`;
         } else {
-            // لو السعر 0 (يعني المدرس مش مهتم بالحسابات)، مانطلعش زراير دفع
+            // الحالة الافتراضية لو لسه متعملش معاه أي أكشن (زرار الدفع العادي)
             if (groupPrice > 0) {
                 let btnText = subscriptionNeedsRenewal ? `تجديد ${monthlyStatus.monthName} 💰` : "استلام نقدية 💰";
                 let btnColor = subscriptionNeedsRenewal ? "var(--danger-color)" : "var(--primary-color)";
@@ -1678,8 +1762,11 @@ window.renderFinanceTable = function() {
             }
         }
 
+        // --- تلوين خلفية الصف ---
         let rowBg = '';
         if (isSessionPaid) rowBg = 'background: rgba(16, 185, 129, 0.05);';
+        else if (payStatus === 'exempt') rowBg = 'background: rgba(100, 116, 139, 0.05);';
+        else if (payStatus === 'unpaid') rowBg = 'background: rgba(239, 68, 68, 0.05);';
         else if (isCoveredByMonthly) rowBg = 'background: rgba(16, 185, 129, 0.02);';
         else if (subscriptionNeedsRenewal) rowBg = 'background: rgba(239, 68, 68, 0.08);';
 
@@ -1695,7 +1782,7 @@ window.renderFinanceTable = function() {
 
     renderSessionExpensesList(sessionId);
     const totalExtraExpenses = expenses.filter(e => e.sessionId === sessionId).reduce((sum, e) => sum + parseFloat(e.amount), 0);
-    const netProfit = totalIncome - totalExtraExpenses; // تم إزالة خصم السنتر لأنه بيتحسب مانيوال في المصروفات الإضافية
+    const netProfit = totalIncome - totalExtraExpenses; 
 
     document.getElementById("total-income").innerText = `${totalIncome} ج.م`;
     document.getElementById("income-details").innerText = groupPayType === 'month' ? `تجديدات الشهر: ${incomeFromMonths} ج` : `تحصيل الحصة: ${incomeFromSessions} ج`;

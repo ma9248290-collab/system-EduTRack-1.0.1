@@ -2226,7 +2226,7 @@
 
     <!-- نافذة الدفع السريع بعد الباركود -->
 <div id="quickPaymentModal" class="modal" style="z-index: 100000;">
-    <div class="modal-content" style="width: 400px; border-top: 5px solid var(--success-color);">
+    <div class="modal-content" style="width: 450px; border-top: 5px solid var(--success-color);">
         <span class="close-btn" onclick="skipQuickPayment()">&times;</span>
         <h2 style="color: var(--success-color); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 24px;">💰</span> الدفع والخزنة
@@ -2238,25 +2238,28 @@
         </div>
         <input type="hidden" id="qpStudentCode">
         
-        <div class="input-group">
+        <div class="input-group" style="display: none;">
             <label>نوع الدفع:</label>
-            <select id="qpPayType" class="custom-input" onchange="updateQpAmount()" style="font-weight: bold;">
+            <select id="qpPayType" class="custom-input">
                 <option value="session">دفع حصة</option>
                 <option value="month">اشتراك شهري</option>
             </select>
         </div>
+        
         <div class="input-group">
-            <label>المبلغ (ج.م):</label>
+            <label>المبلغ المستحق (ج.م):</label>
             <input type="number" id="qpAmount" class="custom-input" style="font-weight: bold; font-size: 20px; color: var(--success-color); text-align: center;">
         </div>
         
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="save-btn" style="flex: 2; margin: 0; background: var(--success-color); font-size: 16px;" onclick="confirmQuickPayment()">تأكيد التحصيل ✅</button>
-            <button class="theme-btn" style="flex: 1; margin: 0; border-color: var(--danger-color); color: var(--danger-color); font-weight: bold;" onclick="skipQuickPayment()">تخطي ❌</button>
+        <!-- الأزرار الجديدة الأربعة -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+            <button class="save-btn" style="margin: 0; background: var(--success-color); font-size: 15px;" onclick="processQuickPayment('paid')">✅ دفع الحصة</button>
+            <button class="save-btn" style="margin: 0; background: var(--exam-color); font-size: 15px;" onclick="processQuickPayment('month')">📅 دفع بالشهر</button>
+            <button class="save-btn" style="margin: 0; background: #64748b; font-size: 15px;" onclick="processQuickPayment('exempt')">🎁 إعفاء (مجاني)</button>
+            <button class="theme-btn" style="margin: 0; border-color: var(--danger-color); color: var(--danger-color); font-weight: bold; font-size: 15px;" onclick="processQuickPayment('unpaid')">❌ لم يدفع (عليه فلوس)</button>
         </div>
     </div>
 </div>
-
     <!-- نافذة الطالب في مجموعة مختلفة (تعويض أو نقل) -->
     <div id="wrongGroupModal" class="modal" style="z-index: 100000;">
         <div class="modal-content" style="width: 450px; border-top: 5px solid #f59e0b;">
