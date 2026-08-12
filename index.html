@@ -322,7 +322,16 @@
                         <div class="header-actions"><button class="add-btn exam-btn" onclick="quickExamForGroup()">⚡ امتحان مفاجئ</button><button class="add-btn" onclick="openAddStudentToGroupModal()">+ إضافة طالب هنا</button></div>
                     </div>
                     <div class="table-container">
-                        <table class="students-table"><thead><tr><th>الكود</th><th>اسم الطالب</th><th>رقم ولي الأمر</th><th>إجراء</th></tr></thead><tbody id="group-students-list"></tbody></table>
+                        <table class="students-table"><thead>
+        <tr>
+            <th onclick="sortGroupTable('code')" style="cursor: pointer; user-select: none; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'" title="اضغط لترتيب الأكواد">الكود ↕️</th>
+            <th onclick="sortGroupTable('name')" style="cursor: pointer; user-select: none; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'" title="اضغط للترتيب الأبجدي">اسم الطالب والمسار ↕️</th>
+            <th style="text-align: center;">آخر 4 حصص</th>
+            <th>رقم ولي الأمر</th>
+            <th>إجراء</th>
+        </tr>
+    </thead>
+    <tbody id="group-students-list"></tbody></table>
                     </div>
                 </section>
             </div>
@@ -1756,11 +1765,15 @@
                             <option value="month">بالشهر (تجديد تلقائي بداية كل شهر)</option>
                         </select>
                     </div>
-                    <div class="input-group full-width" style="margin-bottom: 5px;">
+                    <div class="input-group" style="margin-bottom: 5px;">
                         <label>سعر الحصة / الشهر (ج.م)</label>
                         <input type="number" id="newGroupPrice" class="custom-input" placeholder="مثال: 50" min="0">
                     </div>
-                    <small style="color: var(--text-muted); font-weight: bold; grid-column: span 2;">* ملاحظة: لو مش بتتابع الحسابات على السيستم، سيب الخانات دي زي ما هي.</small>
+                    <div class="input-group" style="margin-bottom: 5px;">
+                        <label>الحد الأقصى للطلاب <span style="color:var(--danger-color); font-size:11px;">(اكتب 0 لعدد مفتوح)</span></label>
+                        <input type="number" id="newGroupCapacity" class="custom-input" placeholder="مثال: 100" min="0" value="0">
+                    </div>
+                    <small style="color: var(--text-muted); font-weight: bold; grid-column: span 2;">* ملاحظة: لو مش بتتابع الحسابات، سيب خانة السعر كما هي.</small>
                 </div>
                 
                 <button type="submit" class="save-btn">حفظ المجموعة</button>
@@ -1792,9 +1805,13 @@
                             <option value="month">بالشهر</option>
                         </select>
                     </div>
-                    <div class="input-group full-width" style="margin-bottom: 5px;">
+                    <div class="input-group" style="margin-bottom: 5px;">
                         <label>السعر (ج.م)</label>
                         <input type="number" id="editGroupPrice" class="custom-input" min="0">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 5px;">
+                        <label>الحد الأقصى للطلاب <span style="color:var(--danger-color); font-size:11px;">(0 لعدد مفتوح)</span></label>
+                        <input type="number" id="editGroupCapacity" class="custom-input" min="0">
                     </div>
                 </div>
                 
