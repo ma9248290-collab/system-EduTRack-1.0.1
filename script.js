@@ -2016,8 +2016,80 @@ function generateLeaderboard() {
 // ==========================================
 // 16. الإكسيل (Import / Export)
 // ==========================================
-function exportData() { const data = { students, groups, classSessions, exams, homeworks, financeRecords, expenses, schedule }; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `EduTrack_Backup_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); showToast("تم تحميل النسخة الاحتياطية بنجاح"); }
-function importData(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const imp = JSON.parse(e.target.result); if(imp.students && imp.groups) { localStorage.setItem("students", JSON.stringify(imp.students)); localStorage.setItem("groups", JSON.stringify(imp.groups)); localStorage.setItem("classSessions", JSON.stringify(imp.classSessions || [])); localStorage.setItem("exams", JSON.stringify(imp.exams || [])); localStorage.setItem("homeworks", JSON.stringify(imp.homeworks || [])); localStorage.setItem("financeRecords", JSON.stringify(imp.financeRecords || {})); localStorage.setItem("expenses", JSON.stringify(imp.expenses || [])); localStorage.setItem("schedule", JSON.stringify(imp.schedule || [])); alert("تم الاسترجاع بنجاح!"); location.reload(); } } catch(err) { showToast("ملف غير صالح!", "error"); } }; reader.readAsText(file); }
+// ==========================================
+// 16. الإكسيل (Import / Export) - النسخة الشاملة
+// ==========================================
+
+// دالة التصدير (تحميل النسخة الاحتياطية)
+window.exportData = function() { 
+    const data = { 
+        students: students || [], 
+        groups: groups || [], 
+        classSessions: classSessions || [], 
+        exams: exams || [], 
+        homeworks: homeworks || [], 
+        financeRecords: financeRecords || {}, 
+        expenses: expenses || [], 
+        schedule: schedule || [],
+        // 👇 البيانات الإضافية لضمان نسخة شاملة 100% 👇
+        books: books || [], 
+        onlineExams: typeof onlineExams !== 'undefined' ? onlineExams : (JSON.parse(localStorage.getItem("onlineExams")) || []),
+        monthlyPayments: typeof monthlyPayments !== 'undefined' ? monthlyPayments : (JSON.parse(localStorage.getItem("monthlyPayments")) || {})
+    }; 
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); 
+    const url = URL.createObjectURL(blob); 
+    const a = document.createElement("a"); 
+    a.href = url; 
+    // تسمية الملف بالتاريخ لسهولة الرجوع إليه
+    a.download = `EduTrack_Full_Backup_${new Date().toISOString().split('T')[0]}.json`; 
+    a.click(); 
+    URL.revokeObjectURL(url); 
+    
+    if(typeof showToast === 'function') {
+        showToast("تم تحميل النسخة الاحتياطية الشاملة بنجاح ✅"); 
+    } else {
+        alert("تم تحميل النسخة الاحتياطية بنجاح");
+    }
+};
+
+// دالة الاسترجاع (استيراد النسخة الاحتياطية)
+window.importData = function(event) { 
+    const file = event.target.files[0]; 
+    if(!file) return; 
+    
+    const reader = new FileReader(); 
+    reader.onload = function(e) { 
+        try { 
+            const imp = JSON.parse(e.target.result); 
+            // التحقق من وجود البيانات الأساسية لضمان سلامة الملف
+            if(imp.students && imp.groups) { 
+                localStorage.setItem("students", JSON.stringify(imp.students)); 
+                localStorage.setItem("groups", JSON.stringify(imp.groups)); 
+                localStorage.setItem("classSessions", JSON.stringify(imp.classSessions || [])); 
+                localStorage.setItem("exams", JSON.stringify(imp.exams || [])); 
+                localStorage.setItem("homeworks", JSON.stringify(imp.homeworks || [])); 
+                localStorage.setItem("financeRecords", JSON.stringify(imp.financeRecords || {})); 
+                localStorage.setItem("expenses", JSON.stringify(imp.expenses || [])); 
+                localStorage.setItem("schedule", JSON.stringify(imp.schedule || [])); 
+                
+                // 👇 استرجاع البيانات الإضافية 👇
+                localStorage.setItem("books", JSON.stringify(imp.books || [])); 
+                localStorage.setItem("onlineExams", JSON.stringify(imp.onlineExams || [])); 
+                localStorage.setItem("monthlyPayments", JSON.stringify(imp.monthlyPayments || {})); 
+                
+                alert("تم استرجاع جميع البيانات بنجاح! سيتم إعادة تحميل الصفحة لتطبيق التغييرات."); 
+                location.reload(); 
+            } else {
+                if(typeof showToast === 'function') showToast("ملف غير صالح أو لا يحتوي على بيانات النظام الأساسية!", "error");
+            }
+        } catch(err) { 
+            if(typeof showToast === 'function') showToast("حدث خطأ أثناء قراءة الملف!", "error"); 
+        } 
+    }; 
+    reader.readAsText(file); 
+};
+
 function downloadExcelTemplate() { const headers = [["الاسم", "الصف", "المجموعة", "هاتف الطالب", "هاتف ولي الأمر", "الجنس"]]; const worksheet = XLSX.utils.aoa_to_sheet(headers); worksheet['!cols'] = [{wch: 25}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 10}]; const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "الطلاب"); XLSX.writeFile(workbook, "نموذج_إضافة_الطلاب.xlsx"); showToast("تم تحميل النموذج!"); }
 
 function importStudentsFromExcel(event) {
