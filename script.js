@@ -30,7 +30,7 @@ let html5QrcodeScanner = null, currentScannerTarget = '';
 // ==========================================
 // 1. قواعد البيانات والتهيئة الأساسية
 // ==========================================
-const WHATSAPP_SERVER_URL = "https://accurately-python-progress-took.trycloudflare.com";
+const WHATSAPP_SERVER_URL = "https://edutrack-api.duckdns.org";
 
 const NOTIFICATIONS_SERVER_URL = "https://infections-muscles-letting-pee.trycloudflare.com";
 
@@ -986,6 +986,10 @@ document.getElementById("addStudentForm")?.addEventListener("submit", function(e
     if (phone !== "0" && parentPhone !== "0" && phone === parentPhone) {
         return showToast("رقم الطالب يجب أن يختلف عن ولي الأمر", "error");
     }
+    if (isGroupFull(group)) {
+        let max = groups.find(g => g.name === group).maxCapacity;
+        return showToast(`عفواً، تم الوصول للحد الأقصى لهذه المجموعة (${max} طلاب)!`, "error");
+    }
 
     const duplicate = students.find(s => 
         s.code === code || 
@@ -1129,6 +1133,11 @@ document.getElementById('editStudentForm')?.addEventListener('submit', function(
         students[studentIndex].phone = phone; 
         students[studentIndex].parentPhone = parentPhone; 
         students[studentIndex].group = document.getElementById('editStudentGroup').value; 
+        let newGroup = document.getElementById('editStudentGroup').value;
+    if (students[studentIndex].group !== newGroup && isGroupFull(newGroup)) {
+        let max = groups.find(g => g.name === newGroup).maxCapacity;
+        return showToast(`عفواً، المجموعة المحددة مكتملة العدد (${max} طلاب)!`, "error");
+    }
         
         // تحديث الرقم في باقي الجداول لو اتغير
         if(oldPhone !== phone) { 
@@ -1170,11 +1179,12 @@ document.getElementById("addGroupFormModal")?.addEventListener("submit", functio
     const groupLevel = document.getElementById("newGroupLevel").value; 
     const payType = document.getElementById("newGroupPayType").value;
     const price = parseFloat(document.getElementById("newGroupPrice").value) || 0;
+    const maxCap = parseInt(document.getElementById("newGroupCapacity").value) || 0; // سحب السعة
 
     if (!groupName) return showToast("يرجى كتابة اسم المجموعة!", "error");
     if(groups.some(g => g.name === groupName)) return showToast("هذه المجموعة موجودة بالفعل!", "error"); 
     
-    groups.push({ name: groupName, level: groupLevel, payType: payType, price: price }); 
+    groups.push({ name: groupName, level: groupLevel, payType: payType, price: price, maxCapacity: maxCap }); 
     localStorage.setItem("groups", JSON.stringify(groups)); 
     
     if(typeof addSystemLog === "function") addSystemLog("إنشاء مجموعة 📚", `تم إنشاء مجموعة: ${groupName} (${payType === 'month' ? 'شهري' : 'بالحصة'}) بـ ${price} ج`);
@@ -1191,6 +1201,7 @@ function openEditGroupModal(oldName) {
         document.getElementById('editGroupLevel').value = group.level;
         document.getElementById('editGroupPayType').value = group.payType || 'session';
         document.getElementById('editGroupPrice').value = group.price || 0;
+        document.getElementById('editGroupCapacity').value = group.maxCapacity || 0;
         openModal('editGroupModal');
     }
 }
@@ -1202,6 +1213,7 @@ document.getElementById('editGroupFormModal')?.addEventListener('submit', functi
     const newLevel = document.getElementById('editGroupLevel').value;
     const newPayType = document.getElementById('editGroupPayType').value;
     const newPrice = parseFloat(document.getElementById('editGroupPrice').value) || 0;
+    const newMaxCap = parseInt(document.getElementById('editGroupCapacity').value) || 0;
 
     const groupIndex = groups.findIndex(g => g.name === oldName);
     if(groupIndex > -1) {
@@ -1211,6 +1223,7 @@ document.getElementById('editGroupFormModal')?.addEventListener('submit', functi
         groups[groupIndex].level = newLevel;
         groups[groupIndex].payType = newPayType;
         groups[groupIndex].price = newPrice;
+        groups[groupIndex].maxCapacity = newMaxCap;
 
         if(newName !== oldName) {
             students.forEach(s => { if(s.group === oldName) s.group = newName; });
@@ -1227,15 +1240,94 @@ document.getElementById('editGroupFormModal')?.addEventListener('submit', functi
 function openGroupDetails(groupName) { currentActiveGroup = groupName; document.getElementById("groups-overview").style.display = "none"; document.getElementById("group-details-view").style.display = "block"; document.getElementById("current-group-title").innerText = `مجموعة: ${groupName}`; renderGroupStudentsTable(); }
 function backToGroups() { currentActiveGroup = null; document.getElementById("groups-overview").style.display = "block"; document.getElementById("group-details-view").style.display = "none"; renderGroupCards(); }
 
-function renderGroupStudentsTable() { 
+window.renderGroupStudentsTable = function() { 
     const tbody = document.getElementById("group-students-list"); 
     tbody.innerHTML = ""; 
-    const groupStudents = students.filter(s => s.group === currentActiveGroup); 
-    if(groupStudents.length === 0) return tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">لا يوجد طلاب</td></tr>`; 
+    let groupStudents = students.filter(s => s.group === currentActiveGroup); 
+    
+    // 💡 تطبيق الترتيب الذكي
+    let sortKey = window.currentGroupSortConfig.key;
+    let isAsc = window.currentGroupSortConfig.asc;
+
+    groupStudents.sort((a, b) => {
+        let valA = a[sortKey] || "";
+        let valB = b[sortKey] || "";
+
+        if (sortKey === 'code') {
+            // استخراج الأرقام فقط من الكود لترتيب صحيح
+            let numA = parseInt(String(valA).replace(/\D/g, '')) || 0;
+            let numB = parseInt(String(valB).replace(/\D/g, '')) || 0;
+            if (numA !== numB) {
+                return isAsc ? numA - numB : numB - numA;
+            }
+        }
+        
+        // الترتيب الأبجدي للأسماء
+        return isAsc ? String(valA).localeCompare(String(valB), 'ar') : String(valB).localeCompare(String(valA), 'ar');
+    });
+
+    if(groupStudents.length === 0) {
+        return tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; font-weight: bold; color: var(--text-muted);">لا يوجد طلاب في هذه المجموعة</td></tr>`; 
+    }
+
+    // 💡 استخراج آخر 4 حصص للمجموعة دي
+    let last4Sessions = classSessions
+        .filter(s => s.group === currentActiveGroup)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(-4);
+
     groupStudents.forEach((student) => { 
-        tbody.innerHTML += `<tr><td><strong style="color:var(--primary-color);">${student.code}</strong></td><td>${student.name}</td><td>${student.parentPhone}</td><td><button class="profile-btn" onclick="openStudentProfile('${student.code}')">👤 الملف</button><button class="icon-btn danger admin-only" style="margin-right: 5px;" onclick="removeStudentFromGroup('${student.code}')">❌ إزالة</button></td></tr>`; 
+        // 1. بادج المسار (عام / أزهر / بكالوريا)
+        let trackName = student.track || 'عام';
+        let trackBadge = `<span style="font-size: 11px; background: rgba(59, 130, 246, 0.1); color: var(--primary-color); padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2); margin-top: 5px; display: inline-block; font-weight: bold;">🎓 ${trackName}</span>`;
+
+        // 2. تصميم نقط الحضور لآخر 4 حصص
+        let attendanceDotsHtml = `<div style="display: flex; gap: 6px; justify-content: center; align-items: center;" dir="rtl">`;
+        
+        for(let i = 0; i < 4; i++) {
+            let session = last4Sessions[i];
+            let dotColor = "#e2e8f0"; // رصاصي (لم يسجل)
+            let tooltipText = "لا توجد حصة / لم يسجل";
+
+            if (session) {
+                // بنبحث بكود الطالب أولاً، ولو ملقيناش بنبحث بالتليفون (دعم للقديم)
+                let status = session.attendance[student.code] || session.attendance[student.phone];
+                if (status === 'present') { 
+                    dotColor = "#10b981"; tooltipText = `${session.date}: حاضر ✅`; 
+                }
+                else if (status === 'late') { 
+                    dotColor = "#f59e0b"; tooltipText = `${session.date}: متأخر ⏳`; 
+                }
+                else if (status === 'absent') { 
+                    dotColor = "#ef4444"; tooltipText = `${session.date}: غائب ❌`; 
+                }
+            }
+
+            attendanceDotsHtml += `<span style="width: 14px; height: 14px; border-radius: 50%; background-color: ${dotColor}; display: inline-block; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); cursor: help;" title="${tooltipText}"></span>`;
+        }
+        attendanceDotsHtml += `</div>`;
+
+        // 3. رسم الصف بالـ 5 أعمدة بشكل سليم
+        tbody.innerHTML += `
+        <tr>
+            <td><strong style="color:var(--primary-color); font-size: 16px;">${student.code}</strong></td>
+            <td>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                    <strong style="font-size: 14px;">${student.name}</strong>
+                    ${trackBadge}
+                </div>
+            </td>
+            <td>${attendanceDotsHtml}</td>
+            <td style="direction: ltr; font-weight: bold;">${student.parentPhone}</td>
+            <td>
+                <div style="display: flex; gap: 5px; justify-content: center;">
+                    <button class="profile-btn" onclick="openStudentProfile('${student.code}')" style="margin:0;">👤 الملف</button>
+                    <button class="icon-btn danger admin-only" onclick="removeStudentFromGroup('${student.code}')" title="إزالة من المجموعة">❌</button>
+                </div>
+            </td>
+        </tr>`; 
     }); 
-}
+};
 
 function removeStudentFromGroup(code) { customConfirm("إزالة هذا الطالب من المجموعة؟", () => { const student = students.find(s => s.code === code); if(student) { student.group = ""; localStorage.setItem("students", JSON.stringify(students)); renderGroupStudentsTable(); renderGroupCards(); showToast("تمت الإزالة"); } }); }
 
@@ -2151,6 +2243,10 @@ window.switchAddStudentTab = function(tab) {
     if(tab === 'existing') {
         document.getElementById("addExistingStudentForm").style.display = "block";
         document.getElementById("newStudentTabContent").style.display = "none";
+    if (isGroupFull(group)) {
+        let max = groups.find(g => g.name === group).maxCapacity;
+        return showToast(`عفواً، تم الوصول للحد الأقصى لهذه المجموعة (${max} طلاب)!`, "error");
+    }
     } else {
         document.getElementById("addExistingStudentForm").style.display = "none";
         document.getElementById("newStudentTabContent").style.display = "block";
@@ -5963,3 +6059,27 @@ window.addEventListener('popstate', function(event) {
 
     setTimeout(() => { window.isHistoryNavigating = false; }, 100);
 });
+window.isGroupFull = function(groupName) {
+    if (!groupName) return false;
+    let targetGroup = groups.find(g => g.name === groupName);
+    // لو مفيش سعة أو السعة صفر (مفتوحة) يبقى مش مليانة
+    if (!targetGroup || !targetGroup.maxCapacity || targetGroup.maxCapacity <= 0) return false;
+    
+    // عد الطلاب اللي في المجموعة حالياً
+    let currentCount = students.filter(s => s.group === groupName).length;
+    return currentCount >= targetGroup.maxCapacity;
+};
+
+window.currentGroupSortConfig = { key: 'code', asc: true };
+
+window.sortGroupTable = function(key) {
+    if (window.currentGroupSortConfig.key === key) {
+        // لو داس على نفس العمود، اعكس الترتيب
+        window.currentGroupSortConfig.asc = !window.currentGroupSortConfig.asc; 
+    } else {
+        // لو داس على عمود جديد، رتب تصاعدي
+        window.currentGroupSortConfig.key = key;
+        window.currentGroupSortConfig.asc = true; 
+    }
+    renderGroupStudentsTable(); // ارسم الجدول تاني
+};

@@ -322,13 +322,20 @@
                         <div class="header-actions"><button class="add-btn exam-btn" onclick="quickExamForGroup()">⚡ امتحان مفاجئ</button><button class="add-btn" onclick="openAddStudentToGroupModal()">+ إضافة طالب هنا</button></div>
                     </div>
                     <div class="table-container">
-                        <table class="students-table"><thead>
+                        <table class="students-table">
+                            
+                            
+                    <thead>
         <tr>
-            <th onclick="sortGroupTable('code')" style="cursor: pointer; user-select: none; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'" title="اضغط لترتيب الأكواد">الكود ↕️</th>
-            <th onclick="sortGroupTable('name')" style="cursor: pointer; user-select: none; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'" title="اضغط للترتيب الأبجدي">اسم الطالب والمسار ↕️</th>
-            <th style="text-align: center;">آخر 4 حصص</th>
-            <th>رقم ولي الأمر</th>
-            <th>إجراء</th>
+            <th onclick="sortGroupTable('code')" style="cursor: pointer; user-select: none; white-space: nowrap;" title="اضغط لترتيب الأكواد">
+                الكود <span style="font-size: 14px; opacity: 0.5;">↕️</span>
+            </th>
+            <th onclick="sortGroupTable('name')" style="cursor: pointer; user-select: none; white-space: nowrap;" title="اضغط للترتيب الأبجدي">
+                اسم الطالب والمسار <span style="font-size: 14px; opacity: 0.5;">↕️</span>
+            </th>
+            <th style="text-align: center; white-space: nowrap;">آخر 4 حصص</th>
+            <th style="white-space: nowrap;">رقم ولي الأمر</th>
+            <th style="white-space: nowrap;">إجراء</th>
         </tr>
     </thead>
     <tbody id="group-students-list"></tbody></table>
