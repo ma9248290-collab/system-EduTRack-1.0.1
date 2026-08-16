@@ -740,7 +740,9 @@
             <p style="font-weight: bold; margin-bottom: 15px; color: var(--text-main); font-size: 15px;">
                 💡 المتغيرات الذكية (اضغط على أي متغير لإضافته في مكان المؤشر داخل الرسالة):
             </p>
-            
+            <!-- أزرار الترحيب العشوائي الجديدة -->
+                <button type="button" class="var-btn" onclick="insertVariable('{ترحيب_ولي_الأمر}')" style="background: #fdf4ff; border-color: #d946ef; color: #a21caf;">👋 ترحيب ولي الأمر (عشوائي)</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{ترحيب_الطالب}')" style="background: #fdf4ff; border-color: #d946ef; color: #a21caf;">👋 ترحيب الطالب (عشوائي)</button>
             <!-- أزرار المتغيرات التفاعلية -->
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;" id="smart-variables-container">
                 <button type="button" class="var-btn" onclick="insertVariable('{اسم_الطالب}')">👤 اسم الطالب</button>

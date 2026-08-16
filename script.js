@@ -27,6 +27,8 @@ let attendanceChartInstance = null, groupsChartInstance = null, financeChartInst
 let html5QrcodeScanner = null, currentScannerTarget = '';
 
 
+
+
 // ==========================================
 // 1. قواعد البيانات والتهيئة الأساسية
 // ==========================================
@@ -54,7 +56,11 @@ function normalizeArabicName(text) {
     return text.replace(/[أإآا]/g, 'ا').replace(/ة/g, 'ه').replace(/[يى]/g, 'ي').replace(/\s+/g, ' ').trim();
 }
 
-
+window.getStudentNameHtml = function(student) {
+    if (!student) return "";
+    let specialBadge = student.isSpecialCase ? `<span style="cursor: help; margin-right: 5px; font-size: 15px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));" title="حالة خاصة: ${student.specialAmount > 0 ? 'يدفع ' + student.specialAmount + ' ج.م' : 'إعفاء تام (مجاني)'}">⭐</span>` : '';
+    return student.name + specialBadge;
+};
 
 
 window.findStudentByCodeOrName = function(input) {
@@ -112,48 +118,59 @@ const errorSound = new Audio('error.mp3');
 successSound.volume = 0.7; 
 errorSound.volume = 0.8;
 
-function showToast(message, type = 'success') {
-    // 🎵 تشغيل الصوت المناسب بناءً على نوع الإشعار
+window.showToast = function(message, type = 'success') {
+    if (!document.getElementById("premium-toast-styles")) {
+        const style = document.createElement("style");
+        style.id = "premium-toast-styles";
+        style.innerHTML = `
+            #premium-toast-container { position: fixed; top: 30px; left: 30px; z-index: 999999; display: flex; flex-direction: column; gap: 15px; pointer-events: none; }
+            .premium-toast { min-width: 320px; max-width: 420px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; animation: slideInLeftToast 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border: 1px solid rgba(255,255,255,0.5); }
+            .premium-toast-content { display: flex; align-items: center; padding: 18px 24px; gap: 18px; direction: rtl; }
+            .toast-icon { font-size: 28px; display: flex; align-items: center; justify-content: center; animation: popIcon 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.1s; opacity: 0; transform: scale(0.5); }
+            .toast-text { color: #1e293b; font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 800; line-height: 1.5; flex: 1; text-align: right; text-shadow: 0 1px 1px rgba(255,255,255,0.8); }
+            .toast-progress-bg { width: 100%; height: 5px; background: rgba(0,0,0,0.05); }
+            .toast-progress-bar { height: 100%; width: 100%; animation: shrinkProgress 4s linear forwards; border-radius: 0 5px 5px 0; }
+            .toast-success .toast-progress-bar { background: linear-gradient(90deg, #10b981, #34d399); }
+            .toast-success { border-right: 6px solid #10b981; }
+            .toast-error .toast-progress-bar { background: linear-gradient(90deg, #ef4444, #f87171); }
+            .toast-error { border-right: 6px solid #ef4444; }
+            .toast-warning .toast-progress-bar { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+            .toast-warning { border-right: 6px solid #f59e0b; background: linear-gradient(to left, rgba(254, 252, 232, 0.95), rgba(255,255,255,0.95)); }
+            .toast-info .toast-progress-bar { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+            .toast-info { border-right: 6px solid #3b82f6; background: linear-gradient(to left, rgba(239, 246, 255, 0.95), rgba(255,255,255,0.95)); }
+            @keyframes slideInLeftToast { 0% { opacity: 0; transform: translateX(-60px) scale(0.9); } 100% { opacity: 1; transform: translateX(0) scale(1); } }
+            @keyframes slideOutLeftToast { 0% { opacity: 1; transform: translateX(0) scale(1); max-height: 100px; margin-bottom: 15px; } 100% { opacity: 0; transform: translateX(-60px) scale(0.9); max-height: 0; margin-bottom: 0; padding: 0; border: none; } }
+            @keyframes shrinkProgress { from { width: 100%; } to { width: 0%; } }
+            @keyframes popIcon { 0% { opacity: 0; transform: scale(0.5) rotate(-20deg); } 80% { transform: scale(1.2) rotate(10deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+        `;
+        document.head.appendChild(style);
+    }
     try {
-        if (type === 'success') {
-            successSound.currentTime = 0; 
-            successSound.play().catch(e => {}); 
-        } else {
-            errorSound.currentTime = 0;
-            errorSound.play().catch(e => {});
+        if (typeof successSound !== 'undefined' && typeof errorSound !== 'undefined') {
+            if (type === 'success' || type === 'info') { successSound.currentTime = 0; successSound.play().catch(e=>{}); }
+            else { errorSound.currentTime = 0; errorSound.play().catch(e=>{}); }
         }
     } catch (e) {}
 
-    // رسم الإشعار على الشاشة
-    let container = document.getElementById('toast-container');
-    if (!container) { 
-        container = document.createElement('div'); 
-        container.id = 'toast-container'; 
-        document.body.appendChild(container); 
-    }
+    let container = document.getElementById('premium-toast-container');
+    if (!container) { container = document.createElement('div'); container.id = 'premium-toast-container'; document.body.appendChild(container); }
+
+    let icon = '✨';
+    if (type === 'success') icon = '✅';
+    if (type === 'error') icon = '❌';
+    if (type === 'warning') icon = '🔔';
+    if (type === 'info') icon = '💻'; 
+
     const toast = document.createElement('div'); 
-    toast.className = `toast ${type}`;
-    
-    // تظبيط العرض عشان الأخطبوط يبقى جنب الكلام مظبوط
-    toast.style.display = 'flex';
-    toast.style.alignItems = 'center';
-
-    // 🐙 تحديد شخصية الأخطبوط (نجاح أو خطأ)
-    const mascotClass = type === 'success' ? 'octo-success' : 'octo-error';
-
-    toast.innerHTML = `
-        <div class="octo-mascot ${mascotClass}" style="width: 35px; height: 35px; min-width: 35px; margin-left: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"></div>
-        <span style="font-weight: bold; font-size: 14px; line-height: 1.5;">${message}</span>
-    `;
-    
+    toast.className = `premium-toast toast-${type}`;
+    toast.innerHTML = `<div class="premium-toast-content"><div class="toast-icon">${icon}</div><div class="toast-text">${message}</div></div><div class="toast-progress-bg"><div class="toast-progress-bar"></div></div>`;
     container.appendChild(toast);
     
-    // إخفاء الإشعار بعد 3 ثواني
     setTimeout(() => { 
-        toast.style.animation = 'slideOut 0.3s ease-in forwards'; 
-        setTimeout(() => toast.remove(), 300); 
-    }, 3000);
-}
+        toast.style.animation = 'slideOutLeftToast 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'; 
+        setTimeout(() => toast.remove(), 500); 
+    }, 4000);
+};
 
 let confirmCallback = null;
 function customConfirm(message, callback) {
@@ -277,6 +294,13 @@ function switchPage(pageId) {
     if (pageId === "leaderboard") { populateDropdowns(); }
     if (pageId === "atrisk") { renderAtRiskStudents(); }
     if (pageId === "books") { renderBooksTable(); }
+
+    // داخل دالة switchPage، ضيف السطر ده عشان يجيب الداتا لما تفتح الصفحة:
+if (pageId === "bot") {
+    document.getElementById('settingBotEnabled').checked = localStorage.getItem('botEnabled') === 'true';
+    document.getElementById('settingBotName').value = localStorage.getItem('botName') || 'أوكتو';
+    document.getElementById('settingBotInstructions').value = localStorage.getItem('botInstructions') || '';
+}
     
     if (pageId === "broadcast") { 
         const select = document.getElementById('broadcastTarget');
@@ -800,7 +824,10 @@ async function syncDataToBot() {
             phoneNumbers: localStorage.getItem("teacherPhones") || "",
             // السطرين دول 👇
             parentMsgTemplate: localStorage.getItem("parentMsgTemplate") || "",
-            studentMsgTemplate: localStorage.getItem("studentMsgTemplate") || ""
+            studentMsgTemplate: localStorage.getItem("studentMsgTemplate") || "",
+            botEnabled: localStorage.getItem("botEnabled") === "true",
+botName: localStorage.getItem("botName") || "المساعد",
+botInstructions: localStorage.getItem("botInstructions") || ""
         },
         teacherName: localStorage.getItem("teacherName") || "المدير",
         centerName: localStorage.getItem("centerName") || "السنتر",
@@ -963,61 +990,81 @@ function filterGroupsByLevel(levelSelectId, groupSelectId) {
 
 function generateStudentCode() { let maxId = 0; students.forEach(s => { let num = parseInt(s.code, 10); if (!isNaN(num) && num > maxId) maxId = num; }); return (maxId + 1).toString(); }
 
-document.getElementById("addStudentForm")?.addEventListener("submit", function(e) { 
-    e.preventDefault(); 
+window.processStudentSaving = async function(keepOpen) {
     const code = document.getElementById("studentCode").value.trim(); 
     const name = document.getElementById("studentName").value.trim(); 
     const level = document.getElementById("studentLevel").value; 
     const gender = document.getElementById("studentGender").value; 
     
-    // 🚀 الإصلاح الذكي لتفادي الفراغات في الخانات
     const phoneEl = document.getElementById("studentPhone");
     const phone = phoneEl && phoneEl.value.trim() !== "" ? phoneEl.value.trim() : "0"; 
-    
     const parentPhoneEl = document.getElementById("parentPhone");
     const parentPhone = parentPhoneEl && parentPhoneEl.value.trim() !== "" ? parentPhoneEl.value.trim() : "0"; 
-    
     const group = document.getElementById("studentGroup").value; 
     
     if(group === "") return showToast("يرجى اختيار مجموعة!", "error"); 
     if (!isValidEgyptianPhone(phone)) return showToast("رقم هاتف الطالب خطأ!", "error");
     if (!isValidEgyptianPhone(parentPhone)) return showToast("رقم هاتف ولي الأمر خطأ!", "error");
 
-    if (phone !== "0" && parentPhone !== "0" && phone === parentPhone) {
-        return showToast("رقم الطالب يجب أن يختلف عن ولي الأمر", "error");
-    }
-    if (isGroupFull(group)) {
-        let max = groups.find(g => g.name === group).maxCapacity;
-        return showToast(`عفواً، تم الوصول للحد الأقصى لهذه المجموعة (${max} طلاب)!`, "error");
-    }
-
-    const duplicate = students.find(s => 
-        s.code === code || 
-        (phone !== "0" && s.phone === phone) || 
-        (parentPhone !== "0" && s.parentPhone === parentPhone) || 
-        normalizeArabicName(s.name) === normalizeArabicName(name)
-    );
-    
+    const duplicate = students.find(s => s.code === code || (phone !== "0" && s.phone === phone) || (parentPhone !== "0" && s.parentPhone === parentPhone) || normalizeArabicName(s.name) === normalizeArabicName(name));
     if(duplicate) return showToast(`مسجل مسبقاً: ${duplicate.name}`, "error");
 
-    students.push({ code, name, level, gender, phone, parentPhone, group, behaviorPoints: 0 }); 
+    // سحب بيانات الحالة الخاصة
+    let isSpecialCase = document.getElementById("studentIsSpecial") ? document.getElementById("studentIsSpecial").checked : false;
+    let specialAmount = isSpecialCase ? (parseFloat(document.getElementById("studentSpecialAmount").value) || 0) : 0;
+
+    students.push({ code, name, level, gender, phone, parentPhone, group, behaviorPoints: 0, isSpecialCase: isSpecialCase, specialAmount: specialAmount });
     localStorage.setItem("students", JSON.stringify(students)); 
-    
     if(typeof addSystemLog === "function") addSystemLog("إضافة طالب 🎓", `تسجيل الطالب: ${name} (كود: ${code}) في ${group}`);
 
+    // إرسال واتساب
     const currentKey = localStorage.getItem("licenseKey") || "";
     const portalLink = `https://ma9248290-collab.github.io/system-EduTRack-1.0.1/parent.html?id=${currentKey}`;
     const msg = `📢 *أهلاً بك في نظام ${localStorage.getItem("teacherName") || "السنتر"} التعليمي*\nتم تسجيل بيانات الطالب بنجاح.\n👤 *اسم الطالب:* ${name}\n🎓 *كود الطالب:* ${code}\n🔗 *رابط بوابة المتابعة:* ${portalLink}`;
     if (typeof sendAutoWhatsApp === "function") sendAutoWhatsApp(parentPhone, msg);
 
-    this.reset(); closeModal('addStudentModal'); renderTable(); showToast("تم تسجيل الطالب بنجاح"); 
+    renderTable(); 
+    if (typeof renderGroupCards === "function") renderGroupCards();
+    if (typeof syncDataToBot === "function") syncDataToBot();
+
+    if (keepOpen) {
+        showToast("تم الحفظ! جاهز لإضافة الطالب التالي ➕");
+        document.getElementById("studentName").value = "";
+        document.getElementById("studentPhone").value = "";
+        document.getElementById("parentPhone").value = "";
+        document.getElementById("studentCode").value = generateStudentCode(); // الكود اللي عليه الدور
+        document.getElementById("studentName").focus();
+    } else {
+        showToast("تم تسجيل الطالب بنجاح ✅"); 
+        document.getElementById("addStudentForm").reset(); 
+        closeModal('addStudentModal'); 
+    }
+};
+
+document.getElementById("addStudentForm")?.addEventListener("submit", async function(e) { 
+    e.preventDefault(); 
+    await processStudentSaving(false);
 });
+
+window.saveAndAddAnotherStudent = async function() {
+    const form = document.getElementById("addStudentForm");
+    if (form.checkValidity()) await processStudentSaving(true);
+    else form.reportValidity(); 
+};
 
 function renderTable() { 
     const tbody = document.getElementById("students-list"); 
     if(!tbody) return;
     tbody.innerHTML = ""; 
-    students.forEach((student) => { tbody.innerHTML += `<tr><td><strong style="color:var(--primary-color);">${student.code}</strong></td><td>${student.name}</td><td>${student.level}</td><td>${student.group}</td><td><button class="profile-btn" onclick="openStudentProfile('${student.code}')">👤 الملف</button></td></tr>`; }); 
+    students.forEach((student) => { 
+        tbody.innerHTML += `<tr>
+            <td><strong style="color:var(--primary-color);">${student.code}</strong></td>
+            <td>${window.getStudentNameHtml(student)}</td>
+            <td>${student.level}</td>
+            <td>${student.group}</td>
+            <td><button class="profile-btn" onclick="openStudentProfile('${student.code}')">👤 الملف</button></td>
+        </tr>`; 
+    }); 
     document.getElementById("total-students").innerText = students.length; 
 }
 
@@ -1092,6 +1139,12 @@ window.openEditStudentModal = function() {
         if(phoneInput) phoneInput.value = student.phone; 
         
         document.getElementById('editParentPhone').value = student.parentPhone; 
+
+        if (document.getElementById('editStudentIsSpecial')) {
+            document.getElementById('editStudentIsSpecial').checked = student.isSpecialCase || false;
+            document.getElementById('editStudentSpecialAmountDiv').style.display = student.isSpecialCase ? 'block' : 'none';
+            document.getElementById('editStudentSpecialAmount').value = student.specialAmount !== undefined ? student.specialAmount : "";
+        }
         openModal('editStudentModal'); 
     } 
 };
@@ -1127,6 +1180,10 @@ document.getElementById('editStudentForm')?.addEventListener('submit', function(
     if(studentIndex > -1) { 
         const oldPhone = students[studentIndex].phone; 
         students[studentIndex].code = newCode; 
+
+        let isSpecial = document.getElementById('editStudentIsSpecial').checked;
+        students[studentIndex].isSpecialCase = isSpecial;
+        students[studentIndex].specialAmount = isSpecial ? (parseFloat(document.getElementById('editStudentSpecialAmount').value) || 0) : 0;
         students[studentIndex].name = name; 
         students[studentIndex].level = document.getElementById('editStudentLevel').value; 
         students[studentIndex].gender = document.getElementById('editStudentGender').value; 
@@ -1313,7 +1370,7 @@ window.renderGroupStudentsTable = function() {
             <td><strong style="color:var(--primary-color); font-size: 16px;">${student.code}</strong></td>
             <td>
                 <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                    <strong style="font-size: 14px;">${student.name}</strong>
+                    <strong style="font-size: 14px;">${window.getStudentNameHtml(student)}</strong>
                     ${trackBadge}
                 </div>
             </td>
@@ -1376,13 +1433,14 @@ document.getElementById('attendanceBarcode')?.addEventListener('keypress', funct
     if(e.key === 'Enter') { 
         e.preventDefault(); 
         let val = this.value.trim(); 
+        if(!val) return; // حماية لو الخانة فاضية
+        
         let student = findStudentByCodeOrName(val); 
         const session = classSessions.find(s => s.id === currentActiveSessionId); 
         
         if(!student) {
             showToast(`طالب غير موجود!`, 'error');
         } else if(student.group !== session.group) {
-            // 🔥 هنا السحر: فتح بوكس الإجراءات السريعة بدل الإيرور
             openWrongGroupModal(student, session);
         } else if(session.status === 'closed') {
             showToast(`الحصة مغلقة!`, 'error');
@@ -1395,6 +1453,22 @@ document.getElementById('attendanceBarcode')?.addEventListener('keypress', funct
             markAttendance(student.code, attStatus); 
             showToast(isLate ? `⏳ تم تسجيل تأخير: ${student.name}` : `✅ تم حضور: ${student.name}`); 
             
+            // 🌟 الإشعار الصامت للحالات الخاصة (يظهر للمستر فقط بدون صوت)
+            if (student.isSpecialCase) {
+                let alertBox = document.createElement('div');
+                let priceText = student.specialAmount === 0 ? "إعفاء تام (مجاني)" : `مطلوب منه ${student.specialAmount} ج.م فقط`;
+                alertBox.innerHTML = `⭐ <b>حالة خاصة:</b> ${student.name} <br><span style="font-size: 14px; font-weight: normal;">${priceText}</span>`;
+                alertBox.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background: linear-gradient(135deg, #f59e0b, #d97706); color:white; padding:12px 30px; border-radius:12px; font-weight:900; font-size:16px; z-index:9999999; box-shadow:0 10px 25px rgba(245, 158, 11, 0.4); text-align:center; animation: slideInLeftToast 0.4s ease-out forwards;";
+                document.body.appendChild(alertBox);
+                
+                // إخفاء الإشعار بعد 4 ثواني
+                setTimeout(() => { 
+                    alertBox.style.opacity = '0'; 
+                    alertBox.style.transition = '0.4s'; 
+                    setTimeout(()=>alertBox.remove(), 400); 
+                }, 4000);
+            }
+            
             // 3. التحقق من تفعيل الدفع السريع
             let autoPaymentEnabled = document.getElementById('autoPaymentCheckbox')?.checked;
             if (autoPaymentEnabled) {
@@ -1406,7 +1480,6 @@ document.getElementById('attendanceBarcode')?.addEventListener('keypress', funct
         this.focus();
     } 
 });
-
 
 
 // بتجيب السعر أوتوماتيك من صفحة الماليات
@@ -2230,7 +2303,7 @@ window.openStudentProfile = function(code) {
     const student = students.find(s => s.code === code); if(!student) return;
     switchPage('students'); currentStudentProfileCode = code;
     document.getElementById("students-overview").style.display = "none"; document.getElementById("student-profile-view").style.display = "block";
-    document.getElementById("profile-name").innerText = student.name; document.getElementById("profile-code-group").innerText = `${student.code} | المجموعة: ${student.group}`;
+   document.getElementById("profile-name").innerHTML = window.getStudentNameHtml(student);
     if (typeof JsBarcode !== 'undefined') JsBarcode("#studentProfileBarcode", student.code, { format: "CODE128", lineColor: "#0f172a", width: 2, height: 40, displayValue: false });
     if(document.getElementById("profile-phone")) document.getElementById("profile-phone").innerText = student.phone;
     if(document.getElementById("profile-parent")) document.getElementById("profile-parent").innerText = student.parentPhone;
@@ -2376,12 +2449,36 @@ window.randomSleep = function(min = 2000, max = 5000) {
 
 
 // ==========================================
-// 🧠 معالج قوالب الرسائل الذكي (المطور)
+// 🧠 معالج قوالب الرسائل الذكي (المطور بالترحيب العشوائي)
 // ==========================================
 window.processMessageTemplate = function(template, student, session, reportData) {
     let tName = localStorage.getItem("teacherName") || "المدير";
     let cName = localStorage.getItem("centerName") || "السنتر";
     let nowTime = new Date().toLocaleTimeString('ar-EG');
+    
+    // 🎲 1. قاموس الترحيبات العشوائية
+    const parentGreetings = [
+        "أهلاً بحضرتك",
+        "مرحباً بك",
+        "السلام عليكم ورحمة الله،",
+        "تحياتنا لحضرتك",
+        "أهلاً وسهلاً بك",
+        "طاب يومك"
+    ];
+
+    const studentGreetings = [
+        "أهلاً بيك يا بطل",
+        "عاش يا وحش",
+        "أخبار المذاكرة إيه يا",
+        "شد حيلك يا نجم",
+        "يا هلا بالبطل",
+        "مستعد للقمة يا",
+        "إيه الأخبار يا"
+    ];
+
+    // اختيار ترحيب عشوائي لكل رسالة
+    let randomParentGreeting = parentGreetings[Math.floor(Math.random() * parentGreetings.length)];
+    let randomStudentGreeting = studentGreetings[Math.floor(Math.random() * studentGreetings.length)];
     
     let finalTemplate = template;
     
@@ -2390,26 +2487,85 @@ window.processMessageTemplate = function(template, student, session, reportData)
         finalTemplate += "\n\n{تفاصيل_التقرير}";
     }
 
-    // 1. استبدال المتغيرات الثابتة
+    // 2. استبدال المتغيرات الثابتة ومتغيرات الترحيب العشوائي
     let msg = finalTemplate
-        .replace(/{اسم_الطالب}/g, student.name)
-        .replace(/{المجموعة}/g, student.group)
+        .replace(/{ترحيب_ولي_الأمر}/g, randomParentGreeting) // يعطي ترحيب عشوائي لولي الأمر
+        .replace(/{ترحيب_الطالب}/g, randomStudentGreeting)    // يعطي ترحيب عشوائي للطالب
+        .replace(/{اسم_الطالب}/g, student.name || "")
+        .replace(/{كود_الطالب}/g, student.code || "")
+        .replace(/{رقم_الطالب}/g, (student.phone && student.phone !== "0") ? student.phone : "غير مسجل")
+        .replace(/{رقم_ولي_الأمر}/g, (student.parentPhone && student.parentPhone !== "0") ? student.parentPhone : "غير مسجل")
+        .replace(/{المجموعة}/g, student.group || "")
         .replace(/{الموضوع}/g, session.topic || 'حصة عادية')
         .replace(/{تفاصيل_التقرير}/g, reportData)
         .replace(/{اسم_السنتر}/g, cName)
         .replace(/{اسم_المدير}/g, tName)
         .replace(/{وقت_الرسالة}/g, nowTime);
 
-    // 2. معالجة الـ Spintax وحذف الأقواس لو المدرس نسي يكتب فاصل |
+    // 3. معالجة الـ Spintax اليدوي لو المدرس استخدمه {كلمة1|كلمة2}
     msg = msg.replace(/\{([^{}]*)\}/g, function(match, contents) {
         if (contents.includes('|')) {
             let options = contents.split('|');
             return options[Math.floor(Math.random() * options.length)];
         }
-        return contents; // 🌟 هنا التعديل: بيرجع الكلمة نظيفة من غير الأقواس
+        return contents; 
     });
     
     return msg;
+};
+
+// ==========================================
+// 🖱️ نظام إدراج المتغيرات التفاعلي في مكان المؤشر (Cursor Tracking)
+// ==========================================
+let lastFocusedMsgBox = null;
+
+// تتبع المربع الذي يقف فيه المستخدم حالياً
+document.addEventListener('DOMContentLoaded', () => {
+    const parentBox = document.getElementById('settingParentMsg');
+    const studentBox = document.getElementById('settingStudentMsg');
+    
+    if(parentBox) {
+        parentBox.addEventListener('focus', () => lastFocusedMsgBox = parentBox);
+        parentBox.addEventListener('blur', () => { /* لا نفرغ المتغير لنحتفظ بآخر مربع */ });
+    }
+    if(studentBox) {
+        studentBox.addEventListener('focus', () => lastFocusedMsgBox = studentBox);
+        studentBox.addEventListener('blur', () => { /* لا نفرغ المتغير لنحتفظ بآخر مربع */ });
+    }
+});
+
+// دالة زرع المتغير في النص
+window.insertVariable = function(variableText) {
+    let targetBox = lastFocusedMsgBox;
+    
+    // لو المدرس مضغطش على أي مربع، نختار مربع ولي الأمر كافتراضي
+    if (!targetBox) {
+        targetBox = document.getElementById('settingParentMsg');
+        if(!targetBox) return;
+        showToast("💡 تم الإدراج في رسالة ولي الأمر (اضغط على مربع الطالب إذا أردت الإدراج هناك).", "info");
+    }
+
+    // تحديد مكان المؤشر الحالي
+    const startPos = targetBox.selectionStart;
+    const endPos = targetBox.selectionEnd;
+    const text = targetBox.value;
+
+    // دمج المتغير في النص
+    targetBox.value = text.substring(0, startPos) + variableText + text.substring(endPos);
+    
+    // إعادة المؤشر بعد المتغير مباشرة عشان يقدر يكمل كتابة
+    const newCursorPos = startPos + variableText.length;
+    targetBox.setSelectionRange(newCursorPos, newCursorPos);
+    targetBox.focus();
+
+    // تشغيل أنيميشن خفيف للمربع عشان يلفت انتباهه إن الإضافة تمت
+    targetBox.style.transition = "all 0.2s";
+    targetBox.style.backgroundColor = "#f0fdf4"; // أخضر فاتح
+    targetBox.style.borderColor = "#10b981";
+    setTimeout(() => {
+        targetBox.style.backgroundColor = "";
+        targetBox.style.borderColor = "";
+    }, 300);
 };
 
 // دالة مساعدة للتأخير الزمني العشوائي (لحماية الرقم من الحظر)
@@ -5033,7 +5189,7 @@ window.renderAttendanceTable = function(session) {
         
         tbody.innerHTML += `<tr>
             <td><strong>${st.code}</strong></td>
-            <td>${st.name}</td>
+            <td>${window.getStudentNameHtml(st)}</td>
             <td>${st.phone}</td>
             <td>${pHT}</td>
             <td>${statHtml}</td>
@@ -5420,34 +5576,24 @@ window.markAttendance = function(codeOrPhone, status) {
         localStorage.setItem("classSessions", JSON.stringify(classSessions));
         localStorage.setItem("students", JSON.stringify(students));
         renderAttendanceTable(s);
+        // 🌟 الإشعار الصامت للحالات الخاصة (يظهر للمستر فقط بدون صوت)
+        if (student.isSpecialCase) {
+            let alertBox = document.createElement('div');
+            let priceText = student.specialAmount === 0 ? "إعفاء تام (مجاني)" : `مطلوب منه ${student.specialAmount} ج.م فقط`;
+            alertBox.innerHTML = `⭐ <b>حالة خاصة:</b> ${student.name} <br><span style="font-size: 14px; font-weight: normal;">${priceText}</span>`;
+            alertBox.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background: linear-gradient(135deg, #f59e0b, #d97706); color:white; padding:12px 30px; border-radius:12px; font-weight:900; font-size:16px; z-index:9999999; box-shadow:0 10px 25px rgba(245, 158, 11, 0.4); text-align:center; animation: slideInLeftToast 0.4s ease-out forwards;";
+            document.body.appendChild(alertBox);
+            
+            setTimeout(() => { 
+                alertBox.style.opacity = '0'; 
+                alertBox.style.transition = '0.4s'; 
+                setTimeout(()=>alertBox.remove(), 400); 
+            }, 4000);
+        }
     }
 };
 
-window.renderAttendanceTable = function(session) { 
-    const tbody = document.getElementById("attendance-list"); const gStudents = students.filter(s => s.group === session.group); 
-    if(gStudents.length===0) return tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;">لا يوجد طلاب</td></tr>`; tbody.innerHTML = ""; 
-    const groupS = classSessions.filter(s => s.group === session.group).sort((a,b)=>new Date(a.date)-new Date(b.date)); 
-    const prevSession = groupS[groupS.findIndex(s => s.id === session.id) - 1]; 
-    
-    gStudents.forEach(st => { 
-        const stat = session.attendance[st.code] || session.attendance[st.phone]; 
-        const statHtml = stat === 'present' ? '<span style="color:#10b981; font-weight:bold;">حاضر ✓</span>' : stat === 'late' ? '<span style="color:#f59e0b; font-weight:bold;">متأخر ⏳</span>' : stat === 'absent' ? '<span style="color:#ef4444; font-weight:bold;">غائب ✗</span>' : '<span style="color:#64748b;">لم يسجل</span>'; 
-        let pHT = '--'; if(prevSession) { const p = prevSession.attendance[st.code] || prevSession.attendance[st.phone]; pHT = p==='present'?'حاضر':p==='late'?'متأخر':p==='absent'?'غائب':'--'; } 
-        
-        tbody.innerHTML += `<tr>
-            <td><strong>${st.code}</strong></td>
-            <td>${st.name}</td>
-            <td>${st.phone}</td>
-            <td>${pHT}</td>
-            <td>${statHtml}</td>
-            <td style="display:flex; gap:5px; justify-content:center;">
-                <button style="background-color:#10b981; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.code}','present')">حاضر</button>
-                <button style="background-color:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.code}','late')">متأخر</button>
-                <button style="background-color:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.code}','absent')">غائب</button>
-            </td>
-        </tr>`; 
-    }); 
-};
+
 
 window.renderGradesTable = function(itemDetails, tbodyId, saveFunction, itemId, itemType) {
     const tbody = document.getElementById(tbodyId); const gStudents = students.filter(s => s.group === itemDetails.group);
@@ -5474,87 +5620,8 @@ window.renderGradesTable = function(itemDetails, tbodyId, saveFunction, itemId, 
 
 
 
-window.openStudentProfile = function(code) {
-    const student = students.find(s => s.code === code); if(!student) return;
-    
-    switchPage('students'); currentStudentProfileCode = code;
-    document.getElementById("students-overview").style.display = "none"; document.getElementById("student-profile-view").style.display = "block";
-    document.getElementById("profile-name").innerText = student.name; document.getElementById("profile-code-group").innerText = `${student.code} | المجموعة: ${student.group}`;
-    
-    if (typeof JsBarcode !== 'undefined') JsBarcode("#studentProfileBarcode", student.code, { format: "CODE128", lineColor: "#0f172a", width: 2, height: 40, displayValue: false });
-    
-    if(document.getElementById("profile-phone")) document.getElementById("profile-phone").innerText = student.phone;
-    if(document.getElementById("profile-parent")) document.getElementById("profile-parent").innerText = student.parentPhone;
-    if(document.getElementById("profile-level")) document.getElementById("profile-level").innerText = student.level;
-    if(document.getElementById("profile-gender")) document.getElementById("profile-gender").innerText = student.gender;
-    document.getElementById("profile-behavior-points").innerText = student.behaviorPoints || 0; 
 
-    // 🔥 التعديل هنا: تشغيل زراير الواتساب للطالب وولي الأمر
-    let waStudentBtn = document.getElementById("wa-student-btn");
-    if (waStudentBtn) {
-        waStudentBtn.onclick = function() {
-            if(student.phone && student.phone !== "0" && student.phone !== "") {
-                window.open(`https://wa.me/20${student.phone.replace(/^0+/, '')}`, '_blank');
-            } else {
-                showToast("رقم هاتف الطالب غير مسجل!", "error");
-            }
-        };
-    }
 
-    let waParentBtn = document.getElementById("wa-parent-btn");
-    if (waParentBtn) {
-        waParentBtn.onclick = function() {
-            if(student.parentPhone && student.parentPhone !== "0" && student.parentPhone !== "") {
-                window.open(`https://wa.me/20${student.parentPhone.replace(/^0+/, '')}`, '_blank');
-            } else {
-                showToast("رقم ولي الأمر غير مسجل!", "error");
-            }
-        };
-    }
-
-    const groupSessions = classSessions.filter(s => s.group === student.group).sort((a,b) => new Date(b.date) - new Date(a.date));
-    let attended = 0; const attTbody = document.getElementById("profile-attendance-list"); if(attTbody) attTbody.innerHTML = "";
-    groupSessions.forEach(s => { 
-    const st = s.attendance[student.code] || s.attendance[student.phone]; 
-    if(st === 'present' || st === 'late') attended++; 
-    const badge = st === 'present' ? `<span style="color:var(--success-color); font-weight:bold;">حاضر ✓</span>` : st === 'late' ? `<span style="color:#f59e0b; font-weight:bold;">متأخر ⏳</span>` : st === 'absent' ? `<span style="color:var(--danger-color); font-weight:bold;">غائب ✗</span>` : `<span style="color:var(--text-muted); font-weight:bold;">لم يسجل</span>`; 
-    if(attTbody) attTbody.innerHTML += `<tr><td>${s.date}</td><td>${badge}</td></tr>`; 
-});
-    document.getElementById("profile-attendance").innerText = `${groupSessions.length > 0 ? Math.round((attended / groupSessions.length) * 100) : 0}%`;
-
-    const groupExams = exams.filter(e => e.group === student.group).sort((a,b) => new Date(b.date) - new Date(a.date));
-    let tExam = 0, sExam = 0; const exTbody = document.getElementById("profile-exams-list"); if(exTbody) exTbody.innerHTML = "";
-    groupExams.forEach(e => { let g = e.grades[student.code] !== undefined ? e.grades[student.code] : e.grades[student.phone]; if(g !== undefined) { tExam += parseFloat(e.maxScore); sExam += parseFloat(g); } if(exTbody) exTbody.innerHTML += `<tr><td>${e.name}</td><td>${e.date}</td><td><strong>${g !== undefined ? g : '--'}</strong> / ${e.maxScore}</td></tr>`; });
-    document.getElementById("profile-exams").innerText = `${tExam > 0 ? Math.round((sExam / tExam) * 100) : 0}%`;
-
-    const groupHw = homeworks.filter(h => h.group === student.group).sort((a,b) => new Date(b.date) - new Date(a.date));
-    let tHw = 0, sHw = 0; const hwTbody = document.getElementById("profile-hw-list"); if(hwTbody) hwTbody.innerHTML = "";
-    groupHw.forEach(h => { let g = h.grades[student.code] !== undefined ? h.grades[student.code] : h.grades[student.phone]; if(g !== undefined) { tHw += parseFloat(h.maxScore); sHw += parseFloat(g); } if(hwTbody) hwTbody.innerHTML += `<tr><td>${h.name}</td><td>${h.date}</td><td><strong>${g !== undefined ? g : '--'}</strong> / ${h.maxScore}</td></tr>`; });
-    document.getElementById("profile-hw").innerText = `${tHw > 0 ? Math.round((sHw / tHw) * 100) : 0}%`;
-};
-
-window.generateAdvancedReport = function() {
-    const type = document.getElementById("reportType").value; const groupFilter = document.getElementById("reportGroup").value; const fromDate = document.getElementById("reportDateFrom").value; const toDate = document.getElementById("reportDateTo").value;
-    const thead = document.getElementById("report-table-head"); const tbody = document.getElementById("report-table-body");
-    thead.innerHTML = ""; tbody.innerHTML = "";
-    let sourceData = []; let itemName = ""; 
-    if (type === 'attendance') { sourceData = classSessions; itemName = "الغياب (الحالة)"; } else if (type === 'exams') { sourceData = exams; itemName = "الامتحان (الدرجة)"; } else if (type === 'homework') { sourceData = homeworks; itemName = "الواجب (الدرجة)"; }
-    let filteredItems = sourceData.filter(item => { let matchGroup = (groupFilter === 'all') || (item.group === groupFilter); let matchDate = true; if (fromDate) matchDate = matchDate && (new Date(item.date) >= new Date(fromDate)); if (toDate) matchDate = matchDate && (new Date(item.date) <= new Date(toDate)); return matchGroup && matchDate; }).sort((a,b) => new Date(a.date) - new Date(b.date)); 
-    if (filteredItems.length === 0) { thead.innerHTML = `<tr><th>لا توجد بيانات مطابقة لهذه الفلاتر</th></tr>`; return; }
-    let targetStudents = groupFilter !== 'all' ? students.filter(s => s.group === groupFilter) : students;
-    let headHtml = `<tr><th>كود الطالب</th><th>الاسم</th><th>المجموعة</th>`; filteredItems.forEach(item => { let title = type === 'attendance' ? item.date : `${item.name} (${item.date})`; headHtml += `<th>${title}</th>`; }); headHtml += `</tr>`; thead.innerHTML = headHtml;
-    targetStudents.forEach(st => {
-        let rowHtml = `<tr><td style="font-weight: bold; color: var(--primary-color);">${st.code}</td><td>${st.name}</td><td>${st.group}</td>`;
-        filteredItems.forEach(item => {
-            let cellValue = "--";
-            if (type === 'attendance') { let stat = item.attendance[st.code] || item.attendance[st.phone]; if (stat === 'present') cellValue = "حاضر"; else if (stat === 'absent') cellValue = "غائب"; } 
-            else if (type === 'exams' || type === 'homework') { let g = item.grades[st.code] !== undefined ? item.grades[st.code] : item.grades[st.phone]; if (g !== undefined) { cellValue = `${g} / ${item.maxScore}`; } else { cellValue = "لم يُمتحن/لم يُسلم"; } }
-            rowHtml += `<td>${cellValue}</td>`;
-        });
-        rowHtml += `</tr>`; tbody.innerHTML += rowHtml;
-    });
-    showToast("تم استخراج التقرير بنجاح! 📊");
-};
 
 window.renderAtRiskStudents = function() {
     const tbody = document.getElementById("atrisk-list"); tbody.innerHTML = "";
@@ -6154,4 +6221,184 @@ window.sortGroupTable = function(key) {
         window.currentGroupSortConfig.asc = true; 
     }
     renderGroupStudentsTable(); // ارسم الجدول تاني
+};
+
+function updateNetworkStatus(isOnline, isInitialLoad = false) {
+    const badge = document.getElementById('network-status-badge');
+    const dot = document.getElementById('network-status-dot');
+    const text = document.getElementById('network-status-text');
+    if (!badge || !dot || !text) return;
+
+    if (isOnline) {
+        badge.style.background = 'rgba(16, 185, 129, 0.1)'; badge.style.color = '#10b981';
+        dot.style.background = '#10b981'; dot.style.boxShadow = '0 0 5px #10b981';
+        text.innerText = 'متصل بالإنترنت';
+        if (!isInitialLoad) {
+            if (typeof syncDataToBot === 'function') syncDataToBot();
+            showToast("تم عودة الإنترنت، وجاري المزامنة 🔄✅", "success");
+        }
+    } else {
+        badge.style.background = 'rgba(239, 68, 68, 0.1)'; badge.style.color = '#ef4444';
+        dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 5px #ef4444';
+        text.innerText = 'الإنترنت فاصل';
+        if (!isInitialLoad) showToast("انقطع الاتصال بالإنترنت! النظام أوفلاين ⚠️", "error");
+    }
+}
+window.addEventListener('online', () => updateNetworkStatus(true, false));
+window.addEventListener('offline', () => updateNetworkStatus(false, false));
+document.addEventListener('DOMContentLoaded', () => { setTimeout(() => { updateNetworkStatus(navigator.onLine, true); }, 500); });
+
+
+window.saveBotSettings = function() {
+    localStorage.setItem("botEnabled", document.getElementById("settingBotEnabled").checked);
+    localStorage.setItem("botName", document.getElementById("settingBotName").value.trim());
+    localStorage.setItem("botInstructions", document.getElementById("settingBotInstructions").value.trim());
+    showToast("تم حفظ إعدادات المساعد الذكي بنجاح! 🤖");
+    if (typeof syncDataToBot === "function") syncDataToBot();
+};
+
+// 1. Interceptor لمراقبة حفظ الداتا
+if (!window.fetchInterceptorAdded) {
+    const originalFetch = window.fetch;
+    window.fetch = async function(...args) {
+        const response = await originalFetch.apply(this, args);
+        try {
+            const url = args[0] instanceof Request ? args[0].url : args[0];
+            const options = args[1] || {};
+            const method = (options.method || (args[0] instanceof Request ? args[0].method : 'GET')).toUpperCase();
+            if (url && typeof url === 'string' && url.includes('firebasedatabase.app') && ['PUT', 'POST', 'PATCH', 'DELETE'].includes(method)) {
+                if (!url.includes('syncSignal.json')) {
+                    if (typeof triggerGlobalSyncSignal === 'function') setTimeout(triggerGlobalSyncSignal, 300);
+                }
+            }
+        } catch (e) {}
+        return response;
+    };
+    window.fetchInterceptorAdded = true;
+}
+
+// 2. إشارة المزامنة
+window.triggerGlobalSyncSignal = async function() {
+    if (localStorage.getItem("is_demo_mode") === "true") return;
+    window.lastLocalSyncTime = Date.now();
+    try {
+        const licenseKey = localStorage.getItem("licenseKey");
+        if(!licenseKey) return;
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${licenseKey}/syncSignal.json`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(window.lastLocalSyncTime)
+        });
+    } catch (e) {}
+};
+
+// 3. داخل دالة syncDataToBot() القديمة، ضيف السطر ده بعد الـ PUT مباشرة:
+// await window.triggerGlobalSyncSignal();
+
+// 4. دالة تحديث الشاشات المرئية
+window.refreshCurrentVisibleScreens = function() {
+    if (document.getElementById("dashboard-view")?.style.display === "block") { document.getElementById("total-students").innerText = students.length; document.getElementById("total-groups").innerText = groups.length; if(typeof renderDashboardCharts === 'function') renderDashboardCharts(); }
+    if (document.getElementById("groups-overview")?.style.display === "block" && typeof renderGroupCards === "function") renderGroupCards();
+    if (document.getElementById("students-overview")?.style.display === "block" && typeof renderTable === "function") renderTable();
+    if (document.getElementById("sessions-overview")?.style.display === "block" && typeof renderSessionCards === "function") renderSessionCards();
+    if (document.getElementById("session-details-view")?.style.display === "block" && currentActiveSessionId) { const session = classSessions.find(s => s.id === currentActiveSessionId); if(session) renderAttendanceTable(session); }
+};
+
+// 5. الاستماع للسيرفر اللحظي
+window.startRealTimeSync = function() {
+    if (sessionStorage.getItem("isLoggedIn") !== "true" || localStorage.getItem("is_demo_mode") === "true") return;
+    const licenseKey = localStorage.getItem("licenseKey");
+    if(!licenseKey) return;
+
+    const syncUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${licenseKey}/syncSignal.json`;
+    const source = new EventSource(syncUrl);
+
+    source.addEventListener('put', async function(e) {
+        try {
+            const payload = JSON.parse(e.data);
+            const serverTime = payload.data; 
+            if (serverTime && (!window.lastLocalSyncTime || serverTime > window.lastLocalSyncTime)) {
+                console.log("⚡ [SYNC] تم رصد تغيير من جهاز آخر، يتم التحديث...");
+                window.lastLocalSyncTime = serverTime; 
+                await loadDataFromFirebase();
+                refreshCurrentVisibleScreens();
+            }
+        } catch (err) {}
+    });
+    source.onerror = function() { source.close(); setTimeout(window.startRealTimeSync, 5000); };
+};
+
+// تشغيله لما يفتح السيستم
+document.addEventListener('DOMContentLoaded', () => { setTimeout(() => { window.startRealTimeSync(); }, 3000); });
+
+
+// ==========================================
+// 🚀 الإصلاح النهائي لسجل الحضور (دعم القديم والجديد معاً)
+// ==========================================
+window.markAttendance = function(codeOrPhone, status) {
+    const s = classSessions.find(s => s.id === currentActiveSessionId);
+    if(s && s.status === 'open') {
+        const student = students.find(st => st.code === codeOrPhone || st.phone === codeOrPhone);
+        if(!student) return;
+        
+        // جلب الحالة القديمة سواء متسجلة بالكود أو بالتليفون (عشان الحصص القديمة)
+        let oldStatus = s.attendance[student.code] || s.attendance[student.phone];
+        
+        if (oldStatus) {
+            if (oldStatus === 'present') student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 5);
+            if (oldStatus === 'late') student.behaviorPoints = Math.max(0, (student.behaviorPoints || 0) - 2);
+        }
+        if (status === 'present') student.behaviorPoints = (student.behaviorPoints || 0) + 5;
+        if (status === 'late') student.behaviorPoints = (student.behaviorPoints || 0) + 2;
+
+        // بنسجل بالكود دايماً في الجديد عشان نمنع تداخل الإخوات
+        s.attendance[student.code] = status; 
+        
+        localStorage.setItem("classSessions", JSON.stringify(classSessions));
+        localStorage.setItem("students", JSON.stringify(students));
+        renderAttendanceTable(s);
+
+        // الإشعار اللحظي
+        let title = "تحديث حضور وانصراف 🏫";
+        let msg = "";
+        if(status === 'present') msg = `✅ وصل ${student.name} إلى السنتر لحضور حصة (${s.topic || 'اليوم'}).`;
+        else if(status === 'late') msg = `⏳ تأخر ${student.name} عن موعد بداية حصة (${s.topic || 'اليوم'}).`;
+        else if(status === 'absent') msg = `❌ تنبيه: ${student.name} غائب عن حصة (${s.topic || 'اليوم'}).`;
+        
+        if(typeof notifyParentApp === 'function') notifyParentApp(student.code, title, msg);
+    }
+};
+
+window.renderAttendanceTable = function(session) { 
+    const tbody = document.getElementById("attendance-list"); 
+    const gStudents = students.filter(s => s.group === session.group); 
+    if(gStudents.length === 0) return tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;">لا يوجد طلاب</td></tr>`; 
+    
+    tbody.innerHTML = ""; 
+    const groupS = classSessions.filter(s => s.group === session.group).sort((a,b)=>new Date(a.date)-new Date(b.date)); 
+    const prevSession = groupS[groupS.findIndex(s => s.id === session.id) - 1]; 
+    
+    gStudents.forEach(st => { 
+        // 💡 السحر هنا: بنقرا الداتا القديمة (بالتليفون) والجديدة (بالكود)
+        const stat = session.attendance[st.code] || session.attendance[st.phone]; 
+        
+        const statHtml = stat === 'present' ? '<span style="color:#10b981; font-weight:bold;">حاضر ✓</span>' : stat === 'late' ? '<span style="color:#f59e0b; font-weight:bold;">متأخر ⏳</span>' : stat === 'absent' ? '<span style="color:#ef4444; font-weight:bold;">غائب ✗</span>' : '<span style="color:#64748b;">لم يسجل</span>'; 
+        
+        let pHT = '--'; 
+        if(prevSession) { 
+            const p = prevSession.attendance[st.code] || prevSession.attendance[st.phone]; 
+            pHT = p==='present' ? 'حاضر' : p==='late' ? 'متأخر' : p==='absent' ? 'غائب' : '--'; 
+        } 
+        
+        tbody.innerHTML += `<tr>
+            <td><strong>${st.code}</strong></td>
+            <td>${window.getStudentNameHtml(st)}</td>
+            <td style="direction:ltr;">${st.phone}</td>
+            <td>${pHT}</td>
+            <td>${statHtml}</td>
+            <td style="display:flex; gap:5px; justify-content:center;">
+                <button style="background-color:#10b981; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.code}','present')">حاضر</button>
+                <button style="background-color:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.code}','late')">متأخر</button>
+                <button style="background-color:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="markAttendance('${st.code}','absent')">غائب</button>
+            </td>
+        </tr>`; 
+    }); 
 };
