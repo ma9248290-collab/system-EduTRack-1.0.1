@@ -736,30 +736,48 @@
             <span style="font-size: 24px;">💬</span> تخصيص رسائل الواتساب التلقائية
         </h2>
         
-        <div style="background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #0ea5e9;">
-            <p style="font-weight: bold; margin-bottom: 10px; color: var(--text-main);">💡 المتغيرات المتاحة (انسخ الكلمة بأقواسها وضعها في النص):</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; margin-bottom: 15px;">
-                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{اسم_الطالب}</span>
-                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{المجموعة}</span>
-                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{الموضوع}</span>
-                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{تفاصيل_التقرير}</span>
-                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{اسم_السنتر}</span>
-                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{اسم_المدير}</span>
-                <span class="badge" style="background: #e0f2fe; color: #1e3a8a; border: 1px solid #bae6fd;">{وقت_الرسالة}</span>
+        <div style="background: var(--hover-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px dashed #0ea5e9; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+            <p style="font-weight: bold; margin-bottom: 15px; color: var(--text-main); font-size: 15px;">
+                💡 المتغيرات الذكية (اضغط على أي متغير لإضافته في مكان المؤشر داخل الرسالة):
+            </p>
+            
+            <!-- أزرار المتغيرات التفاعلية -->
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;" id="smart-variables-container">
+                <button type="button" class="var-btn" onclick="insertVariable('{اسم_الطالب}')">👤 اسم الطالب</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{كود_الطالب}')">🔢 كود الطالب</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{رقم_الطالب}')">📱 هاتف الطالب</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{رقم_ولي_الأمر}')">👨‍👦 هاتف ولي الأمر</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{المجموعة}')">📚 المجموعة</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{الموضوع}')">🎯 موضوع الحصة</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{تفاصيل_التقرير}')" style="background: #e0e7ff; border-color: #3b82f6; color: #1d4ed8;">📊 تفاصيل التقرير (الغياب والدرجات)</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{اسم_السنتر}')">🏫 اسم السنتر</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{اسم_المدير}')">👑 اسم المدرس</button>
+                <button type="button" class="var-btn" onclick="insertVariable('{وقت_الرسالة}')">⏰ وقت الإرسال</button>
             </div>
-            <p style="margin-top: 10px; font-size: 13px; color: var(--danger-color); line-height: 1.6;">
-                🛡️ <strong>حماية من الحظر (Spintax):</strong> لتجنب حظر الواتساب، استخدم الصيغة <code>{كلمة1|كلمة2|كلمة3}</code> ليقوم النظام باختيار كلمة عشوائية في كل رسالة، مما يجعل الرسائل تبدو وكأن بشراً يكتبها.
+
+            <p style="margin-top: 15px; font-size: 13px; color: var(--danger-color); line-height: 1.6; background: rgba(239, 68, 68, 0.05); padding: 10px; border-radius: 8px;">
+                🛡️ <strong>حماية من الحظر (Spintax):</strong> لتجنب حظر الواتساب، استخدم الصيغة <code>{كلمة1|كلمة2|كلمة3}</code> ليقوم النظام باختيار كلمة عشوائية في كل رسالة.
             </p>
         </div>
 
+        <style>
+            .var-btn {
+                background: white; border: 1px solid #bae6fd; color: #0369a1; padding: 6px 12px;
+                border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer;
+                transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-family: 'Cairo', sans-serif;
+            }
+            .var-btn:hover { background: #0ea5e9; color: white; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(14, 165, 233, 0.3); }
+            .var-btn:active { transform: translateY(0); }
+        </style>
+
         <div class="input-group">
-            <label style="font-weight: bold;">قالب رسالة ولي الأمر</label>
-            <textarea id="settingParentMsg" class="custom-input" rows="5" placeholder="مثال: {أهلاً|مرحباً} ولي أمر الطالب {اسم_الطالب}..."></textarea>
+            <label style="font-weight: bold; font-size: 15px; color: var(--primary-color);">👨‍👦 قالب رسالة ولي الأمر</label>
+            <textarea id="settingParentMsg" class="custom-input" rows="6" placeholder="قف هنا ثم اضغط على المتغيرات بالأعلى لإضافتها..."></textarea>
         </div>
         
         <div class="input-group">
-            <label style="font-weight: bold;">قالب رسالة الطالب</label>
-            <textarea id="settingStudentMsg" class="custom-input" rows="5" placeholder="مثال: {عاش يا بطل|أخبار المذاكرة إيه} يا {اسم_الطالب}..."></textarea>
+            <label style="font-weight: bold; font-size: 15px; color: var(--success-color);">🎓 قالب رسالة الطالب</label>
+            <textarea id="settingStudentMsg" class="custom-input" rows="6" placeholder="قف هنا ثم اضغط على المتغيرات بالأعلى لإضافتها..."></textarea>
         </div>
         
         <button class="save-btn" style="width: 100%; font-size: 16px; background-color: #0ea5e9;" onclick="saveAccountSettings()">💾 حفظ قوالب الرسائل والإعدادات</button>
