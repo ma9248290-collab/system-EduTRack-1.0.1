@@ -806,28 +806,204 @@ async function loadDataFromFirebase() {
     }
     isFirebaseLoaded = true; 
 
+    // بعد ما السيستم يحمل الداتا ويفرشها، شيك لو محتاجين باك أب النهاردة
+    setTimeout(autoCloudBackup, 5000); // بنأخره 5 ثواني عشان ميعطلش فتح الشاشة
+
     setTimeout(window.checkGlobalAnnouncements, 1500);
 }
 
+// ==========================================
+// 🧬 المُدمج الذكي للبيانات (Two-Way Sync Merge)
+// ==========================================
+window.mergeOfflineDataAndSync = async function() {
+    showToast("جاري دمج بياناتك الأوفلاين مع بيانات الأجهزة الأخرى... ⏳", "info");
+    
+    try {
+        // 1. سحب داتا السيرفر الحالية
+        let res = await fetch(getFirebaseUrl());
+        let serverData = await res.json() || {};
+
+        // 2. دمج الطلاب (الجداد من هنا ومن هناك)
+        let mergedStudentsMap = {};
+        (serverData.students || []).forEach(s => { if(s) mergedStudentsMap[s.code] = s; });
+        students.forEach(s => { mergedStudentsMap[s.code] = { ...mergedStudentsMap[s.code], ...s }; });
+        students = Object.values(mergedStudentsMap);
+
+        // 3. دمج الحصص والحضور (أهم نقطة عشان الغياب ميتلغيش)
+        let mergedSessionsMap = {};
+        (serverData.classSessions || []).forEach(s => { if(s) mergedSessionsMap[s.id] = s; });
+        classSessions.forEach(s => {
+            if(mergedSessionsMap[s.id]) {
+                // لو الحصة موجودة في الجهازين، ادمج غياب الطلاب اللي هنا مع اللي هناك
+                mergedSessionsMap[s.id].attendance = { ...mergedSessionsMap[s.id].attendance, ...s.attendance };
+                mergedSessionsMap[s.id] = { ...mergedSessionsMap[s.id], ...s, attendance: mergedSessionsMap[s.id].attendance };
+            } else {
+                mergedSessionsMap[s.id] = s; // لو حصة جديدة أوفلاين
+            }
+        });
+        classSessions = Object.values(mergedSessionsMap).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        // 4. دمج الامتحانات والدرجات
+        let mergedExamsMap = {};
+        (serverData.exams || []).forEach(e => { if(e) mergedExamsMap[e.id] = e; });
+        exams.forEach(e => {
+            if(mergedExamsMap[e.id]) {
+                mergedExamsMap[e.id].grades = { ...mergedExamsMap[e.id].grades, ...e.grades };
+                mergedExamsMap[e.id] = { ...mergedExamsMap[e.id], ...e, grades: mergedExamsMap[e.id].grades };
+            } else {
+                mergedExamsMap[e.id] = e;
+            }
+        });
+        exams = Object.values(mergedExamsMap);
+
+        // 5. دمج الخزنة والماليات (عشان الفلوس متضيعش)
+        let serverFinance = serverData.financeRecords || {};
+        Object.keys(financeRecords).forEach(sessionKey => {
+            if(!serverFinance[sessionKey]) serverFinance[sessionKey] = {};
+            serverFinance[sessionKey] = { ...serverFinance[sessionKey], ...financeRecords[sessionKey] };
+        });
+        financeRecords = serverFinance;
+
+        // 6. حفظ النسخة المدمجة في الجهاز
+        localStorage.setItem("students", JSON.stringify(students));
+        localStorage.setItem("classSessions", JSON.stringify(classSessions));
+        localStorage.setItem("exams", JSON.stringify(exams));
+        localStorage.setItem("financeRecords", JSON.stringify(financeRecords));
+
+        // 7. رفع النسخة المدمجة للسيرفر
+        localStorage.removeItem('has_offline_changes');
+        await syncDataToBot();
+        
+        showToast("✅ تمت المزامنة! تم دمج شغلك مع السيرفر بنجاح.", "success");
+        if(typeof refreshCurrentVisibleScreens === 'function') refreshCurrentVisibleScreens();
+
+    } catch(err) {
+        showToast("حدث خطأ أثناء دمج البيانات!", "error");
+        console.error(err);
+    }
+};
+
+
+// ==========================================
+// 🛡️ نظام النسخ الاحتياطي التلقائي السحابي (Auto Cloud Backup)
+// ==========================================
+async function autoCloudBackup() {
+    const licenseKey = localStorage.getItem("licenseKey");
+    let isDemo = localStorage.getItem("is_demo_mode") === "true";
+    
+    // لو مفيش نت، أو الحساب تجريبي، أو مفيش كود سنتر، متعملش باك أب
+    if (!licenseKey || !navigator.onLine || isDemo) return;
+
+    // تحديد اسم النسخة بتاريخ اليوم (مثال: 2026-08-19)
+    const today = new Date().toISOString().split('T')[0];
+    const lastBackup = localStorage.getItem('last_auto_backup');
+
+    // لو السيستم عمل نسخة النهاردة بالفعل، هيوقف عشان ميزحمش الداتابيز
+    if (lastBackup === today) return;
+
+    // تجميع كل قطرة داتا في السيستم
+    const backupData = {
+        timestamp: new Date().toISOString(),
+        students: typeof students !== 'undefined' ? students : [], 
+        classSessions: typeof classSessions !== 'undefined' ? classSessions : [], 
+        exams: typeof exams !== 'undefined' ? exams : [], 
+        homeworks: typeof homeworks !== 'undefined' ? homeworks : [], 
+        schedule: typeof schedule !== 'undefined' ? schedule : [], 
+        groups: typeof groups !== 'undefined' ? groups : [], 
+        financeRecords: typeof financeRecords !== 'undefined' ? financeRecords : {}, 
+        expenses: typeof expenses !== 'undefined' ? expenses : [], 
+        books: typeof books !== 'undefined' ? books : [], 
+        monthlyPayments: typeof monthlyPayments !== 'undefined' ? monthlyPayments : {},
+        onlineExams: typeof onlineExams !== 'undefined' ? onlineExams : []
+    };
+
+    try {
+        // رفع النسخة في مسار معزول تماماً اسمه (backups) جوه ملف السنتر
+        await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${licenseKey}/backups/${today}.json`, { 
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(backupData) 
+        });
+        
+        // تسجيل إننا عملنا باك أب النهاردة عشان ميكرروش تاني إلا بكرة
+        localStorage.setItem('last_auto_backup', today);
+        console.log(`✅ تم أخذ لقطة احتياطية سحابية بنجاح ليوم: ${today}`);
+        
+    } catch (e) {
+        console.error("⚠️ فشل النسخ الاحتياطي التلقائي:", e);
+    }
+}
+
+
+// ==========================================
+// 🌐 مراقب حالة الإنترنت (محدث بالدمج الذكي)
+// ==========================================
+function updateNetworkStatus(isOnline, isInitialLoad = false) {
+    const badge = document.getElementById('network-status-badge');
+    const dot = document.getElementById('network-status-dot');
+    const text = document.getElementById('network-status-text');
+    if (!badge || !dot || !text) return;
+
+    if (isOnline) {
+        badge.style.background = 'rgba(16, 185, 129, 0.1)'; badge.style.color = '#10b981';
+        dot.style.background = '#10b981'; dot.style.boxShadow = '0 0 5px #10b981';
+        text.innerText = 'متصل بالإنترنت';
+        
+        if (!isInitialLoad) {
+            // 🛑 فحص هل في شغل اتعمل وإحنا أوفلاين ولا لأ؟
+            let hasOfflineChanges = localStorage.getItem('has_offline_changes') === 'true';
+            
+            if (hasOfflineChanges) {
+                // تشغيل الدمج الذكي اللي بيجمع شغل الجهازين مع بعض
+                mergeOfflineDataAndSync();
+            } else {
+                // لو معملش حاجة أوفلاين، يسحب بأمان
+                showToast("تم عودة الإنترنت، جاري سحب أحدث البيانات... 📥", "info");
+                if (typeof loadDataFromFirebase === 'function') {
+                    loadDataFromFirebase().then(() => {
+                        if (typeof refreshCurrentVisibleScreens === 'function') refreshCurrentVisibleScreens();
+                        showToast("تم تحديث شاشتك بأحدث البيانات بنجاح ✅", "success");
+                    });
+                }
+            }
+        }
+    } else {
+        badge.style.background = 'rgba(239, 68, 68, 0.1)'; badge.style.color = '#ef4444';
+        dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 5px #ef4444';
+        text.innerText = 'الإنترنت فاصل';
+        if (!isInitialLoad) showToast("انقطع الاتصال بالإنترنت! سيتم دمج أي تعديل لاحقاً ⚠️", "error");
+    }
+}
+
+// ==========================================
+// ☁️ دالة الرفع للسحابة (محمية ضد تداخل الأجهزة)
+// ==========================================
 async function syncDataToBot() {
+    // 🔥 الحماية الأولى: لو مفيش نت، متعملش أي حاجة وسجل إن في شغل أوفلاين
+    if (!navigator.onLine) {
+        console.warn("الإنترنت مفصول.. تم إيقاف الرفع مؤقتاً وتسجيل التعديلات كمحلية.");
+        // وضع علامة سرية في الجهاز إن في داتا مستنية تترفع
+        const originalSetItem = localStorage.constructor.prototype.setItem;
+        originalSetItem.call(localStorage, 'has_offline_changes', 'true');
+        return; 
+    }
+
     let isDemo = localStorage.getItem("is_demo_mode") === "true";
     if (!isDemo && (!isFirebaseLoaded || !licenseKey)) return; 
 
-    // تجميع البيانات وضمان وجود أري الامتحانات الإلكترونية بدون تضارب
    const dataToSync = {
         settings: {
             teacherName: localStorage.getItem("teacherName") || "المدير",
             centerName: localStorage.getItem("centerName") || "السنتر",
             adminUser: localStorage.getItem("adminUser") || "shefo",
-           adminPass: localStorage.getItem("adminPass") || "12345",
+            adminPass: localStorage.getItem("adminPass") || "12345",
             adminPin: localStorage.getItem("adminPin") || "1234",
             phoneNumbers: localStorage.getItem("teacherPhones") || "",
-            // السطرين دول 👇
             parentMsgTemplate: localStorage.getItem("parentMsgTemplate") || "",
             studentMsgTemplate: localStorage.getItem("studentMsgTemplate") || "",
             botEnabled: localStorage.getItem("botEnabled") === "true",
-botName: localStorage.getItem("botName") || "المساعد",
-botInstructions: localStorage.getItem("botInstructions") || ""
+            botName: localStorage.getItem("botName") || "المساعد",
+            botInstructions: localStorage.getItem("botInstructions") || ""
         },
         teacherName: localStorage.getItem("teacherName") || "المدير",
         centerName: localStorage.getItem("centerName") || "السنتر",
@@ -835,29 +1011,38 @@ botInstructions: localStorage.getItem("botInstructions") || ""
         adminPass: localStorage.getItem("adminPass"),
         adminPin: localStorage.getItem("adminPin"),
         
-        students, classSessions, exams, homeworks, schedule, groups, financeRecords, expenses, books,monthlyPayments: monthlyPayments,
-        onlineExams: onlineExams // ضفناها هنا عشان الفايربيز يحفظ هيكل الامتحانات
-        
+        students, classSessions, exams, homeworks, schedule, groups, financeRecords, expenses, books, monthlyPayments: monthlyPayments,
+        onlineExams: onlineExams 
     };
 
-    // داخل دالة syncDataToBot()
-if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") {
-    try {
-        // 🔥 تحديث الرابط هنا
-        await fetch(`${WHATSAPP_SERVER_URL}/sync-database`, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(dataToSync) 
-        });
-    } catch (e) {}
-}
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:") {
+        try {
+            await fetch(`${WHATSAPP_SERVER_URL}/sync-database`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(dataToSync) 
+            });
+        } catch (e) {}
+    }
 
     if (isDemo) return;
 
     try {
-        await fetch(getFirebaseUrl(), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSync) });
+        await fetch(getFirebaseUrl(), { 
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(dataToSync) 
+        });
+        
+        // 🔥 مسح العلامة بعد الرفع بنجاح عشان منسألوش تاني
+        localStorage.removeItem('has_offline_changes');
+
+        if (typeof triggerGlobalSyncSignal === 'function') {
+            await triggerGlobalSyncSignal();
+        }
     } catch (e) {}
 }
+
 
 ["students", "classSessions", "exams", "homeworks", "schedule", "groups", "financeRecords", "expenses", "books", "monthlyPayments"].forEach(key => {
     const originalSetItem = localStorage.setItem;
@@ -866,6 +1051,9 @@ if (window.location.hostname === "localhost" || window.location.hostname === "12
         if(key === k) syncDataToBot();
     };
 });
+
+
+
 
 // ==========================================
 // 5. إدارة الجدول الأسبوعي (النسخة المرنة الديناميكية)
@@ -988,8 +1176,27 @@ function filterGroupsByLevel(levelSelectId, groupSelectId) {
     if(level) { groups.filter(g => g.level === level).forEach(g => { groupSelect.innerHTML += `<option value="${g.name}">${g.name}</option>`; }); }
 }
 
-function generateStudentCode() { let maxId = 0; students.forEach(s => { let num = parseInt(s.code, 10); if (!isNaN(num) && num > maxId) maxId = num; }); return (maxId + 1).toString(); }
+function generateStudentCode() { 
+    // لو السيستم لسه فاضي ومفيش أي طلاب
+    if (students.length === 0) return "1";
 
+    // نجيب آخر طالب تم إضافته (الموجود في آخر المصفوفة)
+    let lastStudent = students[students.length - 1];
+    let lastNum = parseInt(lastStudent.code, 10);
+
+    // لو الكود الأخير رقم سليم، نزود عليه 1
+    if (!isNaN(lastNum)) {
+        return (lastNum + 1).toString();
+    } else {
+        // خطة بديلة (لو آخر كود مكنش رقم لأي سبب، نرجع ندور على أكبر رقم)
+        let maxId = 0; 
+        students.forEach(s => { 
+            let num = parseInt(s.code, 10); 
+            if (!isNaN(num) && num > maxId) maxId = num; 
+        }); 
+        return (maxId + 1).toString();
+    }
+}
 window.processStudentSaving = async function(keepOpen) {
     const code = document.getElementById("studentCode").value.trim(); 
     const name = document.getElementById("studentName").value.trim(); 
@@ -2264,20 +2471,32 @@ function processVoiceCommand(text, mode, inputId) {
 // ==========================================
 function getRandomGreeting() { const greetings = ["أهلاً بحضرتك", "مرحباً بك", "السلام عليكم"]; return greetings[Math.floor(Math.random() * greetings.length)]; }
 
+// ==========================================
+// 18. الواتساب والإرسال الجماعي (الخلفية)
+// ==========================================
 async function sendAutoWhatsApp(phone, message) {
     // لو الرقم 0، بلاش يبعت واتساب خالص
     if (!phone || String(phone).trim() === "" || String(phone).trim() === "0") return false;
-    if (!phone || String(phone).trim() === "") return false;
-    let fPhone = String(phone).trim(); if (fPhone.startsWith("0") && fPhone.length === 11) fPhone = "20" + fPhone.substring(1);
+    
+    let fPhone = String(phone).trim(); 
+    if (fPhone.startsWith("0") && fPhone.length === 11) fPhone = "20" + fPhone.substring(1);
+    
     try {
-        // 🔥 استخدام المتغير الجديد للاتصال بالسيرفر
         let response = await fetch(`${WHATSAPP_SERVER_URL}/send`, { 
-    method: 'POST', 
-    headers: { 'Content-Type': 'application/json' }, 
-    body: JSON.stringify({ clientId: getSafeUid(), phone: fPhone, message: message }) 
-});
-        return (await response.json()).success === true; 
-    } catch(e) { return false; }
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true' // 🔥 السطر ده هو اللي هيحل مشكلة عدم الإرسال
+            }, 
+            body: JSON.stringify({ clientId: getSafeUid(), phone: fPhone, message: message }) 
+        });
+        
+        let data = await response.json();
+        return data.success === true; 
+    } catch(e) { 
+        console.error("WhatsApp Send Error:", e);
+        return false; 
+    }
 }
 
 function toggleSessionStatus(id) { 
@@ -2577,7 +2796,7 @@ window.randomSleep = function(min = 2000, max = 5000) {
 
 
 // ==========================================
-// 🚀 إغلاق الحصة، وإرسال التقارير (مع الحماية الدقيقة من الحظر)
+// 🚀 إغلاق الحصة، وإرسال التقارير (محدث ليدعم التوقف والإلغاء)
 // ==========================================
 window.confirmCloseSession = async function(sendMessages) {
     const session = classSessions.find(s => s.id === document.getElementById('closeSessionId').value); 
@@ -2587,7 +2806,6 @@ window.confirmCloseSession = async function(sendMessages) {
     students.filter(s => s.group === session.group).forEach(st => {
         if (!session.attendance[st.code] && !session.attendance[st.phone]) {
             session.attendance[st.code] = 'absent';
-            if(typeof notifyParentApp === 'function') notifyParentApp(st.code, "غياب عن الحصة ❌", `تنبيه: الطالب/ة ${st.name} غائب عن حصة (${session.topic || 'اليوم'}).`);
         }
     });
     
@@ -2608,6 +2826,9 @@ window.confirmCloseSession = async function(sendMessages) {
     session.sentTotal = targetStudents.length; 
     session.reportData = { success: [], failed: [] };
     
+    // 🟢 تعيين حالة الإرسال قيد التشغيل
+    window.sessionSendingStates[session.id] = 'running';
+    
     localStorage.setItem("classSessions", JSON.stringify(classSessions)); 
     renderSessionCards();
     
@@ -2615,10 +2836,19 @@ window.confirmCloseSession = async function(sendMessages) {
     const sessionHw = homeworks.find(h => h.group === session.group && h.date === session.date);
     
     (async () => {
-        let messagesSentForBatch = 0; // 🌟 عداد الاستراحة الطويلة
+        let messagesSentForBatch = 0; 
         let currentStudentIndex = 0;
 
         for (let st of targetStudents) {
+            
+            // 🛑 [الميزة الجديدة] فحص حالة الإيقاف المؤقت أو الإلغاء
+            while (window.sessionSendingStates[session.id] === 'paused') {
+                await window.randomSleep(1000, 1500); // ينام ثانية ويرجع يفحص تاني
+            }
+            if (window.sessionSendingStates[session.id] === 'cancelled') {
+                break; // الخروج من اللوب بالكامل لو ضغط إلغاء
+            }
+
             currentStudentIndex++;
             let reportData = ``;
             let att = session.attendance[st.code] || session.attendance[st.phone];
@@ -2646,24 +2876,22 @@ window.confirmCloseSession = async function(sendMessages) {
                 messagesSentForBatch++;
             }
 
-            // 🌟 تطبيق الاستراحة الطويلة لو وصلنا 20 رسالة
             if (messagesSentForBatch >= 20) {
                 let pText = document.getElementById(`prog-text-${session.id}`); 
                 if(pText) pText.innerText = "☕ استراحة أمان...";
-                await window.randomSleep(30000, 60000); // استراحة من 30 لـ 60 ثانية
+                await window.randomSleep(30000, 60000); 
                 messagesSentForBatch = 0;
             }
             
             // إرسال للطالب
             if (st.phone && st.phone !== st.parentPhone) {
-                if (st.parentPhone) await window.randomSleep(2000, 4000); // 🌟 فاصل صغير بين رسالة الأب والابن
+                if (st.parentPhone) await window.randomSleep(2000, 4000); 
                 let isOk = await sendAutoWhatsApp(st.phone, studentMsg);
                 if (isOk) session.reportData.success.push({ name: st.name, code: st.code, target: 'الطالب', phone: st.phone });
                 else session.reportData.failed.push({ name: st.name, code: st.code, target: 'الطالب', phone: st.phone });
                 messagesSentForBatch++;
             }
 
-            // 🌟 تطبيق الاستراحة الطويلة لو وصلنا 20 رسالة
             if (messagesSentForBatch >= 20) {
                 let pText = document.getElementById(`prog-text-${session.id}`); 
                 if(pText) pText.innerText = "☕ استراحة أمان...";
@@ -2671,23 +2899,28 @@ window.confirmCloseSession = async function(sendMessages) {
                 messagesSentForBatch = 0;
             }
 
-            // تحديث شريط التحميل خطوة بخطوة بعد الإرسال الفعلي
             session.sentProgress++;
             let pText = document.getElementById(`prog-text-${session.id}`); 
             let pBar = document.getElementById(`prog-bar-${session.id}`);
             if(pText) pText.innerText = `${session.sentProgress}/${session.sentTotal}`; 
             if(pBar) pBar.style.width = `${(session.sentProgress/session.sentTotal)*100}%`;
 
-            // 🌟 استراحة عشوائية بين كل طالب والتاني عشان الواتساب ميقفلش الرقم
-            if (currentStudentIndex < targetStudents.length) {
+            // فحص الإلغاء مرة أخرى قبل الـ Sleep النهائي
+            if (currentStudentIndex < targetStudents.length && window.sessionSendingStates[session.id] !== 'cancelled') {
                 await window.randomSleep(3000, 6000); 
             }
         }
         
+        let wasCancelled = (window.sessionSendingStates[session.id] === 'cancelled');
         session.isSending = false; 
+        delete window.sessionSendingStates[session.id];
+        
         localStorage.setItem("classSessions", JSON.stringify(classSessions)); 
         renderSessionCards(); 
-        showToast(`✅ اكتمل إرسال تقارير حصة: ${session.topic}`);
+        
+        if (!wasCancelled) {
+            showToast(`✅ اكتمل إرسال تقارير حصة: ${session.topic}`);
+        }
     })();
 };
 
@@ -3774,9 +4007,6 @@ window.clearSystemLogs = function() {
 };
 
 
-// ==========================================
-// 📈 2. نظام التقارير الشاملة وتصدير الإكسيل
-// ==========================================
 window.generateAdvancedReport = function() {
     const type = document.getElementById("reportType").value;
     const groupFilter = document.getElementById("reportGroup").value;
@@ -3790,10 +4020,9 @@ window.generateAdvancedReport = function() {
 
     // 1. تحديد الداتا بناءً على النوع المختار (حصص ولا امتحانات ولا واجبات)
     let sourceData = [];
-    let itemName = ""; // اسم العمود (حصة / امتحان / واجب)
-    if (type === 'attendance') { sourceData = classSessions; itemName = "الغياب (الحالة)"; }
-    else if (type === 'exams') { sourceData = exams; itemName = "الامتحان (الدرجة)"; }
-    else if (type === 'homework') { sourceData = homeworks; itemName = "الواجب (الدرجة)"; }
+    if (type === 'attendance') { sourceData = classSessions; }
+    else if (type === 'exams') { sourceData = exams; }
+    else if (type === 'homework') { sourceData = homeworks; }
 
     // 2. فلترة الداتا بالتاريخ والمجموعة
     let filteredItems = sourceData.filter(item => {
@@ -3802,14 +4031,14 @@ window.generateAdvancedReport = function() {
         if (fromDate) matchDate = matchDate && (new Date(item.date) >= new Date(fromDate));
         if (toDate) matchDate = matchDate && (new Date(item.date) <= new Date(toDate));
         return matchGroup && matchDate;
-    }).sort((a,b) => new Date(a.date) - new Date(b.date)); // ترتيب تصاعدي بالزمن
+    }).sort((a,b) => new Date(a.date) - new Date(b.date)); 
 
     if (filteredItems.length === 0) {
         thead.innerHTML = `<tr><th>لا توجد بيانات مطابقة لهذه الفلاتر</th></tr>`;
         return;
     }
 
-    // 3. فلترة الطلاب (لو اختار مجموعة معينة نجيب طلابها بس، لو الكل نجيب الكل)
+    // 3. فلترة الطلاب
     let targetStudents = students;
     if (groupFilter !== 'all') targetStudents = students.filter(s => s.group === groupFilter);
 
@@ -3833,13 +4062,17 @@ window.generateAdvancedReport = function() {
             let cellValue = "--";
             
             if (type === 'attendance') {
-                let stat = item.attendance[st.phone];
+                // 🔥 التعديل هنا: قراءة الحضور بكود الطالب ثم هاتفه
+                let stat = item.attendance[st.code] || item.attendance[st.phone];
                 if (stat === 'present') cellValue = "حاضر";
+                else if (stat === 'late') cellValue = "متأخر";
                 else if (stat === 'absent') cellValue = "غائب";
             } 
             else if (type === 'exams' || type === 'homework') {
-                if (item.grades && item.grades[st.phone] !== undefined) {
-                    cellValue = `${item.grades[st.phone]} / ${item.maxScore}`;
+                // 🔥 التعديل هنا: قراءة الدرجة بكود الطالب ثم هاتفه
+                let grade = item.grades[st.code] !== undefined ? item.grades[st.code] : item.grades[st.phone];
+                if (grade !== undefined) {
+                    cellValue = `${grade} / ${item.maxScore}`;
                 } else {
                     cellValue = "لم يُمتحن/لم يُسلم";
                 }
@@ -3853,6 +4086,49 @@ window.generateAdvancedReport = function() {
     
     showToast("تم استخراج التقرير بنجاح! 📊");
 };
+
+
+// ==========================================
+// 📥 تحميل بيانات الطلاب الشاملة لإكسيل
+// ==========================================
+window.exportStudentsToExcel = function(groupName = 'all') {
+    if (students.length === 0) return showToast("لا يوجد طلاب لتصديرهم!", "error");
+
+    let targetStudents = students;
+    if (groupName !== 'all') {
+        targetStudents = students.filter(s => s.group === groupName);
+        if (targetStudents.length === 0) return showToast("لا يوجد طلاب في هذه المجموعة!", "error");
+    }
+
+    // تجهيز الداتا بالشكل المطلوب وعمل خريطة (Map) بأسماء العواميد
+    let excelData = targetStudents.map(st => ({
+        "الكود": st.code,
+        "اسم الطالب": st.name,
+        "المرحلة الدراسية": st.level,
+        "المجموعة": st.group,
+        "هاتف الطالب": st.phone,
+        "رقم ولي الأمر": st.parentPhone,
+        "الجنس": st.gender || "غير محدد",
+        "حالة خاصة (إعفاء/خصم)": st.isSpecialCase ? `نعم (يدفع ${st.specialAmount} ج)` : "لا",
+        "رصيد المحفظة (ج.م)": st.walletBalance || 0,
+        "نقاط السلوك": st.behaviorPoints || 0
+    }));
+
+    let ws = XLSX.utils.json_to_sheet(excelData);
+    
+    // تظبيط عرض العواميد عشان الكلام ميبقاش مزنوق
+    ws['!cols'] = [{wch: 15}, {wch: 35}, {wch: 25}, {wch: 25}, {wch: 18}, {wch: 18}, {wch: 12}, {wch: 25}, {wch: 18}, {wch: 15}];
+
+    let wb = XLSX.utils.book_new();
+    let sheetTitle = groupName === 'all' ? "جميع_الطلاب" : `مجموعة_${groupName}`;
+    XLSX.utils.book_append_sheet(wb, ws, "البيانات");
+    
+    let dateStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `داتا_${sheetTitle}_${dateStr}.xlsx`);
+    
+    showToast(`تم تحميل بيانات ${targetStudents.length} طالب بنجاح! 📥`);
+};
+
 
 // 📥 دالة تصدير الجدول لإكسيل باستخدام مكتبة XLSX الموجودة عندك
 window.exportReportToExcel = function() {
@@ -5446,64 +5722,57 @@ window.renderStoreLogs = function() {
 
 
 // ==========================================
-// 🎨 دمج شريط التحميل وزرار الإحصائيات جوه الكارت بشياكة واحترافية
+// 🎨 دمج شريط التحميل وأزرار التحكم جوه الكارت بشياكة
 // ==========================================
 const originalRenderSessionCards = window.renderSessionCards;
 window.renderSessionCards = function() {
     if(originalRenderSessionCards) originalRenderSessionCards();
     
-    // التعديل السحري على الكروت بعد رسمها
     classSessions.forEach(session => {
         let delBtn = document.querySelector(`button[onclick*="deleteSession('${session.id}')"]`);
         if(delBtn) {
             let cardActionsDiv = delBtn.parentElement;
             
             if (session.isSending) {
-                // شكل شريط التحميل وهو شغال (تصميم فخم)
+                // 🛑 استدعاء حالة الإرسال الحالية
+                let currentState = window.sessionSendingStates ? window.sessionSendingStates[session.id] : 'running';
+                let isPaused = currentState === 'paused';
+                
+                let statusText = isPaused ? "⏸️ الإرسال متوقف مؤقتاً..." : "⏳ جاري إرسال التقارير...";
+                let statusColor = isPaused ? "#f59e0b" : "#3b82f6";
+
                 cardActionsDiv.innerHTML = `
-                    <div style="width: 100%; text-align: center; background: rgba(59, 130, 246, 0.05); padding: 12px; border-radius: 10px; border: 1px dashed rgba(59, 130, 246, 0.3); margin-bottom: 12px;">
+                    <div style="width: 100%; text-align: center; background: ${isPaused ? 'rgba(245, 158, 11, 0.05)' : 'rgba(59, 130, 246, 0.05)'}; padding: 12px; border-radius: 10px; border: 1px dashed ${isPaused ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.3)'}; margin-bottom: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 13px; color: #3b82f6; font-weight: 800;">⏳ جاري إرسال التقارير...</span>
-                            <span id="prog-text-${session.id}" style="font-size: 12px; font-weight: bold; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 20px;">${session.sentProgress}/${session.sentTotal}</span>
+                            <span id="prog-status-${session.id}" style="font-size: 13px; color: ${statusColor}; font-weight: 800;">${statusText}</span>
+                            <span id="prog-text-${session.id}" style="font-size: 12px; font-weight: bold; background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 20px;">${session.sentProgress}/${session.sentTotal}</span>
                         </div>
-                        <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
-                            <div id="prog-bar-${session.id}" style="width: ${(session.sentProgress/session.sentTotal)*100}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); transition: 0.3s; border-radius: 10px;"></div>
+                        <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
+                            <div id="prog-bar-${session.id}" style="width: ${(session.sentProgress/session.sentTotal)*100}%; height: 100%; background: ${isPaused ? '#f59e0b' : 'linear-gradient(90deg, #3b82f6, #60a5fa)'}; transition: 0.3s; border-radius: 10px;"></div>
+                        </div>
+                        
+                        <!-- أزرار الإيقاف والإلغاء -->
+                        <div style="display: flex; gap: 10px; justify-content: center;">
+                            <button onclick="togglePauseSession('${session.id}')" style="flex: 1; background: ${isPaused ? '#10b981' : '#f59e0b'}; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                ${isPaused ? '▶️ استكمال' : '⏸️ إيقاف مؤقت'}
+                            </button>
+                            <button onclick="cancelSendSession('${session.id}')" style="flex: 1; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                🛑 إلغاء نهائي
+                            </button>
                         </div>
                     </div>
                 `;
             } else if (session.reportData) {
-                // زرار التقرير بعد ما يخلص (تصميم Premium بـ Hover Effect)
+                // زرار التقرير بعد ما يخلص
                 let reportBtn = document.createElement('button');
                 reportBtn.style.cssText = `
                     width: 100%;
                     background: linear-gradient(45deg, #10b981, #059669);
-                    color: white;
-                    border: none;
-                    padding: 10px 15px;
-                    border-radius: 10px;
-                    font-size: 14px;
-                    font-weight: 800;
-                    font-family: 'Cairo', sans-serif;
-                    cursor: pointer;
-                    margin-bottom: 12px;
-                    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
-                    transition: all 0.3s ease;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 8px;
+                    color: white; border: none; padding: 10px 15px; border-radius: 10px;
+                    font-size: 14px; font-weight: 800; cursor: pointer; margin-bottom: 12px;
+                    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); transition: all 0.3s ease;
+                    display: flex; justify-content: center; align-items: center; gap: 8px;
                 `;
-                
-                // تأثير الأنيميشن لما الماوس ييجي عليه
-                reportBtn.onmouseover = function() {
-                    this.style.transform = 'translateY(-2px)';
-                    this.style.boxShadow = '0 6px 15px rgba(16, 185, 129, 0.4)';
-                };
-                reportBtn.onmouseout = function() {
-                    this.style.transform = 'translateY(0)';
-                    this.style.boxShadow = '0 4px 10px rgba(16, 185, 129, 0.2)';
-                };
-                
                 reportBtn.innerHTML = "<span style='font-size: 18px;'>📊</span> تقرير إرسال الواتساب";
                 reportBtn.onclick = () => showReportModal(session.id);
                 cardActionsDiv.insertBefore(reportBtn, cardActionsDiv.firstChild);
@@ -6223,27 +6492,7 @@ window.sortGroupTable = function(key) {
     renderGroupStudentsTable(); // ارسم الجدول تاني
 };
 
-function updateNetworkStatus(isOnline, isInitialLoad = false) {
-    const badge = document.getElementById('network-status-badge');
-    const dot = document.getElementById('network-status-dot');
-    const text = document.getElementById('network-status-text');
-    if (!badge || !dot || !text) return;
 
-    if (isOnline) {
-        badge.style.background = 'rgba(16, 185, 129, 0.1)'; badge.style.color = '#10b981';
-        dot.style.background = '#10b981'; dot.style.boxShadow = '0 0 5px #10b981';
-        text.innerText = 'متصل بالإنترنت';
-        if (!isInitialLoad) {
-            if (typeof syncDataToBot === 'function') syncDataToBot();
-            showToast("تم عودة الإنترنت، وجاري المزامنة 🔄✅", "success");
-        }
-    } else {
-        badge.style.background = 'rgba(239, 68, 68, 0.1)'; badge.style.color = '#ef4444';
-        dot.style.background = '#ef4444'; dot.style.boxShadow = '0 0 5px #ef4444';
-        text.innerText = 'الإنترنت فاصل';
-        if (!isInitialLoad) showToast("انقطع الاتصال بالإنترنت! النظام أوفلاين ⚠️", "error");
-    }
-}
 window.addEventListener('online', () => updateNetworkStatus(true, false));
 window.addEventListener('offline', () => updateNetworkStatus(false, false));
 document.addEventListener('DOMContentLoaded', () => { setTimeout(() => { updateNetworkStatus(navigator.onLine, true); }, 500); });
@@ -6401,4 +6650,28 @@ window.renderAttendanceTable = function(session) {
             </td>
         </tr>`; 
     }); 
+};
+
+// ==========================================
+// ⏸️ نظام التحكم في الإرسال (إيقاف مؤقت وإلغاء)
+// ==========================================
+window.sessionSendingStates = window.sessionSendingStates || {};
+
+window.togglePauseSession = function(sessionId) {
+    if (window.sessionSendingStates[sessionId] === 'running') {
+        window.sessionSendingStates[sessionId] = 'paused';
+        showToast("⏸️ تم إيقاف الإرسال مؤقتاً!", "warning");
+    } else if (window.sessionSendingStates[sessionId] === 'paused') {
+        window.sessionSendingStates[sessionId] = 'running';
+        showToast("▶️ جاري استكمال الإرسال...", "success");
+    }
+    renderSessionCards(); // تحديث شكل الزرار
+};
+
+window.cancelSendSession = function(sessionId) {
+    customConfirm("هل أنت متأكد من إلغاء عملية الإرسال نهائياً؟ (لن يتم إرسال باقي الرسائل)", () => {
+        window.sessionSendingStates[sessionId] = 'cancelled';
+        showToast("🛑 تم إلغاء الإرسال نهائياً!", "error");
+        renderSessionCards();
+    });
 };

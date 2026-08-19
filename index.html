@@ -325,7 +325,8 @@
                 <section id="group-details-view" class="students-section" style="display: none;">
                     <div class="section-header">
                         <div><button class="theme-btn" onclick="backToGroups()" style="margin-bottom: 15px;">🔙 عودة</button><h2 id="current-group-title" style="color: var(--primary-color);">إدارة مجموعة: </h2></div>
-                        <div class="header-actions"><button class="add-btn exam-btn" onclick="quickExamForGroup()">⚡ امتحان مفاجئ</button><button class="add-btn" onclick="openAddStudentToGroupModal()">+ إضافة طالب هنا</button></div>
+                        <div class="header-actions"><!-- الزرار الجديد لتحميل طلاب المجموعة المحددة فقط -->
+<button class="theme-btn" onclick="exportStudentsToExcel(currentActiveGroup)" style="border-color: #3b82f6; color: #3b82f6;">📥 تحميل داتا المجموعة</button><button class="add-btn exam-btn" onclick="quickExamForGroup()">⚡ امتحان مفاجئ</button><button class="add-btn" onclick="openAddStudentToGroupModal()">+ إضافة طالب هنا</button></div>
                     </div>
                     <div class="table-container">
                         <table class="students-table">
@@ -395,6 +396,8 @@
                     <div class="section-header">
                         <h2>سجل الطلاب الشامل</h2>
                         <div class="header-actions">
+                            <!-- الزرار الجديد لتحميل كل الطلاب -->
+<button class="theme-btn" onclick="exportStudentsToExcel('all')" style="border-color: #3b82f6; color: #3b82f6;">📥 تحميل داتا الطلاب</button>
                             <input type="text" id="searchInput" placeholder="بحث بالاسم أو الكود..." class="custom-input" onkeyup="searchStudent()" style="width: 250px;">
                             <button class="theme-btn" onclick="downloadExcelTemplate()" style="border-color: #10b981; color: #10b981;">📄 تحميل نموذج الإكسيل</button>
                             <div style="position: relative; display: inline-block;">
@@ -403,6 +406,7 @@
                             </div>
                             <button class="add-btn" onclick="openModal('addStudentModal')">+ تسجيل طالب</button>
                         </div>
+
                     </div>
                     <div class="table-container">
                         <table class="students-table"><thead><tr><th>الكود</th><th>اسم الطالب</th><th>الصف</th><th>المجموعة</th><th>إجراءات</th></tr></thead><tbody id="students-list"></tbody></table>
