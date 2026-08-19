@@ -874,22 +874,32 @@ async function fetchStudentData(isAutoLogin = false) {
             if(document.getElementById("tracker-reminder")) document.getElementById("tracker-reminder").innerText = reminder || "🎯 واصل تقدمك!";
         } catch(err) {}
 
+        // ==========================================
+        // 📊 رسم جدول الحضور (محدث ليدعم الكود والهاتف)
+        // ==========================================
         let attHtml = `<tr><th>التاريخ</th><th>الموضوع</th><th>حالة الحضور</th></tr>`;
         let hasAtt = false;
         safeClassSessions.filter(s => s && s.group === currentStudent.group).reverse().forEach(s => {
             hasAtt = true;
-            let stat = (s.attendance || {})[currentStudent.phone]; 
+            // 💡 التعديل هنا: البحث بالكود أولاً ثم الهاتف
+            let stat = (s.attendance || {})[currentStudent.code] || (s.attendance || {})[currentStudent.phone]; 
+            
             let badge = stat === 'present' ? `<span class="badge badge-present">حاضر ✓</span>` : stat === 'late' ? `<span class="badge" style="background:#fef3c7; color:#d97706;">متأخر ⏳</span>` : stat === 'absent' ? `<span class="badge badge-absent">غائب ✗</span>` : `<span style="color:var(--text-muted); font-weight:bold;">لم يسجل</span>`;
             attHtml += `<tr><td>${s.date}</td><td>${s.topic || 'حصة عادية'}</td><td>${badge}</td></tr>`;
         });
         if(!hasAtt) attHtml += `<tr><td colspan="3" style="text-align:center; padding: 30px;">لا توجد حصص مسجلة.</td></tr>`;
         document.getElementById("attendance-details").innerHTML = attHtml;
 
+        // ==========================================
+        // 📝 رسم جدول الامتحانات والواجبات (محدث ليدعم الكود والهاتف)
+        // ==========================================
         let exHtml = `<tr><th>التاريخ</th><th>اسم التقييم</th><th>الدرجة التي حصلت عليها</th></tr>`;
         let hasEx = false;
         safeExams.concat(safeHomeworks).filter(e => e && e.group === currentStudent.group).sort((a,b)=> new Date(b.date) - new Date(a.date)).forEach(e => {
             hasEx = true;
-            let grade = (e.grades || {})[currentStudent.phone]; 
+            // 💡 التعديل هنا: البحث بالكود أولاً ثم الهاتف (مع التأكد إن القيمة مش undefined)
+            let grade = (e.grades || {})[currentStudent.code] !== undefined ? (e.grades || {})[currentStudent.code] : (e.grades || {})[currentStudent.phone]; 
+            
             let text = grade !== undefined ? `<span style="font-weight:900; color:var(--primary); font-size:16px;">${grade} <span style="color:var(--text-muted); font-size:13px;">من ${e.maxScore}</span></span>` : `<span style="color:var(--text-muted)">لم يتم الرصد</span>`;
             exHtml += `<tr><td>${e.date}</td><td>${e.name}</td><td>${text}</td></tr>`;
         });
