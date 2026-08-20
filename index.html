@@ -2189,24 +2189,32 @@
     </div>
 
     <div id="courseAnalyticsModal" class="modal" style="z-index: 1000005;">
-        <div class="modal-content" style="width: 800px; max-width: 95%; max-height: 90vh; overflow-y: auto; border-top: 5px solid #8b5cf6;">
+        <div class="modal-content" style="width: 850px; max-width: 95%; max-height: 90vh; overflow-y: auto; border-top: 5px solid #8b5cf6; border-radius: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
-                <h2 id="analyticsVideoTitle" style="margin: 0; color: #8b5cf6;">📊 إحصائيات المشاهدة</h2>
+                <h2 id="analyticsVideoTitle" style="margin: 0; color: #8b5cf6; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">📊</span> إحصائيات المشاهدة
+                </h2>
                 <span class="close" onclick="closeModal('courseAnalyticsModal')" style="font-size: 28px; cursor: pointer; color: var(--danger-color);">&times;</span>
             </div>
             
-            <div class="table-container card">
+            <!-- 🔍 شريط البحث السريع داخل النافذة -->
+            <div style="margin-bottom: 20px; position: relative;">
+                <input type="text" id="searchAnalyticsInput" class="custom-input" placeholder="🔍 بحث عن طالب بالاسم أو الكود..." onkeyup="searchAnalytics()" style="border-color: #8b5cf6; border-radius: 30px; padding: 12px 20px; box-shadow: 0 4px 6px rgba(139, 92, 246, 0.1);">
+            </div>
+
+            <div class="table-container card" style="box-shadow: none; border: 1px solid var(--border-color);">
                 <table class="students-table" style="width: 100%;">
-                    <thead>
+                    <thead style="background: rgba(139, 92, 246, 0.05);">
                         <tr>
                             <th>كود الطالب</th>
                             <th>الاسم</th>
-                            <th>المشاهدات</th>
+                            <th>الاستهلاك (المشاهدات)</th>
                             <th>تاريخ آخر مشاهدة</th>
+                            <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="course-analytics-list">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>

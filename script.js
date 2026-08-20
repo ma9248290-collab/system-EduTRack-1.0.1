@@ -4906,13 +4906,21 @@ window.readFileAsBase64 = function(fileInputId) {
 
 
 // ==========================================
-// 📊 دوال تراكر المشاهدات (تعمل بالكود ومحمية من الداتا القديمة)
+// 📊 دوال تراكر المشاهدات (المحدثة بشريط التقدم وإضافة المشاهدات)
 // ==========================================
 window.openVideoAnalytics = async function(courseId, videoIndex, videoTitle) {
     let tbody = document.getElementById("course-analytics-list");
-    document.getElementById("analyticsVideoTitle").innerText = `📊 إحصائيات: ${videoTitle}`;
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">جاري جلب البيانات... ⏳</td></tr>`;
+    let titleEl = document.getElementById("analyticsVideoTitle");
+    if(titleEl) titleEl.innerHTML = `<span style="font-size: 24px;">📊</span> إحصائيات: ${videoTitle}`;
+    
+    let searchInput = document.getElementById("searchAnalyticsInput");
+    if(searchInput) searchInput.value = ""; 
+
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">جاري جلب البيانات... ⏳</td></tr>`;
     openModal("courseAnalyticsModal");
+
+    let course = window.fetchedLectures.find(l => l.id === courseId) || (window.allLectures ? window.allLectures.find(l => l.id === courseId) : null);
+    let baseMaxViews = course ? (parseInt(course.maxViews) || 0) : 0;
 
     try {
         let res = await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/course_tracking/${courseId}.json`);
@@ -4921,7 +4929,6 @@ window.openVideoAnalytics = async function(courseId, videoIndex, videoTitle) {
         tbody.innerHTML = ""; let hasData = false;
 
         Object.keys(trackingData).forEach(key => {
-            // 🔥 مسح الداتا الوهمية بتاعة رقم 0
             if (key === "0" || key === "") return;
 
             let studentVids = trackingData[key];
@@ -4932,20 +4939,151 @@ window.openVideoAnalytics = async function(courseId, videoIndex, videoTitle) {
                 let name = st ? st.name : "طالب غير معروف";
                 let code = st ? st.code : key;
 
-                tbody.innerHTML += `<tr>
-                    <td><strong>${code}</strong></td>
-                    <td>${name}</td>
-                    <td><span style="background:var(--primary-color); color:#fff; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:14px;">${vData.views}</span></td>
-                    <td style="font-size: 14px; color: var(--text-muted); font-weight:bold;">${vData.lastSeen}</td>
+                let usedViews = parseInt(vData.views) || 0;
+                let extraViews = parseInt(vData.extraViews) || 0;
+                
+                let totalAllowed = baseMaxViews > 0 ? (baseMaxViews + extraViews) : '∞';
+                let viewsText = baseMaxViews > 0 ? `${usedViews} من ${totalAllowed}` : `${usedViews} مشاهدة (مفتوح)`;
+                
+                // 🎨 تصميم شريط التقدم (Progress Bar)
+                let progressHtml = "";
+                if (baseMaxViews > 0) {
+                    let percent = Math.min((usedViews / totalAllowed) * 100, 100);
+                    let color = percent >= 100 ? '#ef4444' : (percent > 75 ? '#f59e0b' : '#10b981');
+                    progressHtml = `
+                        <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px; color: ${color}; display: flex; justify-content: space-between;">
+                            <span>استهلك:</span> <span>${viewsText}</span>
+                        </div>
+                        <div style="width: 100%; background: #e2e8f0; height: 8px; border-radius: 10px; overflow: hidden;">
+                            <div style="width: ${percent}%; height: 100%; background: ${color}; border-radius: 10px; transition: 0.5s;"></div>
+                        </div>
+                    `;
+                } else {
+                    progressHtml = `<div style="font-size: 14px; font-weight: bold; color: #3b82f6; text-align: center; background: rgba(59, 130, 246, 0.1); padding: 5px; border-radius: 8px;">${viewsText}</div>`;
+                }
+
+                // 🏗️ رسم الـ 5 عواميد بالترتيب السليم
+                tbody.innerHTML += `<tr class="analytics-row">
+                    <td class="st-code" style="font-weight: bold; color: var(--primary-color);">${code}</td>
+                    <td class="st-name" style="font-weight: bold;">${name}</td>
+                    <td style="width: 30%;">${progressHtml}</td>
+                    <td style="font-size: 13px; color: var(--text-muted); font-weight:bold;">${vData.lastSeen}</td>
+                    <td>
+                        <button class="save-btn" style="background: #8b5cf6; padding: 6px 12px; margin: 0; width: auto; font-size: 13px; box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);" onclick="addExtraViews('${courseId}', '${key}', ${videoIndex}, '${videoTitle.replace(/'/g, "\\'")}')">➕ مشاهدات</button>
+                    </td>
                 </tr>`;
             }
         });
 
-        if(!hasData) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; font-weight:bold; color:var(--text-muted);">لم يقم أي طالب بمشاهدة هذا الفيديو حتى الآن.</td></tr>`;
+        if(!hasData) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; font-weight:bold; color:var(--text-muted);">لم يقم أي طالب بمشاهدة هذا الفيديو حتى الآن.</td></tr>`;
 
-    } catch(e) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">خطأ في الاتصال بالإنترنت!</td></tr>`; }
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">خطأ في الاتصال بالإنترنت!</td></tr>`; }
 };
 
+// 🔍 دالة البحث داخل نافذة الإحصائيات
+window.searchAnalytics = function() {
+    let inputEl = document.getElementById("searchAnalyticsInput");
+    if(!inputEl) return;
+    let input = inputEl.value.toLowerCase();
+    let rows = document.querySelectorAll(".analytics-row");
+    
+    rows.forEach(row => {
+        let codeEl = row.querySelector(".st-code");
+        let nameEl = row.querySelector(".st-name");
+        if (!codeEl || !nameEl) return;
+        
+        let code = codeEl.innerText.toLowerCase();
+        let name = nameEl.innerText.toLowerCase();
+        
+        if (code.includes(input) || name.includes(input)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+};
+
+// ➕ دالة إضافة المشاهدات للطالب
+window.addExtraViews = async function(courseId, studentKey, videoIndex, videoTitle) {
+    let extra = prompt(`أدخل عدد المشاهدات الإضافية التي تريد منحها للطالب في فيديو (${videoTitle}):`);
+    if (!extra || isNaN(extra) || parseInt(extra) <= 0) return;
+    
+    let extraNum = parseInt(extra);
+    
+    try {
+        let trackUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/course_tracking/${courseId}/${studentKey}/${videoIndex}.json`;
+        let res = await fetch(trackUrl);
+        let vData = await res.json();
+        
+        if (vData) {
+            let currentExtra = parseInt(vData.extraViews) || 0;
+            vData.extraViews = currentExtra + extraNum;
+            
+            // تحديث الداتا في الفايربيز
+            await fetch(trackUrl, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ extraViews: vData.extraViews })
+            });
+            
+            if(typeof showToast === 'function') showToast(`تم إضافة ${extraNum} مشاهدات للطالب بنجاح! ✅`);
+            // تحديث النافذة عشان يقرأ الداتا الجديدة
+            openVideoAnalytics(courseId, videoIndex, videoTitle);
+        } else {
+            if(typeof showToast === 'function') showToast("لم يشاهد الطالب هذا الفيديو بعد لتتمكن من تعديل مشاهداته!", "error");
+        }
+    } catch (error) {
+        if(typeof showToast === 'function') showToast("حدث خطأ أثناء الاتصال!", "error");
+    }
+};
+
+// 🔍 دالة البحث داخل نافذة الإحصائيات
+window.searchAnalytics = function() {
+    let input = document.getElementById("searchAnalyticsInput").value.toLowerCase();
+    let rows = document.querySelectorAll(".analytics-row");
+    
+    rows.forEach(row => {
+        let code = row.querySelector(".st-code").innerText.toLowerCase();
+        let name = row.querySelector(".st-name").innerText.toLowerCase();
+        if (code.includes(input) || name.includes(input)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+};
+
+// ➕ دالة إضافة المشاهدات للطالب
+window.addExtraViews = async function(courseId, studentKey, videoIndex, videoTitle) {
+    let extra = prompt(`أدخل عدد المشاهدات الإضافية التي تريد منحها للطالب في فيديو (${videoTitle}):`);
+    if (!extra || isNaN(extra) || parseInt(extra) <= 0) return;
+    
+    let extraNum = parseInt(extra);
+    
+    try {
+        let trackUrl = `https://edutrack-system-1ded4-default-rtdb.firebaseio.com/teachers/${window.getSafeUid()}/course_tracking/${courseId}/${studentKey}/${videoIndex}.json`;
+        let res = await fetch(trackUrl);
+        let vData = await res.json();
+        
+        if (vData) {
+            let currentExtra = parseInt(vData.extraViews) || 0;
+            vData.extraViews = currentExtra + extraNum;
+            
+            // تحديث الداتا في الفايربيز
+            await fetch(trackUrl, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ extraViews: vData.extraViews })
+            });
+            
+            showToast(`تم إضافة ${extraNum} مشاهدات للطالب بنجاح! ✅`);
+            // تحديث النافذة عشان يقرأ الداتا الجديدة
+            openVideoAnalytics(courseId, videoIndex, videoTitle);
+        }
+    } catch (error) {
+        showToast("حدث خطأ أثناء الاتصال!", "error");
+    }
+};
 window.openCourseAnalytics = async function(courseId) {
     let tbody = document.getElementById("course-analytics-list");
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">جاري جلب البيانات... ⏳</td></tr>`;

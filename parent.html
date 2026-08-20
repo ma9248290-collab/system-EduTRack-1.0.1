@@ -1367,8 +1367,12 @@ async function submitOnlineExam(isTimeOut = false) {
     let res = await fetch(trackingUrl);
     let data = await res.json() || { views: 0 };
 
-    // 🔥 الشرط السحري: لو المدرس محدد عدد (أكبر من 0) والطلاب وصل للعدد ده
-    if (maxViews > 0 && data.views >= maxViews) {
+   // حساب إجمالي المشاهدات المسموحة (الأساسي + الإضافي اللي المدرس ضافه)
+    let extraViews = parseInt(data.extraViews) || 0;
+    let totalAllowedViews = maxViews > 0 ? (maxViews + extraViews) : 0;
+
+    // 🔥 الشرط السحري المحدث: لو المدرس محدد عدد (أكبر من 0) والطلاب وصل للعدد ده
+    if (totalAllowedViews > 0 && data.views >= totalAllowedViews) {
         alert("🚫 لقد استخدمت العدد المحدد لمشاهدة الكورس (انتهت مرات المشاهدة).");
         return; // بيوقف تشغيل الفيديو
     }
