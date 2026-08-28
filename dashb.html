@@ -192,9 +192,43 @@
     </div>
 
     <script>
-      const DB_URL = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com";
+      const DB_OLD = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com";
+        const DB_NEW = "https://el-senior-system-default-rtdb.europe-west1.firebasedatabase.app";
+        
         let lastKnownOrderCount = -1; 
         let lastKnownIdOrderCount = -1; 
+
+        // ==========================================
+        // 🚀 دوال الاتصال المزدوج (لدمج قواعد البيانات)
+        // ==========================================
+        
+        // 1. دالة القراءة من القاعدتين ودمجهم
+        async function fetchFromBoth(path) {
+            try {
+                let [resOld, resNew] = await Promise.all([
+                    fetch(`${DB_OLD}/${path}`).catch(() => ({ json: () => ({}) })),
+                    fetch(`${DB_NEW}/${path}`).catch(() => ({ json: () => ({}) }))
+                ]);
+                let dataOld = await resOld.json() || {};
+                let dataNew = await resNew.json() || {};
+                return { ...dataOld, ...dataNew }; // دمج البيانات بذكاء
+            } catch (e) {
+                console.error(`Error fetching ${path}:`, e);
+                return {};
+            }
+        }
+
+        // 2. دالة تنفيذ الأوامر في القاعدتين (تأكيد، حذف، تفعيل)
+        async function executeInBoth(path, method, bodyObj = null) {
+            let options = { method: method, headers: { 'Content-Type': 'application/json' } };
+            if (bodyObj) options.body = JSON.stringify(bodyObj);
+            
+            await Promise.all([
+                fetch(`${DB_OLD}/${path}`, options).catch(() => {}),
+                fetch(`${DB_NEW}/${path}`, options).catch(() => {})
+            ]);
+        }
+
 
         // ==========================================
         // 1. نظام الدخول والتهيئة
@@ -257,16 +291,16 @@
 
         async function fetchSystemData() {
             try {
-                let [licRes, techRes, demoRes, idRes, ordRes, wdRes] = await Promise.all([
-                    fetch(`${DB_URL}/licenses.json`), fetch(`${DB_URL}/teachers.json`),
-                    fetch(`${DB_URL}/demo_users.json`), fetch(`${DB_URL}/id_orders.json`),
-                    fetch(`${DB_URL}/orders.json`), fetch(`${DB_URL}/withdraw_requests.json`)
+                // جلب الداتا من الدالتين السحريتين
+                let [licenses, teachers, demos, idOrders, orders, withdraws] = await Promise.all([
+                    fetchFromBoth('licenses.json'), 
+                    fetchFromBoth('teachers.json'),
+                    fetchFromBoth('demo_users.json'), 
+                    fetchFromBoth('id_orders.json'),
+                    fetchFromBoth('orders.json'), 
+                    fetchFromBoth('withdraw_requests.json')
                 ]);
                 
-                let licenses = await licRes.json() || {}; let teachers = await techRes.json() || {};
-                let demos = await demoRes.json() || {}; let idOrders = await idRes.json() || {};
-                let orders = await ordRes.json() || {}; let withdraws = await wdRes.json() || {};
-
                 // إشعارات طلبات الشراء
                 let currentOrderCount = Object.keys(orders).length;
                 if (lastKnownOrderCount !== -1 && currentOrderCount > lastKnownOrderCount) {
@@ -281,7 +315,7 @@
                 }
                 lastKnownIdOrderCount = currentIdOrderCount;
 
-                // رسم الجداول بأمان تام
+                // رسم الجداول
                 renderOrders(orders);
                 renderClients(licenses, teachers);
                 renderDemos(demos);
@@ -405,15 +439,49 @@
         }
 
         // ==========================================
-        // 4. العمليات والتأكيدات المباشرة
+        // 4. العمليات والتأكيدات المباشرة (تُنفذ في القاعدتين)
         // ==========================================
-        async function approveOrder(key) { if(confirm("تأكيد استلام المبلغ؟ (قم بتوليد كود وإرساله للعميل)")) { await fetch(`${DB_URL}/orders/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'تم الدفع والتفعيل ✅' }) }); fetchSystemData(); } }
-        async function approveIdOrder(key) { if(confirm("هل قمت بطباعة وتوصيل الكروت بالفعل؟")) { await fetch(`${DB_URL}/id_orders/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'done' }) }); fetchSystemData(); } }
-        async function updateLicenseStatus(key, status) { await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: status }) }); fetchSystemData(); }
-        async function renewLicense(key) { await fetch(`${DB_URL}/licenses/${key}.json`, { method: 'PATCH', body: JSON.stringify({ activatedAt: new Date().toISOString(), durationMonths: 1, status: 'active' }) }); fetchSystemData(); showNotification("تم!", "تم تجديد الاشتراك بنجاح."); }
-        async function updateDemoStatus(key, status) { await fetch(`${DB_URL}/demo_users/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: status }) }); fetchSystemData(); }
-        async function deleteDemo(key) { await fetch(`${DB_URL}/demo_users/${key}.json`, { method: 'DELETE' }); fetchSystemData(); }
-        async function approveWithdraw(key) { if(confirm("هل قمت بتحويل المبلغ؟")) { await fetch(`${DB_URL}/withdraw_requests/${key}.json`, { method: 'PATCH', body: JSON.stringify({ status: 'paid' }) }); fetchSystemData(); } }
+        async function approveOrder(key) { 
+            if(confirm("تأكيد استلام المبلغ؟ (قم بتوليد كود وإرساله للعميل)")) { 
+                await executeInBoth(`orders/${key}.json`, 'PATCH', { status: 'تم الدفع والتفعيل ✅' });
+                fetchSystemData(); 
+            } 
+        }
+        
+        async function approveIdOrder(key) { 
+            if(confirm("هل قمت بطباعة وتوصيل الكروت بالفعل؟")) { 
+                await executeInBoth(`id_orders/${key}.json`, 'PATCH', { status: 'done' });
+                fetchSystemData(); 
+            } 
+        }
+        
+        async function updateLicenseStatus(key, status) { 
+            await executeInBoth(`licenses/${key}.json`, 'PATCH', { status: status });
+            fetchSystemData(); 
+        }
+        
+        async function renewLicense(key) { 
+            await executeInBoth(`licenses/${key}.json`, 'PATCH', { activatedAt: new Date().toISOString(), durationMonths: 1, status: 'active' });
+            fetchSystemData(); 
+            showNotification("تم!", "تم تجديد الاشتراك بنجاح."); 
+        }
+        
+        async function updateDemoStatus(key, status) { 
+            await executeInBoth(`demo_users/${key}.json`, 'PATCH', { status: status });
+            fetchSystemData(); 
+        }
+        
+        async function deleteDemo(key) { 
+            await executeInBoth(`demo_users/${key}.json`, 'DELETE');
+            fetchSystemData(); 
+        }
+        
+        async function approveWithdraw(key) { 
+            if(confirm("هل قمت بتحويل المبلغ؟")) { 
+                await executeInBoth(`withdraw_requests/${key}.json`, 'PATCH', { status: 'paid' });
+                fetchSystemData(); 
+            } 
+        }
 
         async function generateLicense() {
             const planValue = document.getElementById("newLicenseType").value;
@@ -422,22 +490,31 @@
             if (planValue === "1_day") { licenseData.durationDays = 1; licenseData.durationMonths = 0; } 
             else if (planValue === "7_days") { licenseData.durationDays = 7; licenseData.durationMonths = 0; } 
             else { licenseData.durationMonths = parseInt(planValue); }
-            await fetch(`${DB_URL}/licenses/${code}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(licenseData) });
-            document.getElementById("generatedCodeDisplay").value = code; fetchSystemData(); showNotification("نجاح!", "تم توليد كود التفعيل وإضافته للرخص.");
+            
+            // إضافة الكود للقاعدتين معاً
+            await executeInBoth(`licenses/${code}.json`, 'PUT', licenseData);
+            
+            document.getElementById("generatedCodeDisplay").value = code; 
+            fetchSystemData(); 
+            showNotification("نجاح!", "تم توليد كود التفعيل وإضافته للرخص.");
         }
 
         async function publishGlobalAnnouncement() {
             const title = prompt("اكتب عنوان الإشعار (مثال: تحديث هام V2.0):"); if (!title) return;
             const message = prompt("اكتب نص الإشعار:"); if (!message) return;
-            try { await fetch(`https://edutrack-system-1ded4-default-rtdb.firebaseio.com/global_announcement.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: "ann_" + Date.now(), title: title, message: message, timestamp: new Date().toISOString() }) }); alert("تم إرسال الإشعار! سيظهر لجميع المدرسين."); } catch (e) { alert("حدث خطأ."); }
+            try { 
+                let annData = { id: "ann_" + Date.now(), title: title, message: message, timestamp: new Date().toISOString() };
+                await executeInBoth(`global_announcement.json`, 'PUT', annData);
+                alert("تم إرسال الإشعار! سيظهر لجميع المدرسين."); 
+            } catch (e) { alert("حدث خطأ."); }
         }
 
         function openEditPlanModal(key) { document.getElementById('editPlanLicenseKey').value = key; document.getElementById('editPlanModal').style.display = 'flex'; }
+        
         async function saveNewPlan() {
             const key = document.getElementById('editPlanLicenseKey').value; 
             const planValue = document.getElementById('newPlanSelect').value; 
             
-            // 🔥 التعديل هنا: ضفنا تحديث لتاريخ التفعيل عشان يبدأ من النهارده، وخلينا الحالة نشطة
             let updates = {
                 activatedAt: new Date().toISOString(),
                 status: 'active'
@@ -454,14 +531,10 @@
             }
             
             try { 
-                await fetch(`${DB_URL}/licenses/${key}.json`, { 
-                    method: 'PATCH', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(updates) 
-                }); 
+                await executeInBoth(`licenses/${key}.json`, 'PATCH', updates);
                 
                 document.getElementById('editPlanModal').style.display = 'none'; 
-                fetchSystemData(); // تحديث الجدول فوراً
+                fetchSystemData(); 
                 alert("تم تعديل الباقة وتجديد تاريخ التفعيل ليبدأ من اليوم! ✅"); 
                 
             } catch (e) { 
