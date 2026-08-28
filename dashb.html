@@ -206,12 +206,16 @@
         async function fetchFromBoth(path) {
             try {
                 let [resOld, resNew] = await Promise.all([
-                    fetch(`${DB_OLD}/${path}`).catch(() => ({ json: () => ({}) })),
-                    fetch(`${DB_NEW}/${path}`).catch(() => ({ json: () => ({}) }))
+                    fetch(`${DB_OLD}/${path}`).catch(() => null),
+                    fetch(`${DB_NEW}/${path}`).catch(() => null)
                 ]);
-                let dataOld = await resOld.json() || {};
-                let dataNew = await resNew.json() || {};
-                return { ...dataOld, ...dataNew }; // دمج البيانات بذكاء
+                let dataOld = (resOld && resOld.ok) ? await resOld.json() : {};
+                let dataNew = (resNew && resNew.ok) ? await resNew.json() : {};
+                
+                if (dataOld && dataOld.error) dataOld = {};
+                if (dataNew && dataNew.error) dataNew = {};
+
+                return { ...(dataOld || {}), ...(dataNew || {}) }; 
             } catch (e) {
                 console.error(`Error fetching ${path}:`, e);
                 return {};
@@ -292,14 +296,33 @@
         async function fetchSystemData() {
             try {
                 // جلب الداتا من الدالتين السحريتين
-                let [licenses, teachers, demos, idOrders, orders, withdraws] = await Promise.all([
+                let [licenses, demos, idOrders, orders, withdraws] = await Promise.all([
                     fetchFromBoth('licenses.json'), 
-                    fetchFromBoth('teachers.json'),
                     fetchFromBoth('demo_users.json'), 
                     fetchFromBoth('id_orders.json'),
                     fetchFromBoth('orders.json'), 
                     fetchFromBoth('withdraw_requests.json')
                 ]);
+
+                // 🌟 الحل السحري لمشكلة المدرسين
+                // من الداتابيز القديمة: نجيب مجلد teachers.json
+                let resOldTeachers = await fetch(`${DB_OLD}/teachers.json`).catch(() => null);
+                let oldTeachers = (resOldTeachers && resOldTeachers.ok) ? await resOldTeachers.json() : {};
+                if (oldTeachers && oldTeachers.error) oldTeachers = {};
+
+                // من الداتابيز الجديدة: نجيب الـ Root مباشرة
+                let resNewRoot = await fetch(`${DB_NEW}/.json`).catch(() => null);
+                let newRoot = (resNewRoot && resNewRoot.ok) ? await resNewRoot.json() : {};
+                if (newRoot && newRoot.error) newRoot = {};
+
+                let teachers = { ...(oldTeachers || {}) };
+                
+                // تنقية الـ Root الجديد عشان ناخد منه بيانات المدرسين بس (ونتجاهل الرخص والطلبات)
+                for (let key in newRoot) {
+                    if (!['licenses', 'demo_users', 'id_orders', 'orders', 'withdraw_requests', 'global_announcement'].includes(key)) {
+                        teachers[key] = newRoot[key];
+                    }
+                }
                 
                 // إشعارات طلبات الشراء
                 let currentOrderCount = Object.keys(orders).length;
@@ -315,7 +338,7 @@
                 }
                 lastKnownIdOrderCount = currentIdOrderCount;
 
-                // رسم الجداول
+                // رسم الجداول بأمان تام
                 renderOrders(orders);
                 renderClients(licenses, teachers);
                 renderDemos(demos);
