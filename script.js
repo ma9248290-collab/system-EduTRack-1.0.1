@@ -6813,3 +6813,65 @@ window.cancelSendSession = function(sessionId) {
         renderSessionCards();
     });
 };
+
+
+
+
+
+// ==========================================
+// ⚙️ فحص حالة السيرفر وعرض الـ QR Code في الإعدادات
+// ==========================================
+setInterval(async () => {
+    const nodeStatus = document.getElementById("nodeStatus");
+    const waStatus = document.getElementById("waStatus");
+    const qrContainer = document.getElementById("qrContainer");
+    const qrImage = document.getElementById("qrImage");
+
+    if(!nodeStatus) return; // لو المدرس مش فاتح الشاشة دي، ميعملش حاجة
+
+    try {
+        // فحص حالة السيرفر
+        const response = await fetch(`${WHATSAPP_SERVER_URL}/status?clientId=${getSafeUid()}`, {
+            headers: {
+                'ngrok-skip-browser-warning': 'true',
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        
+        nodeStatus.innerHTML = '<span style="color: #10b981; font-weight: bold;">● يعمل (Online)</span>';
+        
+        if (data.status === 'connected') {
+            waStatus.innerHTML = '<span style="color: #10b981; font-weight: bold;">متصل ✅</span>';
+            if(qrContainer) qrContainer.style.display = "none";
+        } else if (data.status === 'need_scan') {
+            waStatus.innerHTML = '<span style="color: #ef4444; font-weight: bold;">بانتظار المسح 📱</span>';
+            if(qrContainer) {
+                qrContainer.style.display = "block";
+                
+                // سحب كود الـ QR الجديد
+                const qrResp = await fetch(`${WHATSAPP_SERVER_URL}/qr?clientId=${getSafeUid()}`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const qrData = await qrResp.json();
+                
+                // رسم الكود جوه المربع
+                if (qrData.qr) {
+                    qrImage.innerHTML = "";
+                    new QRCode(qrImage, { text: qrData.qr, width: 200, height: 200 });
+                }
+            }
+        } else {
+            waStatus.innerHTML = '<span style="color: #f59e0b; font-weight: bold;">جاري التهيئة... ⏳</span>';
+            if(qrContainer) qrContainer.style.display = "none";
+        }
+    } catch (e) {
+        // لو السيرفر واقع
+        nodeStatus.innerHTML = '<span style="color: #ef4444; font-weight: bold;">● متوقف (Offline)</span>';
+        waStatus.innerHTML = '---';
+        if(qrContainer) qrContainer.style.display = "none";
+    }
+}, 5000); // بيفحص كل 5 ثواني
