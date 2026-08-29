@@ -1874,55 +1874,144 @@
         </div>
     </div>
 
-    <div id="addStudentModal" class="modal"><div class="modal-content student-modal"><span class="close-btn" onclick="closeModal('addStudentModal')">&times;</span><h2>تسجيل طالب جديد</h2><form id="addStudentForm" class="form-grid"><div class="input-group"><label>كود الطالب</label><input type="text" id="studentCode" required class="custom-input" style="font-weight: bold; color: var(--primary-color);"></div><div class="input-group"><label>الاسم</label><input type="text" id="studentName" required class="custom-input"></div><div class="input-group"><label>الصف</label><select id="studentLevel" required class="custom-input" onchange="filterGroupsByLevel('studentLevel', 'studentGroup')"><option value="">اختر...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><label>المجموعة</label><select id="studentGroup" required class="custom-input"><option value="">اختر الصف أولاً...</option></select></div><!-- في ملف index.html ابحث عن خانة studentPhone -->
-<div class="input-group">
-    <label>هاتف الطالب <span style="color:var(--text-muted); font-size: 11px;">(أو اكتب 0 إذا لم يوجد)</span></label>
-    <input type="text" id="studentPhone" required class="custom-input">
-<div class="input-group">
-    <label>هاتف ولي الأمر</label>
-    <input type="text" id="parentPhone" required class="custom-input" onkeyup="checkDuplicateParentPhone('add')">
-    <p id="parentPhoneWarning_add" style="color: var(--danger-color); font-size: 12px; font-weight: bold; margin-top: 5px; display: none;"></p>
-</div>
-<div class="input-group full-width"><label>الجنس</label><select id="studentGender" required class="custom-input"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div>
+<div id="addStudentModal" class="modal">
+    <div class="modal-content student-modal">
+        <span class="close-btn" onclick="closeModal('addStudentModal')">&times;</span>
+        <h2 style="color: var(--primary-color); margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">➕ تسجيل طالب جديد</h2>
+        
+        <form id="addStudentForm" class="form-grid">
+            <div class="input-group">
+                <label>كود الطالب</label>
+                <input type="text" id="studentCode" required class="custom-input" style="font-weight: bold; color: var(--primary-color);">
+            </div>
+            <div class="input-group">
+                <label>الاسم رباعي</label>
+                <input type="text" id="studentName" required class="custom-input" placeholder="اكتب اسم الطالب...">
+            </div>
+            
+            <div class="input-group">
+                <label>الصف الدراسي</label>
+                <select id="studentLevel" required class="custom-input" onchange="filterGroupsByLevel('studentLevel', 'studentGroup')">
+                    <option value="">اختر...</option>
+                    <option value="الأول الثانوي">الأول الثانوي</option>
+                    <option value="الثاني الثانوي">الثاني الثانوي</option>
+                    <option value="الثالث الثانوي">الثالث الثانوي</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>المجموعة</label>
+                <select id="studentGroup" required class="custom-input">
+                    <option value="">اختر الصف أولاً...</option>
+                </select>
+            </div>
 
-<!-- بوكس الحالة الخاصة (مكانه الصحيح هنا قبل الزراير) -->
-<div class="input-group full-width" style="background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed #f59e0b; grid-column: span 2;">
-    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold; color: #d97706;">
-        <input type="checkbox" id="studentIsSpecial" style="width: 18px; height: 18px; accent-color: #f59e0b;" onchange="document.getElementById('studentSpecialAmountDiv').style.display = this.checked ? 'block' : 'none'">
-        ⭐ حالة خاصة (خصم أو إعفاء)
-    </label>
-    <div id="studentSpecialAmountDiv" style="display: none; margin-top: 10px;">
-        <label>المبلغ المطلوب دفعه للحصة (اكتب 0 للإعفاء التام):</label>
-        <input type="number" id="studentSpecialAmount" class="custom-input" placeholder="مثال: 20" min="0">
+            <!-- 🔥 هنا صلحنا القفلة اللي كانت ناقصة 🔥 -->
+            <div class="input-group">
+                <label>هاتف الطالب <span style="color:var(--text-muted); font-size: 11px;">(أو اكتب 0 إذا لم يوجد)</span></label>
+                <input type="text" id="studentPhone" required class="custom-input" placeholder="01XXXXXXXXX">
+            </div> 
+            
+            <div class="input-group">
+                <label>هاتف ولي الأمر</label>
+                <input type="text" id="parentPhone" required class="custom-input" placeholder="01XXXXXXXXX" onkeyup="checkDuplicateParentPhone('add')">
+                <p id="parentPhoneWarning_add" style="color: var(--danger-color); font-size: 12px; font-weight: bold; margin-top: 5px; display: none;"></p>
+            </div>
+            
+            <div class="input-group full-width">
+                <label>الجنس</label>
+                <select id="studentGender" required class="custom-input">
+                    <option value="ذكر">ذكر</option>
+                    <option value="أنثى">أنثى</option>
+                </select>
+            </div>
+
+            <div class="input-group full-width" style="background: rgba(245, 158, 11, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed #f59e0b; margin-top: 10px; grid-column: span 2;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f59e0b; font-weight: bold; margin: 0;">
+                    <input type="checkbox" id="studentIsSpecial" style="width: 20px; height: 20px; accent-color: #f59e0b; cursor: pointer;" onchange="document.getElementById('studentSpecialAmountDiv').style.display = this.checked ? 'block' : 'none'">
+                    ⭐ حالة خاصة (تسعير مختلف / إعفاء)
+                </label>
+                <div id="studentSpecialAmountDiv" style="display: none; margin-top: 15px;">
+                    <label style="color: var(--text-main);">المبلغ المخصص لهذا الطالب (ج.م): <span style="color:var(--text-muted); font-size:12px;">(اكتب 0 للإعفاء التام)</span></label>
+                    <input type="number" id="studentSpecialAmount" class="custom-input" placeholder="مثال: 20" min="0">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px; grid-column: span 2;">
+                <button type="button" class="save-btn" style="flex: 1; background: #f59e0b; margin: 0; font-size: 16px;" onclick="saveAndAddAnotherStudent()">حفظ وإضافة آخر ➕</button>
+                <button type="submit" class="save-btn" style="flex: 1; background: #10b981; margin: 0; font-size: 16px;">حفظ وإنهاء ✅</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- زراير الحفظ -->
-<div style="display: flex; gap: 10px; margin-top: 15px; grid-column: span 2;">
-    <button type="button" class="save-btn" style="flex: 1; background: #f59e0b; margin: 0; font-size: 16px;" onclick="saveAndAddAnotherStudent()">حفظ وإضافة طالب جديد ➕</button>
-    <button type="submit" class="save-btn" style="flex: 1; background: #10b981; margin: 0; font-size: 16px;">حفظ وإنهاء ✅</button>
-</div>
-</form></div></div>
-    <div id="editStudentModal" class="modal"><div class="modal-content student-modal"><span class="close-btn" onclick="closeModal('editStudentModal')">&times;</span><h2>تعديل بيانات الطالب ✏️</h2><form id="editStudentForm" class="form-grid"><input type="hidden" id="editStudentCodeOriginal"><div class="input-group"><label>الكود</label><input type="text" id="editStudentCode" required class="custom-input" style="font-weight:bold; color:var(--primary-color);"></div><div class="input-group"><label>الاسم</label><input type="text" id="editStudentName" required class="custom-input"></div><div class="input-group"><label>الصف</label><select id="editStudentLevel" required class="custom-input" onchange="filterGroupsByLevel('editStudentLevel', 'editStudentGroup')"><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><label>المجموعة</label><select id="editStudentGroup" required class="custom-input"></select></div><!-- في ملف index.html ابحث عن خانة studentPhone -->
-<div class="input-group">
-    <label>هاتف الطالب <span style="color:var(--text-muted); font-size: 11px;">(أو اكتب 0 إذا لم يوجد)</span></label>
-    <input type="text" id="editStudentPhone" required class="custom-input">
-<div class="input-group">
-    <label>هاتف ولي الأمر</label>
-    <input type="text" id="editParentPhone" required class="custom-input" onkeyup="checkDuplicateParentPhone('edit')">
-    <p id="parentPhoneWarning_edit" style="color: var(--danger-color); font-size: 12px; font-weight: bold; margin-top: 5px; display: none;"></p>
-</div>
-<div class="input-group full-width"><label>الجنس</label><select id="editStudentGender" required class="custom-input"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div><div class="input-group full-width" style="background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed #f59e0b;">
-    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold; color: #d97706;">
-        <input type="checkbox" id="editStudentIsSpecial" style="width: 18px; height: 18px; accent-color: #f59e0b;" onchange="document.getElementById('editStudentSpecialAmountDiv').style.display = this.checked ? 'block' : 'none'">
-        ⭐ حالة خاصة (خصم أو إعفاء)
-    </label>
-    <div id="editStudentSpecialAmountDiv" style="display: none; margin-top: 10px;">
-        <label>المبلغ المطلوب دفعه للحصة (اكتب 0 للإعفاء التام):</label>
-        <input type="number" id="editStudentSpecialAmount" class="custom-input" placeholder="مثال: 20" min="0">
+
+<div id="editStudentModal" class="modal">
+    <div class="modal-content student-modal">
+        <span class="close-btn" onclick="closeModal('editStudentModal')">&times;</span>
+        <h2 style="color: #f59e0b; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">✏️ تعديل بيانات الطالب</h2>
+        
+        <form id="editStudentForm" class="form-grid">
+            <input type="hidden" id="editStudentCodeOriginal">
+            
+            <div class="input-group">
+                <label>كود الطالب</label>
+                <input type="text" id="editStudentCode" required class="custom-input" style="font-weight:bold; color:var(--primary-color); background: #f8fafc;">
+            </div>
+            <div class="input-group">
+                <label>الاسم</label>
+                <input type="text" id="editStudentName" required class="custom-input">
+            </div>
+
+            <div class="input-group">
+                <label>الصف</label>
+                <select id="editStudentLevel" required class="custom-input" onchange="filterGroupsByLevel('editStudentLevel', 'editStudentGroup')">
+                    <option value="الأول الثانوي">الأول الثانوي</option>
+                    <option value="الثاني الثانوي">الثاني الثانوي</option>
+                    <option value="الثالث الثانوي">الثالث الثانوي</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>المجموعة</label>
+                <select id="editStudentGroup" required class="custom-input"></select>
+            </div>
+
+            <!-- 🔥 هنا صلحنا القفلة اللي كانت ناقصة 🔥 -->
+            <div class="input-group">
+                <label>هاتف الطالب <span style="color:var(--text-muted); font-size: 11px;">(أو اكتب 0 إذا لم يوجد)</span></label>
+                <input type="text" id="editStudentPhone" required class="custom-input">
+            </div>
+            
+            <div class="input-group">
+                <label>هاتف ولي الأمر</label>
+                <input type="text" id="editParentPhone" required class="custom-input" onkeyup="checkDuplicateParentPhone('edit')">
+                <p id="parentPhoneWarning_edit" style="color: var(--danger-color); font-size: 12px; font-weight: bold; margin-top: 5px; display: none;"></p>
+            </div>
+            
+            <div class="input-group full-width">
+                <label>الجنس</label>
+                <select id="editStudentGender" required class="custom-input">
+                    <option value="ذكر">ذكر</option>
+                    <option value="أنثى">أنثى</option>
+                </select>
+            </div>
+            
+            <div class="input-group full-width" style="background: rgba(245, 158, 11, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed #f59e0b; margin-top: 10px; grid-column: span 2;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #f59e0b; font-weight: bold; margin: 0;">
+                    <input type="checkbox" id="editStudentIsSpecial" style="width: 20px; height: 20px; accent-color: #f59e0b; cursor: pointer;" onchange="document.getElementById('editStudentSpecialAmountDiv').style.display = this.checked ? 'block' : 'none'">
+                    ⭐ حالة خاصة (تسعير مختلف / إعفاء)
+                </label>
+                <div id="editStudentSpecialAmountDiv" style="display: none; margin-top: 15px;">
+                    <label style="color: var(--text-main);">المبلغ المخصص لهذا الطالب (ج.م):</label>
+                    <input type="number" id="editStudentSpecialAmount" class="custom-input" placeholder="مثال: 20" min="0">
+                </div>
+            </div>
+
+            <button type="submit" class="save-btn full-width" style="background: #f59e0b; margin-top: 15px; font-size: 18px; grid-column: span 2;">تحديث بيانات الطالب 💾</button>
+        </form>
     </div>
-</div><button type="submit" class="save-btn full-width">تحديث</button></form></div></div>
-    
+</div>
+
+
     <div id="addSessionModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('addSessionModal')">&times;</span><h2>فتح حصة 🎯</h2><form id="addSessionForm"><div class="input-group"><label>الصف</label><select id="sessionLevelSelect" class="custom-input" onchange="filterGroupsByLevel('sessionLevelSelect', 'sessionGroupSelect')" required><option value="">اختر...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><label>المجموعة</label><select id="sessionGroupSelect" required class="custom-input"><option value="">اختر الصف أولاً...</option></select></div><div class="input-group"><label>التاريخ</label><input type="date" id="sessionDate" required class="custom-input"></div><div class="input-group"><label>الموضوع</label><input type="text" id="sessionTopic" class="custom-input"></div><div class="premium-box" style="margin-top: 20px; padding: 15px; border: 1px dashed var(--primary-color); border-radius: 8px; background: rgba(59, 130, 246, 0.05);"><h4 style="margin-bottom: 10px; color: var(--primary-color);">✨ أوتوماتيك:</h4><label style="display: flex; gap: 10px;"><input type="checkbox" id="autoExamCheck" onchange="toggleAutoInputs()"> إنشاء امتحان</label><input type="number" id="autoExamScore" placeholder="الدرجة؟" class="custom-input" style="display: none; margin-bottom: 15px;" min="1"><label style="display: flex; gap: 10px;"><input type="checkbox" id="autoHwCheck" onchange="toggleAutoInputs()"> تكليف واجب</label><input type="number" id="autoHwScore" placeholder="الدرجة؟" class="custom-input" style="display: none; margin-top: 10px;" min="1"></div><button type="submit" class="save-btn" style="margin-top: 20px;">إنشاء الحصة</button></form></div></div>
     <div id="addHwModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('addHwModal')">&times;</span><h2>واجب جديد</h2><form id="addHwForm"><div class="input-group"><select id="hwLevelSelect" class="custom-input" onchange="filterGroupsByLevel('hwLevelSelect', 'hwGroupSelect')" required><option value="">الصف...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><select id="hwGroupSelect" required class="custom-input"><option value="">المجموعة...</option></select></div><div class="input-group"><input type="text" id="hwName" required placeholder="الاسم/الصفحة" class="custom-input"></div><div class="input-group"><input type="number" id="hwMaxScore" required min="1" placeholder="الدرجة من" class="custom-input"></div><div class="input-group"><input type="date" id="hwDate" required class="custom-input"></div><button type="submit" class="save-btn" style="background-color: var(--hw-color);">إنشاء</button></form></div></div>
     <div id="addExamModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('addExamModal')">&times;</span><h2>امتحان جديد</h2><form id="addExamForm"><div class="input-group"><select id="examLevelSelect" class="custom-input" onchange="filterGroupsByLevel('examLevelSelect', 'examGroupSelect')" required><option value="">الصف...</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option></select></div><div class="input-group"><select id="examGroupSelect" required class="custom-input"><option value="">المجموعة...</option></select></div><div class="input-group"><input type="text" id="examName" required placeholder="الاسم" class="custom-input"></div><div class="input-group"><input type="number" id="examMaxScore" required min="1" placeholder="الدرجة من" class="custom-input"></div><div class="input-group"><input type="date" id="examDate" required class="custom-input"></div><button type="submit" class="save-btn exam-btn">إنشاء</button></form></div></div>
