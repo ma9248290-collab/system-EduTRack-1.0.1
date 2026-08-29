@@ -1878,7 +1878,11 @@
 <div class="input-group">
     <label>هاتف الطالب <span style="color:var(--text-muted); font-size: 11px;">(أو اكتب 0 إذا لم يوجد)</span></label>
     <input type="text" id="studentPhone" required class="custom-input">
-</div><div class="input-group"><label>هاتف ولي الأمر</label><input type="text" id="parentPhone" required class="custom-input"></div>
+<div class="input-group">
+    <label>هاتف ولي الأمر</label>
+    <input type="text" id="parentPhone" required class="custom-input" onkeyup="checkDuplicateParentPhone('add')">
+    <p id="parentPhoneWarning_add" style="color: var(--danger-color); font-size: 12px; font-weight: bold; margin-top: 5px; display: none;"></p>
+</div>
 <div class="input-group full-width"><label>الجنس</label><select id="studentGender" required class="custom-input"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div>
 
 <!-- بوكس الحالة الخاصة (مكانه الصحيح هنا قبل الزراير) -->
@@ -1903,7 +1907,12 @@
 <div class="input-group">
     <label>هاتف الطالب <span style="color:var(--text-muted); font-size: 11px;">(أو اكتب 0 إذا لم يوجد)</span></label>
     <input type="text" id="editStudentPhone" required class="custom-input">
-</div><div class="input-group"><label>هاتف ولي الأمر</label><input type="text" id="editParentPhone" required class="custom-input"></div><div class="input-group full-width"><label>الجنس</label><select id="editStudentGender" required class="custom-input"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div><div class="input-group full-width" style="background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed #f59e0b;">
+<div class="input-group">
+    <label>هاتف ولي الأمر</label>
+    <input type="text" id="editParentPhone" required class="custom-input" onkeyup="checkDuplicateParentPhone('edit')">
+    <p id="parentPhoneWarning_edit" style="color: var(--danger-color); font-size: 12px; font-weight: bold; margin-top: 5px; display: none;"></p>
+</div>
+<div class="input-group full-width"><label>الجنس</label><select id="editStudentGender" required class="custom-input"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div><div class="input-group full-width" style="background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed #f59e0b;">
     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold; color: #d97706;">
         <input type="checkbox" id="editStudentIsSpecial" style="width: 18px; height: 18px; accent-color: #f59e0b;" onchange="document.getElementById('editStudentSpecialAmountDiv').style.display = this.checked ? 'block' : 'none'">
         ⭐ حالة خاصة (خصم أو إعفاء)

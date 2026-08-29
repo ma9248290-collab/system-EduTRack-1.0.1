@@ -807,8 +807,7 @@ async function loadDataFromFirebase() {
     isFirebaseLoaded = true; 
 
     // بعد ما السيستم يحمل الداتا ويفرشها، شيك لو محتاجين باك أب النهاردة
-    setTimeout(autoCloudBackup, 5000); // بنأخره 5 ثواني عشان ميعطلش فتح الشاشة
-
+// setTimeout(autoCloudBackup, 5000); // تم إيقاف الباك أب التلقائي لتوفير الباقة
     setTimeout(window.checkGlobalAnnouncements, 1500);
 }
 
@@ -1213,7 +1212,7 @@ window.processStudentSaving = async function(keepOpen) {
     if (!isValidEgyptianPhone(phone)) return showToast("رقم هاتف الطالب خطأ!", "error");
     if (!isValidEgyptianPhone(parentPhone)) return showToast("رقم هاتف ولي الأمر خطأ!", "error");
 
-    const duplicate = students.find(s => s.code === code || (phone !== "0" && s.phone === phone) || (parentPhone !== "0" && s.parentPhone === parentPhone) || normalizeArabicName(s.name) === normalizeArabicName(name));
+   const duplicate = students.find(s => s.code === code || (phone !== "0" && s.phone === phone) || normalizeArabicName(s.name) === normalizeArabicName(name));
     if(duplicate) return showToast(`مسجل مسبقاً: ${duplicate.name}`, "error");
 
     // سحب بيانات الحالة الخاصة
@@ -1374,13 +1373,12 @@ document.getElementById('editStudentForm')?.addEventListener('submit', function(
     if (phone !== "0" && parentPhone !== "0" && phone === parentPhone) return showToast("رقم الطالب يجب أن يختلف عن ولي الأمر", "error");
 
     const duplicate = students.find(s => 
-        s.code !== originalCode && (
-            s.code === newCode || 
-            (phone !== "0" && s.phone === phone) || 
-            (parentPhone !== "0" && s.parentPhone === parentPhone) || 
-            normalizeArabicName(s.name) === normalizeArabicName(name)
-        )
-    );
+    s.code !== originalCode && (
+        s.code === newCode || 
+        (phone !== "0" && s.phone === phone) || 
+        normalizeArabicName(s.name) === normalizeArabicName(name)
+    )
+);
     if(duplicate) return showToast(`تنبيه! مسجل مسبقاً`, "error");
 
     const studentIndex = students.findIndex(s => s.code === originalCode); 
@@ -1417,7 +1415,39 @@ document.getElementById('editStudentForm')?.addEventListener('submit', function(
     } 
 });
 
+// دالة الفحص اللحظي لتكرار رقم ولي الأمر (الإخوة)
+window.checkDuplicateParentPhone = function(mode) {
+    let inputId = mode === 'add' ? 'parentPhone' : 'editParentPhone';
+    let warningId = mode === 'add' ? 'parentPhoneWarning_add' : 'parentPhoneWarning_edit';
+    let currentCode = mode === 'edit' ? document.getElementById('editStudentCodeOriginal').value : null;
+    
+    let phone = document.getElementById(inputId).value.trim();
+    let warningEl = document.getElementById(warningId);
+    
+    if (!warningEl) return;
 
+    // لو الرقم لسه صغير أو صفر، نخفي التنبيه
+    if (phone.length < 10 || phone === "0") {
+        warningEl.style.display = "none";
+        return;
+    }
+
+    // البحث عن طلاب مسجلين بنفس رقم ولي الأمر (مع استبعاد الطالب نفسه لو بنعدل بياناته)
+    let duplicates = students.filter(s => s.parentPhone === phone && s.code !== currentCode);
+
+    if (duplicates.length > 0) {
+        // لو لقينا، نعمل أساميهم كلينك يفتح البروفايل
+        let links = duplicates.map(s => {
+            let modalToClose = mode === 'add' ? 'addStudentModal' : 'editStudentModal';
+            return `<a href="#" onclick="closeModal('${modalToClose}'); openStudentProfile('${s.code}'); return false;" style="color: var(--danger-color); text-decoration: underline; pointer-events: auto;">${s.name}</a>`;
+        }).join("، ");
+        
+        warningEl.innerHTML = `⚠️ هذا الرقم مسجل مسبقاً للطالب: ${links} (إخوة)`;
+        warningEl.style.display = "block";
+    } else {
+        warningEl.style.display = "none";
+    }
+};
 
 function renderGroupCards() { 
     const grid = document.getElementById("groups-list"); 
