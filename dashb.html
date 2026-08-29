@@ -192,379 +192,354 @@
     </div>
 
     <script>
-      const DB_OLD = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com";
-        const DB_NEW = "https://el-senior-system-default-rtdb.europe-west1.firebasedatabase.app";
-        
-        let lastKnownOrderCount = -1; 
-        let lastKnownIdOrderCount = -1; 
+    // 🔗 رابط قاعدة البيانات الموحدة للسيستم كله
+    const DB_URL = "https://edutrack-system-1ded4-default-rtdb.firebaseio.com";
+    
+    let lastKnownOrderCount = -1; 
+    let lastKnownIdOrderCount = -1; 
 
-        // ==========================================
-        // 🚀 دوال الاتصال المزدوج (لدمج قواعد البيانات)
-        // ==========================================
-        
-        // 1. دالة القراءة من القاعدتين ودمجهم
-        async function fetchFromBoth(path) {
-            try {
-                let [resOld, resNew] = await Promise.all([
-                    fetch(`${DB_OLD}/${path}`).catch(() => null),
-                    fetch(`${DB_NEW}/${path}`).catch(() => null)
-                ]);
-                let dataOld = (resOld && resOld.ok) ? await resOld.json() : {};
-                let dataNew = (resNew && resNew.ok) ? await resNew.json() : {};
-                
-                if (dataOld && dataOld.error) dataOld = {};
-                if (dataNew && dataNew.error) dataNew = {};
-
-                return { ...(dataOld || {}), ...(dataNew || {}) }; 
-            } catch (e) {
-                console.error(`Error fetching ${path}:`, e);
-                return {};
-            }
+    // ==========================================
+    // 🚀 دوال الاتصال بقاعدة البيانات الموحدة
+    // ==========================================
+    
+    async function fetchData(path) {
+        try {
+            let res = await fetch(`${DB_URL}/${path}`);
+            let data = (res && res.ok) ? await res.json() : {};
+            if (data && data.error) data = {};
+            return data || {}; 
+        } catch (e) {
+            console.error(`Error fetching ${path}:`, e);
+            return {};
         }
+    }
 
-        // 2. دالة تنفيذ الأوامر في القاعدتين (تأكيد، حذف، تفعيل)
-        async function executeInBoth(path, method, bodyObj = null) {
-            let options = { method: method, headers: { 'Content-Type': 'application/json' } };
-            if (bodyObj) options.body = JSON.stringify(bodyObj);
-            
-            await Promise.all([
-                fetch(`${DB_OLD}/${path}`, options).catch(() => {}),
-                fetch(`${DB_NEW}/${path}`, options).catch(() => {})
+    async function executeData(path, method, bodyObj = null) {
+        let options = { method: method, headers: { 'Content-Type': 'application/json' } };
+        if (bodyObj) options.body = JSON.stringify(bodyObj);
+        await fetch(`${DB_URL}/${path}`, options).catch(() => {});
+    }
+
+    // ==========================================
+    // 1. نظام الدخول والتهيئة
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", () => {
+        if (localStorage.getItem("superAdminAuth") === "true") {
+            document.getElementById('adminLogin').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'flex';
+            initDashboard();
+        }
+        setInterval(() => { document.getElementById("liveClock").innerText = new Date().toLocaleString('ar-EG'); }, 1000);
+    });
+
+    function checkAdmin() {
+        const pass = document.getElementById('adminPass').value;
+        // باسوورد الإدارة العليا
+        if (pass === "shefo2026") {
+            localStorage.setItem("superAdminAuth", "true");
+            document.getElementById('adminLogin').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'flex';
+            initDashboard();
+        } else {
+            document.getElementById('errorMsg').style.display = 'block';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("superAdminAuth");
+        location.reload();
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId + '-tab').classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    // ==========================================
+    // 2. جلب الداتا والإشعارات اللحظية 🔔
+    // ==========================================
+    function initDashboard() {
+        fetchSystemData(); 
+        setInterval(fetchSystemData, 10000); 
+    }
+
+    function playNotifySound() {
+        const audio = document.getElementById("notifySound");
+        audio.currentTime = 0; audio.play().catch(e => {});
+    }
+
+    function showNotification(title, msg) {
+        const container = document.getElementById("notification-container");
+        const toast = document.createElement("div");
+        toast.className = "notify-toast";
+        toast.innerHTML = `<div style="font-size:30px;">🔔</div><div><div style="font-size:16px;">${title}</div><div style="font-size:13px; color:#94a3b8;">${msg}</div></div>`;
+        container.appendChild(toast);
+        playNotifySound();
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 5000);
+    }
+
+    async function fetchSystemData() {
+        try {
+            // جلب الداتا من القاعدة الموحدة
+            let [licenses, demos, idOrders, orders, withdraws, teachers] = await Promise.all([
+                fetchData('licenses.json'), 
+                fetchData('demo_users.json'), 
+                fetchData('id_orders.json'),
+                fetchData('orders.json'), 
+                fetchData('withdraw_requests.json'),
+                fetchData('teachers.json')
             ]);
-        }
-
-
-        // ==========================================
-        // 1. نظام الدخول والتهيئة
-        // ==========================================
-        document.addEventListener("DOMContentLoaded", () => {
-            if (localStorage.getItem("superAdminAuth") === "true") {
-                document.getElementById('adminLogin').style.display = 'none';
-                document.getElementById('adminDashboard').style.display = 'flex';
-                initDashboard();
+            
+            // إشعارات طلبات الشراء
+            let currentOrderCount = Object.keys(orders).length;
+            if (lastKnownOrderCount !== -1 && currentOrderCount > lastKnownOrderCount) {
+                showNotification("طلب شراء جديد! 🛒", "قم بمراجعة قسم طلبات الشراء الآن لتفعيل حساب العميل.");
             }
-            setInterval(() => { document.getElementById("liveClock").innerText = new Date().toLocaleString('ar-EG'); }, 1000);
-        });
-
-        function checkAdmin() {
-            const pass = document.getElementById('adminPass').value;
-            if (pass === "shefo2026") {
-                localStorage.setItem("superAdminAuth", "true");
-                document.getElementById('adminLogin').style.display = 'none';
-                document.getElementById('adminDashboard').style.display = 'flex';
-                initDashboard();
-            } else {
-                document.getElementById('errorMsg').style.display = 'block';
+            lastKnownOrderCount = currentOrderCount;
+            
+            // إشعارات كروت الـ ID
+            let currentIdOrderCount = Object.keys(idOrders).length;
+            if (lastKnownIdOrderCount !== -1 && currentIdOrderCount > lastKnownIdOrderCount) {
+                showNotification("طلب كروت ID جديد! 💳", "تم استلام طلب جديد لطباعة الكروت، راجع القسم.");
             }
-        }
+            lastKnownIdOrderCount = currentIdOrderCount;
 
-        function logout() {
-            localStorage.removeItem("superAdminAuth");
-            location.reload();
-        }
+            // رسم الجداول بأمان تام
+            renderOrders(orders);
+            renderClients(licenses, teachers);
+            renderDemos(demos);
+            renderIdOrders(idOrders);
+            renderWithdraws(withdraws);
+            
+        } catch (e) { console.error("Error Fetching:", e); }
+    }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId + '-tab').classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        // ==========================================
-        // 2. جلب الداتا والإشعارات اللحظية 🔔
-        // ==========================================
-        function initDashboard() {
-            fetchSystemData(); 
-            setInterval(fetchSystemData, 10000); 
-        }
-
-        function playNotifySound() {
-            const audio = document.getElementById("notifySound");
-            audio.currentTime = 0; audio.play().catch(e => {});
-        }
-
-        function showNotification(title, msg) {
-            const container = document.getElementById("notification-container");
-            const toast = document.createElement("div");
-            toast.className = "notify-toast";
-            toast.innerHTML = `<div style="font-size:30px;">🔔</div><div><div style="font-size:16px;">${title}</div><div style="font-size:13px; color:#94a3b8;">${msg}</div></div>`;
-            container.appendChild(toast);
-            playNotifySound();
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 5000);
-        }
-
-        async function fetchSystemData() {
+    // ==========================================
+    // 3. دوال الرسم المحمية 100% 🛡️
+    // ==========================================
+    
+    function renderOrders(orders) {
+        const tbody = document.getElementById("ordersTable"); if(!tbody) return;
+        tbody.innerHTML = ""; let unhandledCount = 0;
+        if (!orders || Object.keys(orders).length === 0) return tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">لا توجد طلبات جديدة</td></tr>`;
+        
+        Object.keys(orders).reverse().forEach(key => {
             try {
-                // جلب الداتا من الدالتين السحريتين
-                let [licenses, demos, idOrders, orders, withdraws] = await Promise.all([
-                    fetchFromBoth('licenses.json'), 
-                    fetchFromBoth('demo_users.json'), 
-                    fetchFromBoth('id_orders.json'),
-                    fetchFromBoth('orders.json'), 
-                    fetchFromBoth('withdraw_requests.json')
-                ]);
+                let o = orders[key]; let phoneStr = String(o.whatsapp || "");
+                let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/, '')}` : "#";
+                let isDone = o.status && o.status.includes('تم');
+                if(!isDone) unhandledCount++;
 
-                // 🌟 الحل السحري لمشكلة المدرسين
-                // من الداتابيز القديمة: نجيب مجلد teachers.json
-                let resOldTeachers = await fetch(`${DB_OLD}/teachers.json`).catch(() => null);
-                let oldTeachers = (resOldTeachers && resOldTeachers.ok) ? await resOldTeachers.json() : {};
-                if (oldTeachers && oldTeachers.error) oldTeachers = {};
+                let statusBadge = isDone ? `<span class="badge" style="background:rgba(16, 185, 129, 0.2); color:var(--success)">${o.status}</span>` : `<span class="badge" style="background:rgba(245, 158, 11, 0.2); color:var(--warning)">${o.status}</span>`;
+                let btn = isDone ? `<span style="color:#64748b; font-weight:bold;">مؤكد ومفعل ✅</span>` : `<button onclick="approveOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px;">تأكيد وتفعيل ✅</button>`;
 
-                // من الداتابيز الجديدة: نجيب الـ Root مباشرة
-                let resNewRoot = await fetch(`${DB_NEW}/.json`).catch(() => null);
-                let newRoot = (resNewRoot && resNewRoot.ok) ? await resNewRoot.json() : {};
-                if (newRoot && newRoot.error) newRoot = {};
+                tbody.innerHTML += `<tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}"><td><strong>${o.teacherName || '-'}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${phoneStr}</a></td><td style="color:var(--primary); font-weight:bold;">${o.plan || '-'}</td><td>${o.paymentMethod || '-'}</td><td style="color:var(--success); font-weight:900;">${o.finalPrice || 0} ج</td><td style="color:var(--warning); font-weight:bold; letter-spacing:1px; direction:ltr;">${o.promoCodeUsed || 'بدون كود'}</td><td style="color:var(--purple); font-weight:bold;">${o.commissionForAffiliate || 0} ج</td><td>${statusBadge}</td><td>${btn}</td></tr>`;
+            } catch(e) {}
+        });
+        document.getElementById("totalOrders").innerText = unhandledCount;
+        let badge = document.getElementById("newOrdersBadge");
+        if(badge) { badge.style.display = unhandledCount === 0 ? "none" : "inline-block"; badge.innerText = unhandledCount; }
+    }
 
-                let teachers = { ...(oldTeachers || {}) };
+    function renderIdOrders(orders) {
+        const tbody = document.getElementById("idOrdersTable"); if (!tbody) return;
+        tbody.innerHTML = ""; let unhandledCount = 0;
+        
+        if (!orders || Object.keys(orders).length === 0) {
+            let badge = document.getElementById("newIdOrdersBadge"); if(badge) badge.style.display = "none";
+            return tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); font-weight: bold;">لا توجد طلبات كروت ID حتى الآن</td></tr>`;
+        }
+
+        Object.keys(orders).reverse().forEach(key => {
+            try {
+                let o = orders[key] || {}; let phoneStr = String(o.phone || "");
+                let isDone = o.status === 'done'; if (!isDone) unhandledCount++;
+                let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/, '')}` : "#";
+                let btn = isDone ? `<span style="color:var(--success); font-weight:bold;">تم التنفيذ ✅</span>` : `<button onclick="approveIdOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px; width: auto; background: var(--primary);">تحديد كمكتمل ✅</button>`;
+
+                tbody.innerHTML += `<tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}"><td><strong>${o.teacherName || "غير محدد"}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${phoneStr}</a></td><td>${o.address || "غير محدد"}</td><td style="color:var(--success); font-weight:bold;">${o.fromCode || "-"}</td><td style="color:var(--danger); font-weight:bold;">${o.toCode || "-"}</td><td>${o.timestamp ? new Date(o.timestamp).toLocaleDateString('ar-EG') : "-"}</td><td>${btn}</td></tr>`;
+            } catch(e) {}
+        });
+        
+        let badge = document.getElementById("newIdOrdersBadge");
+        if (badge) { badge.style.display = unhandledCount === 0 ? "none" : "inline-block"; badge.innerText = unhandledCount; }
+    }
+
+    function renderDemos(demos) {
+        const tbody = document.getElementById("demoTable"); if(!tbody) return;
+        tbody.innerHTML = ""; let demoCount = 0;
+        if(!demos || Object.keys(demos).length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">لا يوجد رادار للحسابات التجريبية حالياً</td></tr>`;
+
+        Object.keys(demos).reverse().forEach(key => {
+            try {
+                let d = demos[key] || {}; let phoneStr = String(d.whatsapp || ""); demoCount++;
+                let daysLeft = d.startDate ? Math.ceil(7 - ((new Date().getTime() - parseInt(d.startDate)) / (1000 * 60 * 60 * 24))) : 0;
+                let stat = d.status === 'suspended' ? `<span class="badge" style="color:var(--danger)">موقوف</span>` : (daysLeft > 0 ? `<span class="badge" style="color:var(--success)">ساري</span>` : `<span class="badge" style="color:var(--warning)">انتهى</span>`);
+                let act = d.status === 'suspended' ? `<button onclick="updateDemoStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px; width:auto;">✅</button>` : `<button onclick="updateDemoStatus('${key}', 'suspended')" class="btn" style="background:var(--warning); padding:5px; width:auto;">🚫</button>`;
+                act += ` <button onclick="deleteDemo('${key}')" class="btn" style="background:var(--danger); padding:5px; width:auto;">🗑️</button>`;
+                let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/,'')}` : "#";
                 
-                // تنقية الـ Root الجديد عشان ناخد منه بيانات المدرسين بس (ونتجاهل الرخص والطلبات)
-                for (let key in newRoot) {
-                    if (!['licenses', 'demo_users', 'id_orders', 'orders', 'withdraw_requests', 'global_announcement'].includes(key)) {
-                        teachers[key] = newRoot[key];
-                    }
+                tbody.innerHTML += `<tr><td><strong>${d.teacherName || '-'}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${phoneStr}</a></td><td>${d.startDate ? new Date(parseInt(d.startDate)).toLocaleDateString('ar-EG') : '-'}</td><td style="color:${daysLeft > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${daysLeft} أيام</td><td>${stat}</td><td>${act}</td></tr>`;
+            } catch(e) {}
+        });
+        document.getElementById("totalDemos").innerText = demoCount;
+    }
+
+    function renderClients(licenses, teachers) {
+        const tbody = document.getElementById("clientsTable"); if(!tbody) return;
+        tbody.innerHTML = ""; let tCount = 0, sCount = 0;
+        if(!licenses || Object.keys(licenses).length === 0) return tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">لا يوجد مدرسين مسجلين بعد.</td></tr>`;
+
+        Object.keys(licenses).forEach(key => {
+            try {
+                let lic = licenses[key] || {}; if(lic.claimedBy) tCount++;
+                
+                // 🔥 التعديل هنا: الدخول لمسار الداتا الصحيح لقراءة عدد الطلاب
+                let stu = 0;
+                if (teachers && teachers[key] && teachers[key].data && Array.isArray(teachers[key].data.students)) {
+                    stu = teachers[key].data.students.length;
+                }
+                sCount += stu;
+                
+                let isExpired = false; let planName = 'شهري';
+                if(lic.durationMonths == 99) planName = 'مدى الحياة'; else if(lic.durationDays == 7) planName = '7 أيام'; else if(lic.durationDays == 1) planName = 'يوم واحد';
+
+                if(lic.activatedAt && lic.durationMonths != 99) {
+                    let act = new Date(lic.activatedAt); let exp;
+                    if(lic.durationDays) exp = new Date(act.getTime() + parseInt(lic.durationDays) * 24*60*60*1000);
+                    else exp = new Date(act.setMonth(act.getMonth() + parseInt(lic.durationMonths)));
+                    if(new Date() > exp) isExpired = true;
                 }
                 
-                // إشعارات طلبات الشراء
-                let currentOrderCount = Object.keys(orders).length;
-                if (lastKnownOrderCount !== -1 && currentOrderCount > lastKnownOrderCount) {
-                    showNotification("طلب شراء جديد! 🛒", "قم بمراجعة قسم طلبات الشراء الآن لتفعيل حساب العميل.");
-                }
-                lastKnownOrderCount = currentOrderCount;
+                let stat = lic.status === 'suspended' ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--danger)">موقوف</span>` : (isExpired ? `<span class="badge" style="background:rgba(245,158,11,0.2); color:var(--warning)">منتهي</span>` : `<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--success)">نشط</span>`);
+                let actBtn = lic.status === 'suspended' ? `<button onclick="updateLicenseStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px 10px; font-size:12px;">تفعيل</button>` : (isExpired ? `<button onclick="renewLicense('${key}')" class="btn" style="background:var(--warning); padding:5px 10px; font-size:12px;">تجديد</button>` : `<button onclick="updateLicenseStatus('${key}', 'suspended')" class="btn" style="background:var(--danger); padding:5px 10px; font-size:12px;">إيقاف</button>`);
                 
-                // إشعارات كروت الـ ID
-                let currentIdOrderCount = Object.keys(idOrders).length;
-                if (lastKnownIdOrderCount !== -1 && currentIdOrderCount > lastKnownIdOrderCount) {
-                    showNotification("طلب كروت ID جديد! 💳", "تم استلام طلب جديد لطباعة الكروت، راجع القسم.");
-                }
-                lastKnownIdOrderCount = currentIdOrderCount;
+                tbody.innerHTML += `<tr><td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td><td style="color:#94a3b8; font-family:monospace;">${key}</td><td><span style="color:#f59e0b; font-weight:bold;">${planName}</span></td><td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString('ar-EG') : '-'}</td><td style="color:var(--primary); font-weight:bold;">${stu}</td><td>${stat}</td><td><div style="display: flex; gap: 5px; justify-content: center;">${actBtn}<button onclick="openEditPlanModal('${key}')" class="btn" style="background:#f59e0b; padding:5px 10px; font-size:12px; color:black; border:none;">تعديل ⚙️</button></div></td></tr>`;
+            } catch(e) {}
+        });
+        document.getElementById("totalTeachers").innerText = tCount; document.getElementById("totalStudents").innerText = sCount;
+    }
 
-                // رسم الجداول بأمان تام
-                renderOrders(orders);
-                renderClients(licenses, teachers);
-                renderDemos(demos);
-                renderIdOrders(idOrders);
-                renderWithdraws(withdraws);
-                
-            } catch (e) { console.error("Error Fetching:", e); }
-        }
-
-        // ==========================================
-        // 3. دوال الرسم المحمية 100% 🛡️
-        // ==========================================
+    
+    function renderWithdraws(requests) {
+        const tbody = document.getElementById("withdrawsTable"); if(!tbody) return;
+        tbody.innerHTML = "";
+        if (!requests || Object.keys(requests).length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد طلبات سحب</td></tr>`;
         
-        function renderOrders(orders) {
-            const tbody = document.getElementById("ordersTable"); if(!tbody) return;
-            tbody.innerHTML = ""; let unhandledCount = 0;
-            if (!orders || Object.keys(orders).length === 0) return tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">لا توجد طلبات جديدة</td></tr>`;
-            
-            Object.keys(orders).reverse().forEach(key => {
-                try {
-                    let o = orders[key]; let phoneStr = String(o.whatsapp || "");
-                    let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/, '')}` : "#";
-                    let isDone = o.status && o.status.includes('تم');
-                    if(!isDone) unhandledCount++;
+        Object.keys(requests).reverse().forEach(key => {
+            try {
+                let r = requests[key] || {};
+                let btn = r.status === 'paid' ? `<span style="color:var(--success); font-weight:bold;">تم التحويل ✅</span>` : `<button onclick="approveWithdraw('${key}')" class="btn" style="background:var(--primary); padding:5px 10px; font-size:12px;">تأكيد التحويل 💳</button>`;
+                tbody.innerHTML += `<tr><td style="letter-spacing:1px;"><strong>${r.promoCode || '-'}</strong></td><td>${r.method || '-'}</td><td style="color:var(--warning); font-weight:bold;">${r.number || '-'}</td><td style="color:var(--success); font-weight:900;">${r.amount || 0} ج</td><td>${r.timestamp ? new Date(r.timestamp).toLocaleDateString('ar-EG') : "-"}</td><td>${btn}</td></tr>`;
+            } catch(e) {}
+        });
+    }
 
-                    let statusBadge = isDone ? `<span class="badge" style="background:rgba(16, 185, 129, 0.2); color:var(--success)">${o.status}</span>` : `<span class="badge" style="background:rgba(245, 158, 11, 0.2); color:var(--warning)">${o.status}</span>`;
-                    let btn = isDone ? `<span style="color:#64748b; font-weight:bold;">مؤكد ومفعل ✅</span>` : `<button onclick="approveOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px;">تأكيد وتفعيل ✅</button>`;
-
-                    tbody.innerHTML += `<tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}"><td><strong>${o.teacherName || '-'}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${phoneStr}</a></td><td style="color:var(--primary); font-weight:bold;">${o.plan || '-'}</td><td>${o.paymentMethod || '-'}</td><td style="color:var(--success); font-weight:900;">${o.finalPrice || 0} ج</td><td style="color:var(--warning); font-weight:bold; letter-spacing:1px; direction:ltr;">${o.promoCodeUsed || 'بدون كود'}</td><td style="color:var(--purple); font-weight:bold;">${o.commissionForAffiliate || 0} ج</td><td>${statusBadge}</td><td>${btn}</td></tr>`;
-                } catch(e) {}
-            });
-            document.getElementById("totalOrders").innerText = unhandledCount;
-            let badge = document.getElementById("newOrdersBadge");
-            if(badge) { badge.style.display = unhandledCount === 0 ? "none" : "inline-block"; badge.innerText = unhandledCount; }
-        }
-
-        function renderIdOrders(orders) {
-            const tbody = document.getElementById("idOrdersTable"); if (!tbody) return;
-            tbody.innerHTML = ""; let unhandledCount = 0;
-            
-            if (!orders || Object.keys(orders).length === 0) {
-                let badge = document.getElementById("newIdOrdersBadge"); if(badge) badge.style.display = "none";
-                return tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); font-weight: bold;">لا توجد طلبات كروت ID حتى الآن</td></tr>`;
-            }
-
-            Object.keys(orders).reverse().forEach(key => {
-                try {
-                    let o = orders[key] || {}; let phoneStr = String(o.phone || "");
-                    let isDone = o.status === 'done'; if (!isDone) unhandledCount++;
-                    let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/, '')}` : "#";
-                    let btn = isDone ? `<span style="color:var(--success); font-weight:bold;">تم التنفيذ ✅</span>` : `<button onclick="approveIdOrder('${key}')" class="btn" style="padding: 6px 12px; font-size: 13px; width: auto; background: var(--primary);">تحديد كمكتمل ✅</button>`;
-
-                    tbody.innerHTML += `<tr style="${!isDone ? 'background: rgba(245, 158, 11, 0.05);' : ''}"><td><strong>${o.teacherName || "غير محدد"}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${phoneStr}</a></td><td>${o.address || "غير محدد"}</td><td style="color:var(--success); font-weight:bold;">${o.fromCode || "-"}</td><td style="color:var(--danger); font-weight:bold;">${o.toCode || "-"}</td><td>${o.timestamp ? new Date(o.timestamp).toLocaleDateString('ar-EG') : "-"}</td><td>${btn}</td></tr>`;
-                } catch(e) {}
-            });
-            
-            let badge = document.getElementById("newIdOrdersBadge");
-            if (badge) { badge.style.display = unhandledCount === 0 ? "none" : "inline-block"; badge.innerText = unhandledCount; }
-        }
-
-        function renderDemos(demos) {
-            const tbody = document.getElementById("demoTable"); if(!tbody) return;
-            tbody.innerHTML = ""; let demoCount = 0;
-            if(!demos || Object.keys(demos).length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">جاري التحميل...</td></tr>`;
-
-            Object.keys(demos).reverse().forEach(key => {
-                try {
-                    let d = demos[key] || {}; let phoneStr = String(d.whatsapp || ""); demoCount++;
-                    let daysLeft = d.startDate ? Math.ceil(7 - ((new Date().getTime() - parseInt(d.startDate)) / (1000 * 60 * 60 * 24))) : 0;
-                    let stat = d.status === 'suspended' ? `<span class="badge" style="color:var(--danger)">موقوف</span>` : (daysLeft > 0 ? `<span class="badge" style="color:var(--success)">ساري</span>` : `<span class="badge" style="color:var(--warning)">انتهى</span>`);
-                    let act = d.status === 'suspended' ? `<button onclick="updateDemoStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px; width:auto;">✅</button>` : `<button onclick="updateDemoStatus('${key}', 'suspended')" class="btn" style="background:var(--warning); padding:5px; width:auto;">🚫</button>`;
-                    act += ` <button onclick="deleteDemo('${key}')" class="btn" style="background:var(--danger); padding:5px; width:auto;">🗑️</button>`;
-                    let waLink = phoneStr ? `https://wa.me/20${phoneStr.replace(/^0+/,'')}` : "#";
-                    
-                    tbody.innerHTML += `<tr><td><strong>${d.teacherName || '-'}</strong></td><td><a href="${waLink}" target="_blank" style="color:var(--success); text-decoration:none;">💬 ${phoneStr}</a></td><td>${d.startDate ? new Date(parseInt(d.startDate)).toLocaleDateString('ar-EG') : '-'}</td><td style="color:${daysLeft > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${daysLeft} أيام</td><td>${stat}</td><td>${act}</td></tr>`;
-                } catch(e) {}
-            });
-            document.getElementById("totalDemos").innerText = demoCount;
-        }
-
-        function renderClients(licenses, teachers) {
-            const tbody = document.getElementById("clientsTable"); if(!tbody) return;
-            tbody.innerHTML = ""; let tCount = 0, sCount = 0;
-            if(!licenses || Object.keys(licenses).length === 0) return tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">جاري التحميل...</td></tr>`;
-
-            Object.keys(licenses).forEach(key => {
-                try {
-                    let lic = licenses[key] || {}; if(lic.claimedBy) tCount++;
-                    let stu = (teachers && teachers[key] && teachers[key].data && teachers[key].data.students) ? teachers[key].data.students.length : 0; sCount += stu;
-                    let isExpired = false; let planName = 'شهري';
-                    if(lic.durationMonths == 99) planName = 'مدى الحياة'; else if(lic.durationDays == 7) planName = '7 أيام'; else if(lic.durationDays == 1) planName = 'يوم واحد';
-
-                    if(lic.activatedAt && lic.durationMonths != 99) {
-                        let act = new Date(lic.activatedAt); let exp;
-                        if(lic.durationDays) exp = new Date(act.getTime() + parseInt(lic.durationDays) * 24*60*60*1000);
-                        else exp = new Date(act.setMonth(act.getMonth() + parseInt(lic.durationMonths)));
-                        if(new Date() > exp) isExpired = true;
-                    }
-                    
-                    let stat = lic.status === 'suspended' ? `<span class="badge" style="background:rgba(239,68,68,0.2); color:var(--danger)">موقوف</span>` : (isExpired ? `<span class="badge" style="background:rgba(245,158,11,0.2); color:var(--warning)">منتهي</span>` : `<span class="badge" style="background:rgba(16,185,129,0.2); color:var(--success)">نشط</span>`);
-                    let actBtn = lic.status === 'suspended' ? `<button onclick="updateLicenseStatus('${key}', 'active')" class="btn" style="background:var(--success); padding:5px 10px; font-size:12px;">تفعيل</button>` : (isExpired ? `<button onclick="renewLicense('${key}')" class="btn" style="background:var(--warning); padding:5px 10px; font-size:12px;">تجديد</button>` : `<button onclick="updateLicenseStatus('${key}', 'suspended')" class="btn" style="background:var(--danger); padding:5px 10px; font-size:12px;">إيقاف</button>`);
-                    
-                    tbody.innerHTML += `<tr><td><strong>${lic.claimedBy || 'غير مفعل'}</strong></td><td style="color:#94a3b8; font-family:monospace;">${key}</td><td><span style="color:#f59e0b; font-weight:bold;">${planName}</span></td><td>${lic.activatedAt ? new Date(lic.activatedAt).toLocaleDateString('ar-EG') : '-'}</td><td style="color:var(--primary); font-weight:bold;">${stu}</td><td>${stat}</td><td><div style="display: flex; gap: 5px; justify-content: center;">${actBtn}<button onclick="openEditPlanModal('${key}')" class="btn" style="background:#f59e0b; padding:5px 10px; font-size:12px; color:black; border:none;">تعديل ⚙️</button></div></td></tr>`;
-                } catch(e) {}
-            });
-            document.getElementById("totalTeachers").innerText = tCount; document.getElementById("totalStudents").innerText = sCount;
-        }
-
-        function renderWithdraws(requests) {
-            const tbody = document.getElementById("withdrawsTable"); if(!tbody) return;
-            tbody.innerHTML = "";
-            if (!requests || Object.keys(requests).length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد طلبات سحب</td></tr>`;
-            
-            Object.keys(requests).reverse().forEach(key => {
-                try {
-                    let r = requests[key] || {};
-                    let btn = r.status === 'paid' ? `<span style="color:var(--success); font-weight:bold;">تم التحويل ✅</span>` : `<button onclick="approveWithdraw('${key}')" class="btn" style="background:var(--primary); padding:5px 10px; font-size:12px;">تأكيد التحويل 💳</button>`;
-                    tbody.innerHTML += `<tr><td style="letter-spacing:1px;"><strong>${r.promoCode || '-'}</strong></td><td>${r.method || '-'}</td><td style="color:var(--warning); font-weight:bold;">${r.number || '-'}</td><td style="color:var(--success); font-weight:900;">${r.amount || 0} ج</td><td>${r.timestamp ? new Date(r.timestamp).toLocaleDateString('ar-EG') : "-"}</td><td>${btn}</td></tr>`;
-                } catch(e) {}
-            });
-        }
-
-        // ==========================================
-        // 4. العمليات والتأكيدات المباشرة (تُنفذ في القاعدتين)
-        // ==========================================
-        async function approveOrder(key) { 
-            if(confirm("تأكيد استلام المبلغ؟ (قم بتوليد كود وإرساله للعميل)")) { 
-                await executeInBoth(`orders/${key}.json`, 'PATCH', { status: 'تم الدفع والتفعيل ✅' });
-                fetchSystemData(); 
-            } 
-        }
-        
-        async function approveIdOrder(key) { 
-            if(confirm("هل قمت بطباعة وتوصيل الكروت بالفعل؟")) { 
-                await executeInBoth(`id_orders/${key}.json`, 'PATCH', { status: 'done' });
-                fetchSystemData(); 
-            } 
-        }
-        
-        async function updateLicenseStatus(key, status) { 
-            await executeInBoth(`licenses/${key}.json`, 'PATCH', { status: status });
+    // ==========================================
+    // 4. العمليات والتأكيدات المباشرة
+    // ==========================================
+    async function approveOrder(key) { 
+        if(confirm("تأكيد استلام المبلغ؟ (قم بتوليد كود وإرساله للعميل)")) { 
+            await executeData(`orders/${key}.json`, 'PATCH', { status: 'تم الدفع والتفعيل ✅' });
             fetchSystemData(); 
-        }
-        
-        async function renewLicense(key) { 
-            await executeInBoth(`licenses/${key}.json`, 'PATCH', { activatedAt: new Date().toISOString(), durationMonths: 1, status: 'active' });
+        } 
+    }
+    
+    async function approveIdOrder(key) { 
+        if(confirm("هل قمت بطباعة وتوصيل الكروت بالفعل؟")) { 
+            await executeData(`id_orders/${key}.json`, 'PATCH', { status: 'done' });
             fetchSystemData(); 
-            showNotification("تم!", "تم تجديد الاشتراك بنجاح."); 
-        }
-        
-        async function updateDemoStatus(key, status) { 
-            await executeInBoth(`demo_users/${key}.json`, 'PATCH', { status: status });
+        } 
+    }
+    
+    async function updateLicenseStatus(key, status) { 
+        await executeData(`licenses/${key}.json`, 'PATCH', { status: status });
+        fetchSystemData(); 
+    }
+    
+    async function renewLicense(key) { 
+        await executeData(`licenses/${key}.json`, 'PATCH', { activatedAt: new Date().toISOString(), durationMonths: 1, status: 'active' });
+        fetchSystemData(); 
+        showNotification("تم!", "تم تجديد الاشتراك بنجاح."); 
+    }
+    
+    async function updateDemoStatus(key, status) { 
+        await executeData(`demo_users/${key}.json`, 'PATCH', { status: status });
+        fetchSystemData(); 
+    }
+    
+    async function deleteDemo(key) { 
+        await executeData(`demo_users/${key}.json`, 'DELETE');
+        fetchSystemData(); 
+    }
+    
+    async function approveWithdraw(key) { 
+        if(confirm("هل قمت بتحويل المبلغ؟")) { 
+            await executeData(`withdraw_requests/${key}.json`, 'PATCH', { status: 'paid' });
             fetchSystemData(); 
-        }
-        
-        async function deleteDemo(key) { 
-            await executeInBoth(`demo_users/${key}.json`, 'DELETE');
-            fetchSystemData(); 
-        }
-        
-        async function approveWithdraw(key) { 
-            if(confirm("هل قمت بتحويل المبلغ؟")) { 
-                await executeInBoth(`withdraw_requests/${key}.json`, 'PATCH', { status: 'paid' });
-                fetchSystemData(); 
-            } 
-        }
+        } 
+    }
 
-        async function generateLicense() {
-            const planValue = document.getElementById("newLicenseType").value;
-            const code = "EDU-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-            let licenseData = { status: 'active', createdAt: new Date().toISOString() };
-            if (planValue === "1_day") { licenseData.durationDays = 1; licenseData.durationMonths = 0; } 
-            else if (planValue === "7_days") { licenseData.durationDays = 7; licenseData.durationMonths = 0; } 
-            else { licenseData.durationMonths = parseInt(planValue); }
-            
-            // إضافة الكود للقاعدتين معاً
-            await executeInBoth(`licenses/${code}.json`, 'PUT', licenseData);
-            
-            document.getElementById("generatedCodeDisplay").value = code; 
-            fetchSystemData(); 
-            showNotification("نجاح!", "تم توليد كود التفعيل وإضافته للرخص.");
-        }
-
-        async function publishGlobalAnnouncement() {
-            const title = prompt("اكتب عنوان الإشعار (مثال: تحديث هام V2.0):"); if (!title) return;
-            const message = prompt("اكتب نص الإشعار:"); if (!message) return;
-            try { 
-                let annData = { id: "ann_" + Date.now(), title: title, message: message, timestamp: new Date().toISOString() };
-                await executeInBoth(`global_announcement.json`, 'PUT', annData);
-                alert("تم إرسال الإشعار! سيظهر لجميع المدرسين."); 
-            } catch (e) { alert("حدث خطأ."); }
-        }
-
-        function openEditPlanModal(key) { document.getElementById('editPlanLicenseKey').value = key; document.getElementById('editPlanModal').style.display = 'flex'; }
+    async function generateLicense() {
+        const planValue = document.getElementById("newLicenseType").value;
+        const code = "EDU-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+        let licenseData = { status: 'active', createdAt: new Date().toISOString() };
+        if (planValue === "1_day") { licenseData.durationDays = 1; licenseData.durationMonths = 0; } 
+        else if (planValue === "7_days") { licenseData.durationDays = 7; licenseData.durationMonths = 0; } 
+        else { licenseData.durationMonths = parseInt(planValue); }
         
-        async function saveNewPlan() {
-            const key = document.getElementById('editPlanLicenseKey').value; 
-            const planValue = document.getElementById('newPlanSelect').value; 
-            
-            let updates = {
-                activatedAt: new Date().toISOString(),
-                status: 'active'
-            };
-            
-            if (planValue === "1_day") { 
-                updates.durationDays = 1; updates.durationMonths = null; 
-            } else if (planValue === "7_days") { 
-                updates.durationDays = 7; updates.durationMonths = null; 
-            } else if (planValue === "1") { 
-                updates.durationDays = null; updates.durationMonths = 1; 
-            } else if (planValue === "99") { 
-                updates.durationDays = null; updates.durationMonths = 99; 
-            }
-            
-            try { 
-                await executeInBoth(`licenses/${key}.json`, 'PATCH', updates);
-                
-                document.getElementById('editPlanModal').style.display = 'none'; 
-                fetchSystemData(); 
-                alert("تم تعديل الباقة وتجديد تاريخ التفعيل ليبدأ من اليوم! ✅"); 
-                
-            } catch (e) { 
-                alert("حدث خطأ أثناء التعديل!"); 
-            }
+        await executeData(`licenses/${code}.json`, 'PUT', licenseData);
+        
+        document.getElementById("generatedCodeDisplay").value = code; 
+        fetchSystemData(); 
+        showNotification("نجاح!", "تم توليد كود التفعيل وإضافته للرخص.");
+    }
+
+    async function publishGlobalAnnouncement() {
+        const title = prompt("اكتب عنوان الإشعار (مثال: تحديث هام V2.0):"); if (!title) return;
+        const message = prompt("اكتب نص الإشعار:"); if (!message) return;
+        try { 
+            let annData = { id: "ann_" + Date.now(), title: title, message: message, timestamp: new Date().toISOString() };
+            await executeData(`global_announcement.json`, 'PUT', annData);
+            alert("تم إرسال الإشعار! سيظهر لجميع المدرسين."); 
+        } catch (e) { alert("حدث خطأ."); }
+    }
+
+    function openEditPlanModal(key) { document.getElementById('editPlanLicenseKey').value = key; document.getElementById('editPlanModal').style.display = 'flex'; }
+    
+    async function saveNewPlan() {
+        const key = document.getElementById('editPlanLicenseKey').value; 
+        const planValue = document.getElementById('newPlanSelect').value; 
+        
+        let updates = {
+            activatedAt: new Date().toISOString(),
+            status: 'active'
+        };
+        
+        if (planValue === "1_day") { 
+            updates.durationDays = 1; updates.durationMonths = null; 
+        } else if (planValue === "7_days") { 
+            updates.durationDays = 7; updates.durationMonths = null; 
+        } else if (planValue === "1") { 
+            updates.durationDays = null; updates.durationMonths = 1; 
+        } else if (planValue === "99") { 
+            updates.durationDays = null; updates.durationMonths = 99; 
         }
-    </script>
+        
+        try { 
+            await executeData(`licenses/${key}.json`, 'PATCH', updates);
+            
+            document.getElementById('editPlanModal').style.display = 'none'; 
+            fetchSystemData(); 
+            alert("تم تعديل الباقة وتجديد تاريخ التفعيل ليبدأ من اليوم! ✅"); 
+            
+        } catch (e) { 
+            alert("حدث خطأ أثناء التعديل!"); 
+        }
+    }
+</script>
 
     <div id="editPlanModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
         <div style="background: var(--card); padding: 25px; border-radius: 12px; width: 350px; text-align: center; border-top: 5px solid #f59e0b; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
