@@ -5161,52 +5161,171 @@ window.deleteLecture = async function(id) {
     } catch(e) {}
 };
 
-// --- 📝 الامتحانات الإلكترونية ---
+// ==========================================
+// 📝 صانع الامتحانات (بدعم الصور والتصميم الجديد)
+// ==========================================
+
 window.openOnlineExamBuilder = function() {
     document.getElementById("onlineExamTitle").value = "";
     document.getElementById("onlineExamDuration").value = "60";
     document.getElementById("onlineExamAutoShowResult").checked = true;
     let groupContainer = document.getElementById("onlineExamGroupsContainer");
     if(groupContainer && typeof groups !== 'undefined') {
-        groupContainer.innerHTML = groups.map(g => `<label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: var(--hover-bg); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-weight: bold;"><input type="checkbox" name="examGroup" value="${g.name}" style="accent-color: var(--primary-color); width: 18px; height: 18px;">${g.name}</label>`).join('');
+        groupContainer.innerHTML = groups.map(g => `<label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: white; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-weight: bold;"><input type="checkbox" name="examGroup" value="${g.name}" style="accent-color: #f97316; width: 18px; height: 18px;">${g.name}</label>`).join('');
     }
     currentQuestions = [];
     document.getElementById("examQuestionsContainer").innerHTML = "";
+    
     addQuestionBlock('mcq'); 
     openModal('buildOnlineExamModal');
+    
+    // 💡 سحر السكرول: إجبار النافذة تفتح من فوق خالص
+    setTimeout(() => { 
+        let sa = document.getElementById('examBuilderScrollArea'); 
+        if(sa) sa.scrollTop = 0; 
+    }, 50);
 };
 
 window.addQuestionBlock = function(type = 'mcq') {
-    currentQuestions.push({ id: "q_" + Date.now(), type: type, text: "", points: 1, options: ["", "", "", ""], correctAnswerIndex: 0, correctAnswerText: "", correctAnswerTF: "true" });
+    currentQuestions.push({ 
+        id: "q_" + Date.now(), 
+        type: type, 
+        text: "", 
+        image: null, // حقل للصورة
+        points: 1, 
+        options: [{text:"", image:null}, {text:"", image:null}, {text:"", image:null}, {text:"", image:null}], 
+        correctAnswerIndex: 0, 
+        correctAnswerText: "", 
+        correctAnswerTF: "true" 
+    });
     renderQuestionBlocks();
-    setTimeout(() => { let sa = document.getElementById('examBuilderScrollArea'); if(sa) sa.scrollTop = sa.scrollHeight; }, 100);
+    
+    // 💡 ينزل سكرول لتحت بس لما يضيف سؤال جديد
+    setTimeout(() => { 
+        let sa = document.getElementById('examBuilderScrollArea'); 
+        if(sa) sa.scrollTop = sa.scrollHeight; 
+    }, 100);
+};
+
+// دوال رفع ومسح الصور للأسئلة والإجابات
+window.uploadQuestionImage = function(event, qIndex) {
+    let file = event.target.files[0];
+    if (!file) return;
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        currentQuestions[qIndex].image = e.target.result;
+        renderQuestionBlocks();
+    };
+    reader.readAsDataURL(file);
+};
+window.removeQuestionImage = function(qIndex) {
+    currentQuestions[qIndex].image = null;
+    renderQuestionBlocks();
+};
+
+window.uploadOptionImage = function(event, qIndex, optIndex) {
+    let file = event.target.files[0];
+    if (!file) return;
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        if (typeof currentQuestions[qIndex].options[optIndex] === 'string') {
+            currentQuestions[qIndex].options[optIndex] = { text: currentQuestions[qIndex].options[optIndex], image: null };
+        }
+        currentQuestions[qIndex].options[optIndex].image = e.target.result;
+        renderQuestionBlocks();
+    };
+    reader.readAsDataURL(file);
+};
+window.removeOptionImage = function(qIndex, optIndex) {
+    currentQuestions[qIndex].options[optIndex].image = null;
+    renderQuestionBlocks();
 };
 
 window.renderQuestionBlocks = function() {
     let container = document.getElementById("examQuestionsContainer");
     if(!container) return;
-    if(currentQuestions.length === 0) return container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px; border: 2px dashed var(--border-color); border-radius: 12px;">لم تقم بإضافة أي أسئلة بعد.</div>`;
+    if(currentQuestions.length === 0) return container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px; border: 2px dashed var(--border-color); border-radius: 12px; background: white;">لم تقم بإضافة أي أسئلة بعد.</div>`;
+    
     container.innerHTML = "";
     currentQuestions.forEach((q, index) => {
-        let html = `<div class="question-block" style="background: var(--bg-color); padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; position: relative; margin-bottom: 15px;"><button type="button" onclick="removeQuestion(${index})" style="position: absolute; top: 10px; left: 10px; background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 5px 10px; cursor: pointer;">حذف</button><div style="display: flex; gap: 15px; margin-bottom: 15px;"><div style="flex: 3;"><label style="color: var(--primary-color); font-weight: bold;">نص السؤال ${index + 1}:</label><textarea class="custom-input" rows="2" required oninput="updateQuestion(${index}, 'text', this.value)">${q.text}</textarea></div><div style="flex: 1;"><label style="color: var(--exam-color); font-weight: bold;">الدرجة:</label><input type="number" class="custom-input" value="${q.points}" min="1" required oninput="updateQuestion(${index}, 'points', parseFloat(this.value))"></div></div><div id="q_options_${index}">${generateOptionsHtml(q, index)}</div></div>`;
+        let html = `
+        <div class="question-block" style="background: #ffffff; padding: 25px; border: 1px solid #e2e8f0; border-radius: 16px; position: relative; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 15px;">
+                <label style="color: #f97316; font-weight: 900; font-size: 16px;">نص السؤال ${index + 1}:</label>
+                <button type="button" onclick="removeQuestion(${index})" style="background: #ef4444; color: #fff; border: none; border-radius: 8px; padding: 6px 15px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">حذف 🗑️</button>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: stretch;">
+                <div style="flex: 1; max-width: 90px; display: flex; flex-direction: column;">
+                    <label style="color: #3b82f6; font-weight: bold; font-size: 14px; margin-bottom: 5px; text-align: center;">الدرجة:</label>
+                    <input type="number" class="custom-input" value="${q.points}" min="1" required oninput="updateQuestion(${index}, 'points', parseFloat(this.value))" style="text-align: center; font-weight: 900; font-size: 18px; height: 100%; margin: 0; padding: 10px;">
+                </div>
+                
+                <div style="flex: 4; position: relative; display: flex; flex-direction: column;">
+                    <textarea class="custom-input" rows="3" placeholder="اكتب نص السؤال هنا..." required oninput="updateQuestion(${index}, 'text', this.value)" style="margin: 0; resize: vertical; height: 100%; padding-left: 55px; font-weight: bold;">${q.text}</textarea>
+                    
+                    <label style="position: absolute; left: 10px; bottom: 10px; cursor: pointer; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.background='#e2e8f0'" title="إرفاق صورة للسؤال">
+                        🖼️
+                        <input type="file" accept="image/*" style="display: none;" onchange="uploadQuestionImage(event, ${index})">
+                    </label>
+                </div>
+            </div>
+            
+            ${q.image ? `
+            <div style="margin-bottom: 20px; position: relative; display: inline-block; padding: 5px; border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc;">
+                <img src="${q.image}" style="max-height: 180px; border-radius: 8px;">
+                <button type="button" onclick="removeQuestionImage(${index})" style="position: absolute; top: -10px; right: -10px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">×</button>
+            </div>` : ''}
+
+            <div id="q_options_${index}">${generateOptionsHtml(q, index)}</div>
+        </div>`;
         container.innerHTML += html;
     });
 };
 
 window.generateOptionsHtml = function(q, index) {
     if(q.type === 'mcq') {
-        return `<label style="font-weight:bold; font-size:14px; margin-bottom:5px; display:block;">الاختيارات (حدد الإجابة الصحيحة بالدائرة):</label><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">${q.options.map((opt, i) => `<div style="display:flex; gap:10px; align-items:center;"><input type="radio" name="correct_${index}" ${q.correctAnswerIndex === i ? 'checked' : ''} onchange="updateQuestion(${index}, 'correctAnswerIndex', ${i})" style="width:18px; height:18px; cursor:pointer;"><input type="text" class="custom-input" value="${opt}" placeholder="الاختيار ${i+1}" oninput="updateOption(${index}, ${i}, this.value)"></div>`).join('')}</div>`;
+        return `
+        <label style="font-weight:900; font-size:14px; margin-bottom:12px; display:block; color: var(--secondary-color);">الاختيارات (حدد الإجابة الصحيحة بالدائرة):</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            ${q.options.map((opt, i) => {
+                let textVal = typeof opt === 'string' ? opt : (opt.text || "");
+                let imgVal = typeof opt === 'object' ? opt.image : null;
+                return `
+                <div style="display:flex; gap:10px; align-items:center; background: #f8fafc; padding: 12px 15px; border-radius: 12px; border: 1px solid #e2e8f0; position: relative; transition: 0.2s;" onmouseover="this.style.borderColor='#94a3b8'" onmouseout="this.style.borderColor='#e2e8f0'">
+                    <input type="radio" name="correct_${index}" ${q.correctAnswerIndex === i ? 'checked' : ''} onchange="updateQuestion(${index}, 'correctAnswerIndex', ${i})" style="width:20px; height:20px; cursor:pointer; accent-color: #3b82f6; margin: 0;">
+                    <input type="text" class="custom-input" value="${textVal}" placeholder="الاختيار ${i+1}" oninput="updateOption(${index}, ${i}, 'text', this.value)" style="margin: 0; padding: 8px; border: none; background: transparent; flex: 1; font-weight: bold; font-size: 14px;">
+                    
+                    ${imgVal ? `
+                    <div style="position: relative; margin-right: 5px; border-right: 1px dashed #cbd5e1; padding-right: 10px;">
+                        <img src="${imgVal}" style="height: 40px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                        <button type="button" onclick="removeOptionImage(${index}, ${i})" style="position: absolute; top: -10px; right: -10px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">×</button>
+                    </div>` : ''}
+                    
+                    <label style="cursor: pointer; background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; display: flex; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" onmouseover="this.style.background='#f1f5f9'" title="إرفاق صورة للإجابة">
+                        🖼️
+                        <input type="file" accept="image/*" style="display: none;" onchange="uploadOptionImage(event, ${index}, ${i})">
+                    </label>
+                </div>`;
+            }).join('')}
+        </div>`;
     } else if(q.type === 'tf') {
-        return `<div style="display: flex; gap: 20px;"><label style="cursor:pointer; display:flex; align-items:center; gap:5px; font-weight:bold; color:var(--success-color);"><input type="radio" name="ans_${index}" ${q.correctAnswerTF === 'true' ? 'checked' : ''} onchange="updateQuestion(${index}, 'correctAnswerTF', 'true')" style="width:18px; height:18px;"> صح ✔️</label><label style="cursor:pointer; display:flex; align-items:center; gap:5px; font-weight:bold; color:var(--danger-color);"><input type="radio" name="ans_${index}" ${q.correctAnswerTF === 'false' ? 'checked' : ''} onchange="updateQuestion(${index}, 'correctAnswerTF', 'false')" style="width:18px; height:18px;"> خطأ ❌</label></div>`;
+        return `<div style="display: flex; gap: 20px;"><label style="cursor:pointer; display:flex; align-items:center; gap:5px; font-weight:bold; color:var(--success-color); background: rgba(16,185,129,0.1); padding: 10px 20px; border-radius: 8px; border: 1px solid var(--success-color);"><input type="radio" name="ans_${index}" ${q.correctAnswerTF === 'true' ? 'checked' : ''} onchange="updateQuestion(${index}, 'correctAnswerTF', 'true')" style="width:18px; height:18px; accent-color: var(--success-color);"> صح ✔️</label><label style="cursor:pointer; display:flex; align-items:center; gap:5px; font-weight:bold; color:var(--danger-color); background: rgba(239,68,68,0.1); padding: 10px 20px; border-radius: 8px; border: 1px solid var(--danger-color);"><input type="radio" name="ans_${index}" ${q.correctAnswerTF === 'false' ? 'checked' : ''} onchange="updateQuestion(${index}, 'correctAnswerTF', 'false')" style="width:18px; height:18px; accent-color: var(--danger-color);"> خطأ ❌</label></div>`;
     } else if(q.type === 'blank') {
-        return `<label style="font-weight:bold; font-size:14px; margin-bottom:5px; display:block;">الإجابة الصحيحة:</label><input type="text" class="custom-input" value="${q.correctAnswerText}" oninput="updateQuestion(${index}, 'correctAnswerText', this.value)">`;
+        return `<label style="font-weight:900; font-size:14px; margin-bottom:5px; display:block; color: var(--secondary-color);">الإجابة الصحيحة:</label><input type="text" class="custom-input" value="${q.correctAnswerText}" oninput="updateQuestion(${index}, 'correctAnswerText', this.value)" style="background: #f8fafc;">`;
     } else {
-        return `<div style="background: rgba(139, 92, 246, 0.1); padding: 10px; border-radius: 8px; border: 1px dashed var(--exam-color); color: var(--exam-color); font-size: 14px; margin: 0;">📝 هذا السؤال مقالي يصحح يدوياً.</div>`;
+        return `<div style="background: rgba(139, 92, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px dashed var(--exam-color); color: var(--exam-color); font-size: 14px; margin: 0; font-weight: bold;">📝 هذا السؤال مقالي سيتم تصحيحه يدوياً بعد تسليم الطالب.</div>`;
     }
 };
 
 window.updateQuestion = function(index, field, value) { currentQuestions[index][field] = value; };
-window.updateOption = function(qIndex, optIndex, value) { currentQuestions[qIndex].options[optIndex] = value; };
+window.updateOption = function(qIndex, optIndex, field, value) { 
+    if (typeof currentQuestions[qIndex].options[optIndex] === 'string') {
+        currentQuestions[qIndex].options[optIndex] = { text: currentQuestions[qIndex].options[optIndex], image: null };
+    }
+    currentQuestions[qIndex].options[optIndex][field] = value; 
+};
 window.removeQuestion = function(index) { currentQuestions.splice(index, 1); renderQuestionBlocks(); };
 
 window.saveOnlineExam = async function() {

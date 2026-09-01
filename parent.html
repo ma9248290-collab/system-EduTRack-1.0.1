@@ -1181,73 +1181,165 @@ window.showOnlineExams = async function(isRenderOnly = false) {
     } catch(e) {}
 };
 
-window.reviewExam = function(examId) {
-    let exam = allOnlineExams.find(e => e.id === examId); 
-    let examSubs = window.studentSubmissions[examId] || {};
-    
-    // 🔥 التعديل هنا: جلب الإجابة بالكود
-    let sub = examSubs[currentStudent.code];
-    if (!sub && currentStudent.phone && String(currentStudent.phone).trim() !== "0") {
-        sub = examSubs[currentStudent.phone];
-    }
-
-    if(!exam || !sub) return;
-    document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("review-exam-screen").style.display = "block";
-    document.getElementById("review-exam-title").innerText = exam.title; document.getElementById("review-exam-score").innerText = sub.score; document.getElementById("review-exam-total").innerText = exam.totalScore;
-    let container = document.getElementById("review-questions-render"); container.innerHTML = "";
-    
-    exam.questions.forEach((q, index) => {
-        let studentAns = sub.answers[q.id]; let qScore = 0; let isCorrect = false; let ansHtml = "";
-        if (q.type === 'mcq') {
-            isCorrect = (studentAns === q.correctAnswerIndex); qScore = isCorrect ? q.points : 0;
-            ansHtml = `<div class="q-options">`;
-            q.options.forEach((opt, optIndex) => {
-                let bg = "var(--bg-color)"; let border = "var(--border)"; let icon = "";
-                if (optIndex === q.correctAnswerIndex) { bg = "#d1fae5"; border = "#10b981"; icon = "✅"; }
-                else if (optIndex === studentAns && !isCorrect) { bg = "#fee2e2"; border = "#ef4444"; icon = "❌"; }
-                ansHtml += `<div class="q-option-label" style="background:${bg}; border-color:${border};">${opt} ${icon}</div>`;
-            });
-            ansHtml += `</div>`;
-        } else if (q.type === 'tf') {
-            isCorrect = (String(studentAns) === String(q.correctAnswerTF || q.correctAnswer)); qScore = isCorrect ? q.points : 0;
-            ansHtml = `<div style="background: ${isCorrect?'#d1fae5':'#fee2e2'}; padding:15px; border-radius:12px; font-weight:bold; border:2px solid ${isCorrect?'#10b981':'#ef4444'};">إجابتك: ${studentAns} | الصحيحة: ${q.correctAnswerTF || q.correctAnswer}</div>`;
-        } else {
-            qScore = (sub.manualGrades && sub.manualGrades[q.id] !== undefined) ? sub.manualGrades[q.id] : (studentAns === q.correctAnswerText ? q.points : 0);
-            ansHtml = `<div style="background:var(--bg-color); padding:15px; border-radius:12px; border:1px solid var(--border);">إجابتك: ${studentAns || 'لم يُجب'}</div>`;
-        }
-        container.innerHTML += `<div class="q-box" style="border-right: 5px solid ${qScore > 0 ? '#10b981' : '#ef4444'};"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary);">(${qScore}/${q.points})</span></div>${ansHtml}</div>`;
-    });
-};
-
-window.closeReviewScreen = function() { document.getElementById("review-exam-screen").style.display = "none"; document.getElementById("online-exams-list-screen").style.display = "block"; };
-function backToDashboard() { document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("app-layout").style.display = "block"; }
-
-function startExam(examId) {
-    currentExam = allOnlineExams.find(e => e.id === examId); if(!currentExam) return;
+window.startExam = function(examId) {
+    currentExam = allOnlineExams.find(e => e.id === examId); 
+    if(!currentExam) return;
     if(!confirm(`هل أنت مستعد؟ المدة: ${currentExam.duration} دقيقة.`)) return;
-    document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("active-exam-screen").style.display = "block";
+    
+    document.getElementById("online-exams-list-screen").style.display = "none"; 
+    document.getElementById("active-exam-screen").style.display = "block";
     document.getElementById("active-exam-title").innerText = currentExam.title;
-    const container = document.getElementById("exam-questions-render"); container.innerHTML = "";
+    
+    let oldSubmitBtn = document.getElementById("submitExamBtn");
+    if(oldSubmitBtn) oldSubmitBtn.style.display = "none";
+
+    const container = document.getElementById("exam-questions-render"); 
+    container.innerHTML = "";
+    window.currentSlideIndex = 0; 
     
     currentExam.questions.forEach((q, index) => {
-        let qHtml = `<div class="q-box"><div class="q-title">${index + 1}. ${q.text} <span style="color:var(--primary); font-size:14px;">(${q.points} درجات)</span></div>`;
+        let displayStyle = index === 0 ? "block" : "none";
+        
+        let qHtml = `<div class="q-slide" id="slide_${index}" style="display: ${displayStyle}; background: white; padding: 35px 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 20px;">`;
+        
+        qHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px dashed var(--border); padding-bottom: 15px; direction: rtl;">
+            <span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 8px 20px; border-radius: 12px; font-weight: 900; font-size: 16px; border: 1px solid rgba(245, 158, 11, 0.3);">🎯 ${q.points} درجات</span>
+            <span style="color: var(--text-muted); font-weight: 900; background: var(--bg-color); padding: 8px 15px; border-radius: 12px;">السؤال ${index + 1} من ${currentExam.questions.length}</span>
+        </div>`;
+
+        qHtml += `<div style="direction: ltr; text-align: left; font-family: 'Segoe UI', Tahoma, sans-serif;">`;
+        
+        // عرض صورة السؤال لو موجودة
+        if (q.image) {
+            qHtml += `<div style="text-align: center; margin-bottom: 20px;"><img src="${q.image}" style="max-width: 100%; max-height: 250px; border-radius: 12px; border: 2px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.05);"></div>`;
+        }
+        
+        qHtml += `<h3 style="color: var(--secondary); font-size: 24px; line-height: 1.6; margin: 0 0 25px 0;">${q.text}</h3>`;
+
         if (q.type === 'mcq') { 
-            qHtml += `<div class="q-options">`; 
+            qHtml += `<div class="q-options" style="display: flex; flex-direction: column; gap: 12px;">`; 
             q.options.forEach((opt, optIndex) => { 
-                qHtml += `<label class="q-option-label"><input type="radio" name="ans_${q.id}" value="${optIndex}"> ${opt}</label>`; 
+                let optText = typeof opt === 'string' ? opt : (opt.text || "");
+                let optImg = typeof opt === 'object' && opt.image ? `<img src="${opt.image}" style="max-height: 70px; border-radius: 8px; margin-left: 15px; border: 1px solid var(--border);">` : '';
+                
+                qHtml += `<label style="display: flex; align-items: center; gap: 15px; background: var(--bg-color); border: 2px solid var(--border); padding: 15px 20px; border-radius: 15px; cursor: pointer; transition: 0.3s; font-size: 18px; font-weight: 600;"
+                onmouseover="this.style.borderColor='var(--primary)'" 
+                onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='var(--border)'"
+                onclick="document.querySelectorAll('input[name=ans_${q.id}]').forEach(inp => {inp.parentElement.style.borderColor='var(--border)'; inp.parentElement.style.background='var(--bg-color)';}); this.style.borderColor='var(--primary)'; this.style.background='rgba(14, 165, 233, 0.05)';">
+                    <input type="radio" name="ans_${q.id}" value="${optIndex}" style="width: 22px; height: 22px; accent-color: var(--primary);"> 
+                    ${optImg}
+                    <span style="flex: 1;">${optText}</span>
+                </label>`; 
             }); 
             qHtml += `</div>`; 
         } 
         else if (q.type === 'tf') { 
-            qHtml += `<div class="q-options"><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="true"> ✔️ صح</label><label class="q-option-label"><input type="radio" name="ans_${q.id}" value="false"> ❌ خطأ</label></div>`; 
+            qHtml += `
+            <div class="q-options" style="display: flex; gap: 20px;">
+                <label style="flex: 1; text-align: center; background: rgba(16, 185, 129, 0.05); border: 2px solid #10b981; padding: 20px; border-radius: 15px; cursor: pointer; font-size: 22px; font-weight: bold; color: #10b981; transition: 0.3s;" onclick="document.querySelectorAll('input[name=ans_${q.id}]').forEach(i=>{i.parentElement.style.background='transparent'; i.parentElement.style.opacity='0.5'}); this.style.background='rgba(16, 185, 129, 0.15)'; this.style.opacity='1';">
+                    <input type="radio" name="ans_${q.id}" value="true" style="display:none;"> ✔️ True
+                </label>
+                <label style="flex: 1; text-align: center; background: rgba(239, 68, 68, 0.05); border: 2px solid #ef4444; padding: 20px; border-radius: 15px; cursor: pointer; font-size: 22px; font-weight: bold; color: #ef4444; transition: 0.3s;" onclick="document.querySelectorAll('input[name=ans_${q.id}]').forEach(i=>{i.parentElement.style.background='transparent'; i.parentElement.style.opacity='0.5'}); this.style.background='rgba(239, 68, 68, 0.15)'; this.style.opacity='1';">
+                    <input type="radio" name="ans_${q.id}" value="false" style="display:none;"> ❌ False
+                </label>
+            </div>`; 
         } 
-        else if (q.type === 'blank') { qHtml += `<input type="text" id="ans_${q.id}" class="custom-input" placeholder="اكتب إجابتك...">`; } 
-        else if (q.type === 'essay') { qHtml += `<textarea id="ans_${q.id}" class="custom-input" rows="4" placeholder="اكتب التفاصيل..."></textarea>`; }
+        else if (q.type === 'blank') { 
+            qHtml += `<input type="text" id="ans_${q.id}" class="custom-input" placeholder="Type your answer here..." style="font-size: 18px; padding: 15px; border-radius: 12px; border: 2px solid var(--border); width: 100%; direction: ltr; text-align: left;">`; 
+        } 
+        else if (q.type === 'essay') { 
+            qHtml += `<textarea id="ans_${q.id}" class="custom-input" rows="5" placeholder="Write your detailed answer here..." style="font-size: 18px; padding: 15px; border-radius: 12px; border: 2px solid var(--border); resize: vertical; width: 100%; direction: ltr; text-align: left;"></textarea>`; 
+        }
+        qHtml += `</div>`; 
+
+        qHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 35px; padding-top: 25px; border-top: 1px solid var(--border); direction: rtl;">
+            <button class="btn btn-secondary" style="width: auto; padding: 12px 30px; font-size: 16px; border-radius: 12px; opacity: ${index === 0 ? '0.3' : '1'}; pointer-events: ${index === 0 ? 'none' : 'auto'};" onclick="navigateSlide(-1)">السابق</button>
+            
+            ${index === currentExam.questions.length - 1 ? 
+                `<button class="btn slide-submit-btn" style="width: auto; background: var(--success); padding: 12px 30px; font-size: 18px; font-weight: 900; border-radius: 12px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);" onclick="submitOnlineExam()">تسليم الامتحان نهائياً ✅</button>` : 
+                `<button class="btn" style="width: auto; padding: 12px 40px; font-size: 18px; font-weight: 900; border-radius: 12px; box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);" onclick="navigateSlide(1)">التالي ⬅️</button>`
+            }
+        </div>`;
+
         container.innerHTML += qHtml + `</div>`;
     });
+    
     let timeInSeconds = currentExam.duration * 60; const timerDisplay = document.getElementById('exam-timer');
-    examTimerInterval = setInterval(() => { let m = Math.floor(timeInSeconds / 60), s = timeInSeconds % 60; timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`; if (timeInSeconds <= 0) { clearInterval(examTimerInterval); submitOnlineExam(true); } timeInSeconds--; }, 1000);
+    examTimerInterval = setInterval(() => { 
+        let m = Math.floor(timeInSeconds / 60), s = timeInSeconds % 60; 
+        timerDisplay.innerText = `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`; 
+        if(timeInSeconds <= 60) timerDisplay.parentElement.style.background = "var(--danger)";
+        if (timeInSeconds <= 0) { clearInterval(examTimerInterval); submitOnlineExam(true); } 
+        timeInSeconds--; 
+    }, 1000);
 }
+
+// دالة مراجعة الامتحان وعرض الصور
+window.reviewExam = function(examId) {
+    let exam = allOnlineExams.find(e => e.id === examId); 
+    let examSubs = window.studentSubmissions[examId] || {};
+    let sub = examSubs[currentStudent.code];
+    if (!sub && currentStudent.phone && String(currentStudent.phone).trim() !== "0") sub = examSubs[currentStudent.phone];
+
+    if(!exam || !sub) return;
+    document.getElementById("online-exams-list-screen").style.display = "none"; 
+    document.getElementById("review-exam-screen").style.display = "block";
+    
+    document.getElementById("review-exam-title").innerText = exam.title; 
+    document.getElementById("review-exam-score").innerText = sub.score; 
+    document.getElementById("review-exam-total").innerText = exam.totalScore;
+    
+    let container = document.getElementById("review-questions-render"); 
+    container.innerHTML = "";
+    
+    exam.questions.forEach((q, index) => {
+        let studentAns = sub.answers[q.id]; let qScore = 0; let isCorrect = false; let ansHtml = "";
+        
+        let qImgHtml = q.image ? `<div style="text-align: center; margin-bottom: 20px;"><img src="${q.image}" style="max-width: 100%; max-height: 250px; border-radius: 12px; border: 2px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.05);"></div>` : '';
+
+        if (q.type === 'mcq') {
+            isCorrect = (studentAns === q.correctAnswerIndex); qScore = isCorrect ? q.points : 0;
+            ansHtml = `<div class="q-options" style="display: flex; flex-direction: column; gap: 10px;">`;
+            q.options.forEach((opt, optIndex) => {
+                let optText = typeof opt === 'string' ? opt : (opt.text || "");
+                let optImg = typeof opt === 'object' && opt.image ? `<img src="${opt.image}" style="max-height: 50px; border-radius: 8px; margin-left: 10px; border: 1px solid var(--border);">` : '';
+                
+                let bg = "var(--bg-color)"; let border = "var(--border)"; let icon = "";
+                if (optIndex === q.correctAnswerIndex) { bg = "#d1fae5"; border = "#10b981"; icon = "✅"; }
+                else if (optIndex === studentAns && !isCorrect) { bg = "#fee2e2"; border = "#ef4444"; icon = "❌"; }
+                ansHtml += `<div style="background:${bg}; border: 2px solid ${border}; padding: 12px 15px; border-radius: 12px; font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center;">${optImg} <span>${optText}</span></div> 
+                    <span>${icon}</span>
+                </div>`;
+            });
+            ansHtml += `</div>`;
+        } else if (q.type === 'tf') {
+            isCorrect = (String(studentAns) === String(q.correctAnswerTF || q.correctAnswer)); qScore = isCorrect ? q.points : 0;
+            ansHtml = `<div style="background: ${isCorrect?'#d1fae5':'#fee2e2'}; padding:15px; border-radius:12px; font-weight:bold; border:2px solid ${isCorrect?'#10b981':'#ef4444'}; font-size: 18px;">Your Answer: ${studentAns==='true'?'True ✔️':'False ❌'} <br> Correct: ${(q.correctAnswerTF || q.correctAnswer)==='true'?'True ✔️':'False ❌'}</div>`;
+        } else {
+            qScore = (sub.manualGrades && sub.manualGrades[q.id] !== undefined) ? sub.manualGrades[q.id] : (studentAns === q.correctAnswerText ? q.points : 0);
+            ansHtml = `<div style="background:var(--bg-color); padding:15px; border-radius:12px; border:2px solid var(--border); font-weight:bold; font-size: 16px;">Your Answer: <span style="color: var(--primary);">${studentAns || 'No Answer'}</span></div>`;
+        }
+
+        container.innerHTML += `
+        <div style="background: white; padding: 30px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 5px 15px rgba(0,0,0,0.03); margin-bottom: 20px; text-align: left; direction: ltr; font-family: 'Segoe UI', Tahoma, sans-serif;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px dashed var(--border); padding-bottom: 15px; direction: rtl;">
+                <span style="background: ${qScore > 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${qScore > 0 ? '#10b981' : '#ef4444'}; padding: 8px 20px; border-radius: 12px; font-weight: 900; font-size: 16px; border: 1px solid ${qScore > 0 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'};">الدرجة: ${qScore} / ${q.points}</span>
+                <span style="color: var(--secondary); font-weight: 900; background: var(--bg-color); padding: 8px 15px; border-radius: 12px;">السؤال ${index + 1}</span>
+            </div>
+            ${qImgHtml}
+            <h3 style="color: var(--secondary); font-size: 22px; line-height: 1.5; margin: 0 0 20px 0;">${q.text}</h3>
+            ${ansHtml}
+        </div>`;
+    });
+};
+
+
+window.closeReviewScreen = function() { document.getElementById("review-exam-screen").style.display = "none"; document.getElementById("online-exams-list-screen").style.display = "block"; };
+function backToDashboard() { document.getElementById("online-exams-list-screen").style.display = "none"; document.getElementById("app-layout").style.display = "block"; }
+
 
 async function submitOnlineExam(isTimeOut = false) {
     if (!isTimeOut && !confirm("تأكيد التسليم؟")) return; clearInterval(examTimerInterval);
