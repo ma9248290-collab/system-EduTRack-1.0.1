@@ -680,6 +680,15 @@ async function activateSoftware() {
 
 // 3. المزامنة السحابية + التحقق من الإيقاف والتاريخ التلقائي والإنذار
 async function loadDataFromFirebase() {
+    window.isFetchingData = true; // 👈 إضافة: إيقاف الرفع التلقائي
+    
+    // ... (باقي الكود الخاص بك داخل الدالة كما هو بدون أي تغيير) ...
+
+    isFirebaseLoaded = true; 
+    window.isFetchingData = false; // 👈 إضافة: إعادة تشغيل الرفع التلقائي
+    
+    setTimeout(window.checkGlobalAnnouncements, 1500);
+
     // 🛑 منع التحميل من السحابة لو الحساب تجريبي
     if (localStorage.getItem("is_demo_mode") === "true") {
         isFirebaseLoaded = true; return; 
@@ -1043,13 +1052,16 @@ async function syncDataToBot() {
 }
 
 
-["students", "classSessions", "exams", "homeworks", "schedule", "groups", "financeRecords", "expenses", "books", "monthlyPayments"].forEach(key => {
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(k, v) {
-        originalSetItem.apply(this, arguments);
-        if(key === k) syncDataToBot();
-    };
-});
+const originalSetItem = localStorage.setItem;
+const keysToSync = ["students", "classSessions", "exams", "homeworks", "schedule", "groups", "financeRecords", "expenses", "books", "monthlyPayments"];
+
+localStorage.setItem = function(k, v) {
+    originalSetItem.apply(this, arguments);
+    // نتأكد أننا لا نقوم بتحميل البيانات من السيرفر حالياً لتجنب اللوب
+    if(keysToSync.includes(k) && !window.isFetchingData) {
+        syncDataToBot();
+    }
+};
 
 
 
